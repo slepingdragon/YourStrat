@@ -34,6 +34,37 @@ npm install
 npx expo start
 ```
 
+### Mobile preview in Cursor
+
+1. `npm install` in `mobile/` (once).
+2. Backend venv: `cd backend`, `python -m venv .venv`, `pip install -r requirements.txt`.
+3. Copy `mobile/.env.example` → `mobile/.env` and fill Supabase keys (auth screens need them).
+4. **Run Build Task** — **Terminal → Run Build Task**, or **Ctrl+Shift+P** → **Tasks: Run Build Task** → **YourStrat: Mobile Preview**, or from repo root:
+
+```powershell
+.\scripts\start-dev.ps1
+```
+
+That starts the API on port **8000**, Expo web on **8082**, then opens the phone frame in the editor Simple Browser. For full-width web UI, use task **YourStrat: Open app (full width)**.
+
+**Shortcuts:** **Ctrl+Alt+B** runs the default build task in this workspace (see `.vscode/keybindings.json`). **Ctrl+Shift+B** works only when the editor has focus—not when the Simple Browser preview panel is focused (the browser steals it for bookmarks).
+
+**If tasks do nothing:** reload the window (**Ctrl+Shift+P** → **Developer: Reload Window**), then try again. The script above kills stale processes on ports **8000** and **8082**, starts the API, waits for `/health`, then starts Expo with `--clear` so `mobile/.env` is re-read. Open **Simple Browser** to `http://127.0.0.1:8082/preview-frame.html` after Metro is ready.
+
+`mobile/.env` must set `EXPO_PUBLIC_API_URL=http://127.0.0.1:8000` (not `localhost`) for the web preview iframe.
+
+Manual terminals: `cd backend` + uvicorn, and `cd mobile && npm run preview`.
+
+### API connection errors (web preview)
+
+If the app shows **Cannot reach the API** on sign-in screens:
+
+1. **Backend** — open `http://127.0.0.1:8000/health` in a browser; expect JSON `{"ok":true,...}`. If it fails, start the API (`.\scripts\start-dev.ps1` or uvicorn in `backend/`).
+2. **Metro proxy** — with Expo running, open `http://127.0.0.1:8081/api/health` (or your Expo port). Expect the same JSON, not an HTML page. HTML means Metro started without `metro.config.js` proxy — stop old Expo processes and run `start-dev.ps1` or `npx expo start --web --clear`.
+3. **Stale session** — a saved Supabase session can trigger profile load on `/login`; the app no longer toasts on public auth routes, but sign out from Profile if redirects behave oddly.
+
+Native builds use `EXPO_PUBLIC_API_URL` directly (no `/api` proxy).
+
 ### Deploy
 
 - **Railway:** connect repo, set root to `backend`, env vars from `.env.example`

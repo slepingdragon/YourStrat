@@ -8,6 +8,7 @@ export { Check } from "./Check";
 export { X } from "./X";
 export { ChevronLeft } from "./ChevronLeft";
 export { ChevronRight } from "./ChevronRight";
+export { ChevronDown } from "./ChevronDown";
 export { Edit } from "./Edit";
 export { Trash } from "./Trash";
 export { Play } from "./Play";

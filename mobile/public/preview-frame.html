@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YourStrat — preview</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #0c0c10;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        color: #9ca3af;
+      }
+      h1 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #6b7280;
+      }
+      .phone {
+        width: 448px;
+        height: 968px;
+        border-radius: 48px;
+        padding: 14px;
+        background: linear-gradient(145deg, #2a2a32, #141418);
+        box-shadow:
+          0 0 0 1px #3f3f46,
+          0 32px 64px rgba(0, 0, 0, 0.55);
+        flex-shrink: 0;
+      }
+      .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 36px;
+        background: #08080b;
+        overflow: hidden;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #08080b;
+      }
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #71717a;
+        background: #08080b;
+      }
+      .loading.hidden {
+        display: none;
+      }
+      .hint {
+        max-width: 448px;
+        font-size: 12px;
+        line-height: 1.5;
+        text-align: center;
+      }
+      .hint a {
+        color: #60a5fa;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YourStrat mobile preview</h1>
+    <div class="phone" aria-label="Phone preview frame">
+      <div class="screen">
+        <div class="loading" id="loading">Loading app…</div>
+        <iframe id="app" src="/" title="YourStrat app"></iframe>
+      </div>
+    </div>
+    <p class="hint">
+      App UI (port 8081). Reload if Metro was still starting.
+      API at
+      <a href="http://127.0.0.1:8000/">127.0.0.1:8000</a>
+      (<a href="http://127.0.0.1:8000/health?html=1">/health</a>,
+      <a href="http://127.0.0.1:8000/docs">/docs</a>) — loopback on your PC, not this preview page.
+      Start both: <strong>Terminal → Run Build Task</strong>, or
+      <strong>Ctrl+Shift+P</strong> → <em>Tasks: Run Build Task</em> →
+      <em>YourStrat: Mobile Preview</em>, or
+      <code>.\scripts\start-dev.ps1</code> from repo root in PowerShell.
+      <em>Ctrl+Shift+B</em> only when the editor is focused—not in this browser panel.
+      <strong>Ctrl+Alt+B</strong> runs the build task from anywhere in this workspace.
+      <strong>Public Wi‑Fi:</strong> localhost API still works; if sign‑in fails, try a phone hotspot (Supabase is external).
+      <a href="/">Open full width</a>
+    </p>
+    <script>
+      const frame = document.getElementById("app");
+      const loading = document.getElementById("loading");
+      frame.addEventListener("load", () => loading.classList.add("hidden"));
+      let tries = 0;
+      const retry = () => {
+        if (tries++ > 20) return;
+        loading.classList.remove("hidden");
+        setTimeout(() => {
+          frame.src = "/";
+        }, 2000);
+      };
+      frame.addEventListener("error", retry);
+      setTimeout(() => {
+        if (!loading.classList.contains("hidden")) retry();
+      }, 8000);
+    </script>
+  </body>
+</html>

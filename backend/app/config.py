@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -5,7 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Windows may set SUPABASE_URL=http://localhost globally; project .env must win.
 _env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(_env_path, override=True)
+if _env_path.is_file():
+    load_dotenv(stream=io.StringIO(_env_path.read_text(encoding="utf-8-sig")), override=True)
+else:
+    load_dotenv(_env_path, override=True)
 
 
 class Settings(BaseSettings):

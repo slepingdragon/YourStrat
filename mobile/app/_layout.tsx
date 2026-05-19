@@ -1,11 +1,29 @@
 import "../global.css";
 import { useEffect, useState } from "react";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Platform } from "react-native";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { ToastHost } from "@/components/ui";
-import { getProfile } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
+import { SetupEnvScreen } from "@/components/SetupEnvScreen";
+import { ToastHost, toastError } from "@/components/ui";
+import { getProfile, isNetworkError, isUnauthorized, pingApiHealth } from "@/lib/api";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+
+const PUBLIC_AUTH_SCREENS = new Set(["login", "signup", "reset", "reset-confirm"]);
+
+/**
+ * Segments can lag on first paint; pathname covers /login on web.
+ * Also treat an unresolved route (no segments + empty/root pathname) as public
+ * so we don't fire "API unreachable" toasts during initial hydration.
+ */
+function isPublicAuthRoute(segments: string[], pathname: string): boolean {
+  if (segments.length === 0 && (pathname === "" || pathname === "/")) return true;
+  const inAuth = segments[0] === "(auth)";
+  const authScreen = (inAuth ? segments[1] : segments[0]) as string | undefined;
+  if (authScreen && PUBLIC_AUTH_SCREENS.has(authScreen)) return true;
+  const leaf = pathname.replace(/\/$/, "").split("/").filter(Boolean).at(-1) ?? "";
+  return PUBLIC_AUTH_SCREENS.has(leaf);
+}
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -15,9 +33,16 @@ export default function RootLayout() {
   const setSession = useStore((s) => s.setSession);
   const setProfile = useStore((s) => s.setProfile);
   const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
+  const toast = useStore((s) => s.toast);
+  const clearToast = useStore((s) => s.clearToast);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setReady(true);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setReady(true);
@@ -33,27 +58,46 @@ export default function RootLayout() {
       return;
     }
     setProfileResolved(false);
-    getProfile()
-      .then((p) => {
+    (async () => {
+      const onPublicAuth = isPublicAuthRoute(segments, pathname);
+
+      if (Platform.OS === "web" && !onPublicAuth) {
+        const apiUp = await pingApiHealth();
+        if (!apiUp) {
+          toastError("Failed to fetch");
+          return;
+        }
+      }
+      try {
+        const p = await getProfile();
         setProfile(p);
         setProfileResolved(true);
-      })
-      .catch((e) => {
+      } catch (e) {
         const msg = (e as Error).message ?? "";
         console.error(e);
-        if (/profile not found/i.test(msg)) {
+        if (isUnauthorized(e) || /profile not found/i.test(msg)) {
           setProfile(null);
           setProfileResolved(true);
+        } else if (isNetworkError(e) && !onPublicAuth) {
+          toastError(msg);
+        } else {
+          setProfileResolved(true);
         }
-      });
-  }, [session, setProfile]);
+      }
+    })();
+  }, [session, setProfile, segments, pathname]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (toast && isPublicAuthRoute(segments, pathname)) {
+      clearToast();
+    }
+  }, [toast, segments, pathname, clearToast]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !ready) return;
     const inAuth = segments[0] === "(auth)";
     const authScreen = segments[1] as string | undefined;
-    const publicAuthScreens = new Set(["login", "signup", "reset", "reset-confirm"]);
-    const onPublicAuth = inAuth && authScreen && publicAuthScreens.has(authScreen);
+    const onPublicAuth = isPublicAuthRoute(segments, pathname);
 
     if (!session && !onPublicAuth) {
       router.replace("/(auth)/login");
@@ -66,7 +110,15 @@ export default function RootLayout() {
     if (session && profile && inAuth) {
       router.replace("/(tabs)");
     }
-  }, [ready, session, profile, profileResolved, segments, router]);
+  }, [ready, session, profile, profileResolved, segments, pathname, router]);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SetupEnvScreen />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

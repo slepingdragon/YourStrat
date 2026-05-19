@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
-import { Screen, Button, Input, OptionCard, Card, toastError, toastSuccess } from "@/components/ui";
+import { ChevronDown } from "@/components/icons";
+import { Screen, Button, Input, OptionCard, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
 import { getProfile, normalizeTrial, updateProfile } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -42,6 +43,9 @@ export default function ProfileScreen() {
   const [goal, setGoal] = useState<"lose" | "maintain" | "gain">("maintain");
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [weightError, setWeightError] = useState<string | null>(null);
+  const [heightError, setHeightError] = useState<string | null>(null);
+  const [ageError, setAgeError] = useState<string | null>(null);
 
   const hydrate = useCallback((p: NonNullable<typeof profile>) => {
     setUnits(p.units);
@@ -101,18 +105,13 @@ export default function ProfileScreen() {
     const w = parseFloat(weight);
     const h = parseFloat(height);
     const a = parseInt(age, 10);
-    if (!w || w <= 0) {
-      toastError("Enter a valid weight.");
-      return;
-    }
-    if (!h || h <= 0) {
-      toastError("Enter a valid height.");
-      return;
-    }
-    if (!a || a < 13 || a > 120) {
-      toastError("Enter an age between 13 and 120.");
-      return;
-    }
+    const wErr = !w || w <= 0 ? "Enter a valid weight." : null;
+    const hErr = !h || h <= 0 ? "Enter a valid height." : null;
+    const aErr = !a || a < 13 || a > 120 ? "Enter an age between 13 and 120." : null;
+    setWeightError(wErr);
+    setHeightError(hErr);
+    setAgeError(aErr);
+    if (wErr || hErr || aErr) return;
 
     setLoading(true);
     try {
@@ -143,7 +142,7 @@ export default function ProfileScreen() {
     router.replace("/(auth)/login");
   };
 
-  const deleteAccount = async () => {
+  const performDelete = async () => {
     try {
       const { error } = await supabase.rpc("delete_user");
       if (error) throw error;
@@ -154,11 +153,34 @@ export default function ProfileScreen() {
     await signOut();
   };
 
+  const deleteAccount = () => {
+    const message = "This permanently deletes your profile, meals, and workout history. This cannot be undone.";
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm(`Delete account?\n\n${message}`)) {
+        void performDelete();
+      }
+      return;
+    }
+    Alert.alert("Delete account?", message, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete account", style: "destructive", onPress: () => void performDelete() },
+    ]);
+  };
+
   if (!profile) {
     return (
       <Screen scroll>
         <Text style={styles.pageTitle}>Profile</Text>
-        <Text style={{ color: colors.textMuted, marginTop: 16 }}>Loading profile…</Text>
+        <View style={{ height: 24 }} />
+        <View style={{ alignItems: "center" }}>
+          <Skeleton width={120} height={120} radius={60} />
+        </View>
+        <View style={{ height: 16 }} />
+        <Skeleton width="40%" height={14} radius={4} style={{ alignSelf: "center" }} />
+        <View style={{ height: 32 }} />
+        <Skeleton height={100} radius={16} />
+        <View style={{ height: 16 }} />
+        <Skeleton height={80} radius={16} />
       </Screen>
     );
   }
@@ -211,10 +233,14 @@ export default function ProfileScreen() {
       <Pressable
         onPress={() => setEditOpen((o) => !o)}
         accessibilityRole="button"
+        accessibilityLabel={editOpen ? "Collapse edit details" : "Expand edit details"}
+        accessibilityState={{ expanded: editOpen }}
         style={styles.editHeader}
       >
         <Text style={styles.editHeaderTitle}>Edit your details</Text>
-        <Text style={{ color: colors.textMuted, fontSize: 14 }}>{editOpen ? "▲" : "▼"}</Text>
+        <View style={{ transform: [{ rotate: editOpen ? "180deg" : "0deg" }] }}>
+          <ChevronDown color={colors.textMuted} size={20} />
+        </View>
       </Pressable>
 
       {editOpen ? (
@@ -227,46 +253,72 @@ export default function ProfileScreen() {
           ) : null}
 
           <Text style={styles.fieldSection}>Units</Text>
-          <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => onUnitsChange("metric")} />
-          <OptionCard
-            label="Imperial (lb, in)"
-            selected={units === "imperial"}
-            onPress={() => onUnitsChange("imperial")}
-          />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => onUnitsChange("metric")} />
+            <OptionCard
+              label="Imperial (lb, in)"
+              selected={units === "imperial"}
+              onPress={() => onUnitsChange("imperial")}
+            />
+          </View>
 
           <Text style={styles.fieldSection}>Body</Text>
           <Text style={styles.label}>Weight ({units === "metric" ? "kg" : "lb"})</Text>
           <Input
             value={weight}
-            onChangeText={setWeight}
+            onChangeText={(v) => {
+              setWeight(v);
+              if (weightError) setWeightError(null);
+            }}
             keyboardType="decimal-pad"
             placeholder={units === "metric" ? "70" : "155"}
             centered={false}
+            error={weightError}
           />
           <Text style={styles.label}>Height ({units === "metric" ? "cm" : "in"})</Text>
           <Input
             value={height}
-            onChangeText={setHeight}
+            onChangeText={(v) => {
+              setHeight(v);
+              if (heightError) setHeightError(null);
+            }}
             keyboardType="decimal-pad"
             placeholder={units === "metric" ? "175" : "69"}
             centered={false}
+            error={heightError}
           />
           <Text style={styles.label}>Age</Text>
-          <Input value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="30" centered={false} />
+          <Input
+            value={age}
+            onChangeText={(v) => {
+              setAge(v);
+              if (ageError) setAgeError(null);
+            }}
+            keyboardType="number-pad"
+            placeholder="30"
+            centered={false}
+            error={ageError}
+          />
 
           <Text style={styles.label}>Sex</Text>
-          <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
-          <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
+            <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
+          </View>
 
           <Text style={styles.fieldSection}>Activity</Text>
-          {ACTIVITY_OPTIONS.map(({ key, label }) => (
-            <OptionCard key={key} label={label} selected={activity === key} onPress={() => setActivity(key)} />
-          ))}
+          <View style={{ gap: 12 }}>
+            {ACTIVITY_OPTIONS.map(({ key, label }) => (
+              <OptionCard key={key} label={label} selected={activity === key} onPress={() => setActivity(key)} />
+            ))}
+          </View>
 
           <Text style={styles.fieldSection}>Goal</Text>
-          <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
-          <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
-          <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
+            <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
+            <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
+          </View>
 
           <View style={{ marginTop: 24 }}>
             <Button label="Save changes" onPress={save} loading={loading} />

@@ -1,3 +1,5 @@
+from collections import Counter
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_current_user, get_supabase
@@ -51,6 +53,7 @@ def _routine_detail(sb, routine_id: str, user_id: str) -> RoutineOut:
                 sets=row.get("sets"),
                 reps=row.get("reps"),
                 duration_sec=row.get("duration_sec"),
+                rest_sec=row.get("rest_sec"),
                 exercise=ex_out,
             )
         )
@@ -60,21 +63,32 @@ def _routine_detail(sb, routine_id: str, user_id: str) -> RoutineOut:
         created_at=r.get("created_at"),
         exercises=exercises_out,
         scheduled_days=_scheduled_days(sb, routine_id),
+        exercise_count=len(exercises_out),
     )
+
+
+def _exercise_counts(sb, routine_ids: list[str]) -> dict[str, int]:
+    if not routine_ids:
+        return {}
+    re = sb.table("routine_exercises").select("routine_id").in_("routine_id", routine_ids).execute()
+    return dict(Counter(row["routine_id"] for row in (re.data or [])))
 
 
 @router.get("/", response_model=list[RoutineOut])
 def list_routines(user: dict = Depends(get_current_user)):
     sb = get_supabase()
     res = sb.table("routines").select("id,name,created_at").eq("user_id", user["id"]).order("created_at", desc=True).execute()
+    rows = res.data or []
+    counts = _exercise_counts(sb, [r["id"] for r in rows])
     return [
         RoutineOut(
             id=r["id"],
             name=r["name"],
             created_at=r.get("created_at"),
             scheduled_days=_scheduled_days(sb, r["id"]),
+            exercise_count=counts.get(r["id"], 0),
         )
-        for r in (res.data or [])
+        for r in rows
     ]
 
 
@@ -93,6 +107,7 @@ def create_routine(body: RoutineCreate, user: dict = Depends(get_current_user)):
             "sets": ex.sets,
             "reps": ex.reps,
             "duration_sec": ex.duration_sec,
+            "rest_sec": ex.rest_sec,
         }).execute()
     days = sorted({d for d in body.scheduled_days if 0 <= d <= 6})
     for d in days:

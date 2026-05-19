@@ -1,7 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 import { Button, Input } from "@/components/ui";
 import type { CatalogExercise, MuscleFilter } from "@/lib/exerciseCatalog";
@@ -18,20 +26,25 @@ import { colors } from "@/theme/colors";
 const SWIPE_THRESHOLD = 80;
 const DEFAULT_WEIGHT_KG = 70;
 
+type LastAction = { type: "add" | "skip"; slug: string };
+
 type Props = {
   selectedSlugs: Set<string>;
   selectedCount: number;
   onAdd: (exercise: CatalogExercise) => void;
   onSkip: (exercise: CatalogExercise) => void;
+  onRemove?: (slug: string) => void;
 };
 
-export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSkip }: Props) {
+export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSkip, onRemove }: Props) {
   const profile = useStore((s) => s.profile);
   const weightKg = profile?.weight_kg ?? DEFAULT_WEIGHT_KG;
 
   const [muscleFilter, setMuscleFilter] = useState<MuscleFilter>("all");
   const [search, setSearch] = useState("");
   const [index, setIndex] = useState(0);
+  const [lastAction, setLastAction] = useState<LastAction | null>(null);
+  const hintShownRef = useRef(false);
 
   const deck = useMemo(() => {
     let list = [...EXERCISE_CATALOG];
@@ -51,10 +64,32 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
   const current = deck[safeIndex] ?? null;
   const translateX = useSharedValue(0);
 
+  useEffect(() => {
+    if (hintShownRef.current || !current) return;
+    hintShownRef.current = true;
+    translateX.value = withDelay(
+      400,
+      withSequence(
+        withTiming(40, { duration: 280 }),
+        withTiming(-20, { duration: 220 }),
+        withSpring(0)
+      )
+    );
+  }, [current, translateX]);
+
   const advance = (action: "add" | "skip", exercise: CatalogExercise) => {
     if (action === "add" && !selectedSlugs.has(exercise.slug)) onAdd(exercise);
     else if (action === "skip") onSkip(exercise);
+    setLastAction({ type: action, slug: exercise.slug });
     setIndex((i) => Math.min(i + 1, Math.max(deck.length - 1, 0)));
+    translateX.value = 0;
+  };
+
+  const undo = () => {
+    if (!lastAction) return;
+    if (lastAction.type === "add" && onRemove) onRemove(lastAction.slug);
+    setIndex((i) => Math.max(i - 1, 0));
+    setLastAction(null);
     translateX.value = 0;
   };
 
@@ -179,9 +214,29 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
         </View>
       ) : null}
 
-      <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: "center", marginTop: 8 }}>
-        Swipe right to add · left to skip
-      </Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          marginTop: 8,
+        }}
+      >
+        <Text style={{ color: colors.textMuted, fontSize: 11 }}>
+          Swipe right to add · left to skip
+        </Text>
+        {lastAction ? (
+          <Pressable
+            onPress={undo}
+            accessibilityRole="button"
+            accessibilityLabel={`Undo ${lastAction.type}`}
+            hitSlop={8}
+          >
+            <Text style={{ color: colors.spark, fontSize: 12, fontWeight: "700" }}>Undo</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <ScrollView
         horizontal
@@ -196,6 +251,9 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
             <Pressable
               key={opt.id}
               onPress={() => selectFilter(opt.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`${opt.label} filter`}
               style={{
                 paddingHorizontal: 12,
                 paddingVertical: 6,

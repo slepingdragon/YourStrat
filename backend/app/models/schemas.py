@@ -116,6 +116,7 @@ class RoutineExerciseInput(BaseModel):
     sets: int | None = None
     reps: int | None = None
     duration_sec: int | None = None
+    rest_sec: int | None = None
 
 
 class RoutineCreate(BaseModel):
@@ -134,6 +135,7 @@ class RoutineOut(BaseModel):
     created_at: str | None = None
     exercises: list[RoutineExerciseOut] = []
     scheduled_days: list[int] = []
+    exercise_count: int = 0
 
 
 class SessionStart(BaseModel):

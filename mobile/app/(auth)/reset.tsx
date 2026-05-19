@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Text } from "react-native";
-import { Link } from "expo-router";
-import { Screen, Button, Input, toastError, toastSuccess } from "@/components/ui";
+import { Text, View } from "react-native";
+import { Screen, Button, Input, LinkButton, toastError, toastSuccess } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/theme/colors";
 
@@ -38,9 +37,8 @@ export default function ResetScreen() {
       </Text>
       <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
       <Button label="Send link" onPress={send} loading={loading} />
-      <Link href="/(auth)/login" style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
-        Back to sign in
-      </Link>
+      <View style={{ height: 8 }} />
+      <LinkButton href="/(auth)/login" label="Back to sign in" />
     </Screen>
   );
 }

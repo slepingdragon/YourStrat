@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Image, Platform, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { Button } from "@/components/ui";
+import { Button, toastError } from "@/components/ui";
 import { Star } from "@/components/icons/Star";
 import type { Profile } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +12,7 @@ import { colors } from "@/theme/colors";
 export const PROFILE_PHOTO_KEY = "yourstrat_profile_photo";
 
 const AVATAR_SIZE = 120;
+const PHOTO_MAX_BYTES = 1_500_000;
 
 const GOAL_LABELS: Record<string, string> = {
   lose: "Lose",
@@ -71,21 +72,38 @@ export function ProfileIdentity({ profile }: Props) {
   const pickPhoto = async () => {
     if (Platform.OS !== "web") {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") return;
+      if (status !== "granted") {
+        toastError("Photo library access denied. Enable it in Settings to change your avatar.");
+        return;
+      }
     }
     setPicking(true);
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.85,
+        quality: 0.6,
         allowsEditing: true,
         aspect: [1, 1],
+        base64: true,
       });
-      if (!res.canceled && res.assets[0]?.uri) {
-        const uri = res.assets[0].uri;
-        await AsyncStorage.setItem(PROFILE_PHOTO_KEY, uri);
-        setPhotoUri(uri);
+      if (res.canceled) return;
+      const asset = res.assets[0];
+      if (!asset?.base64) {
+        toastError("Could not read that image. Try a different one.");
+        return;
       }
+      const approxBytes = Math.floor((asset.base64.length * 3) / 4);
+      if (approxBytes > PHOTO_MAX_BYTES) {
+        toastError("Image is too large. Pick a smaller one or crop it down.");
+        return;
+      }
+      const mime = asset.mimeType ?? "image/jpeg";
+      const dataUri = `data:${mime};base64,${asset.base64}`;
+      await AsyncStorage.setItem(PROFILE_PHOTO_KEY, dataUri);
+      setPhotoUri(dataUri);
+    } catch (e) {
+      console.error(e);
+      toastError("Could not save photo. Try again.");
     } finally {
       setPicking(false);
     }

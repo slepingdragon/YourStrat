@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Button, Input, OptionCard, ProgressBar, toastError } from "@/components/ui";
-import { onboard } from "@/lib/api";
+import { isNetworkError, onboard } from "@/lib/api";
 import { computeTargets, inToCm, lbsToKg } from "@/lib/targets";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -77,10 +77,9 @@ export default function OnboardingScreen() {
       router.replace("/(tabs)");
     } catch (e) {
       console.error(e);
-      const msg =
-        e instanceof TypeError
-          ? "Cannot reach the server. Start the backend: uvicorn app.main:app --port 8000"
-          : (e as Error).message;
+      const msg = isNetworkError(e) || /failed to fetch/i.test((e as Error).message ?? "")
+        ? "Cannot reach the API at 127.0.0.1:8000. Start servers: Terminal → Run Build Task, or Ctrl+Shift+P → Tasks: Run Build Task → YourStrat: Mobile Preview, or .\\scripts\\start-dev.ps1 from repo root. Wi‑Fi does not block localhost."
+        : (e as Error).message;
       toastError(msg);
     } finally {
       setLoading(false);
@@ -136,8 +135,10 @@ export default function OnboardingScreen() {
         <>
           <Text style={styles.heading}>Units</Text>
           <Text style={styles.sub}>Choose how you measure.</Text>
-          <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => setUnits("metric")} />
-          <OptionCard label="Imperial (lb, in)" selected={units === "imperial"} onPress={() => setUnits("imperial")} />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => setUnits("metric")} />
+            <OptionCard label="Imperial (lb, in)" selected={units === "imperial"} onPress={() => setUnits("imperial")} />
+          </View>
         </>
       )}
       {step === 1 && (
@@ -163,30 +164,36 @@ export default function OnboardingScreen() {
       {step === 4 && (
         <>
           <Text style={styles.heading}>Sex</Text>
-          <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
-          <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
+            <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
+          </View>
         </>
       )}
       {step === 5 && (
         <>
           <Text style={styles.heading}>Activity</Text>
-          {[
-            ["sedentary", "Sedentary"],
-            ["light", "Light"],
-            ["moderate", "Moderate"],
-            ["active", "Active"],
-            ["very_active", "Very active"],
-          ].map(([k, label]) => (
-            <OptionCard key={k} label={label} selected={activity === k} onPress={() => setActivity(k)} />
-          ))}
+          <View style={{ gap: 12 }}>
+            {[
+              ["sedentary", "Sedentary"],
+              ["light", "Light"],
+              ["moderate", "Moderate"],
+              ["active", "Active"],
+              ["very_active", "Very active"],
+            ].map(([k, label]) => (
+              <OptionCard key={k} label={label} selected={activity === k} onPress={() => setActivity(k)} />
+            ))}
+          </View>
         </>
       )}
       {step === 6 && (
         <>
           <Text style={styles.heading}>Goal</Text>
-          <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
-          <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
-          <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
+          <View style={{ gap: 12 }}>
+            <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
+            <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
+            <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
+          </View>
           {preview ? (
             <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
               {preview.daily_calorie_target} cal/day · P {preview.daily_protein_target_g}g · C{" "}

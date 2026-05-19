@@ -1,18 +1,32 @@
 import logging
 
-from fastapi import FastAPI
+import json
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.config import settings
-from app.deps import get_supabase
 from app.routers import exercises, meals, profile, routines, sessions, today
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="YourStrat API", version="1.0.0")
 
+# Credentials + wildcard origin is invalid in browsers; allow Expo web preview hosts.
+_CORS_ORIGINS = [
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8082",
+    "http://localhost:8083",
+    "http://127.0.0.1:8083",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,6 +46,57 @@ def log_supabase_host():
     logger.info("Supabase host: %s", host)
 
 
+_ROOT_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YourStrat API</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; color: #1f2937; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    p { color: #4b5563; }
+    a { color: #2563eb; }
+    code { background: #f3f4f6; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    ul { padding-left: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>YourStrat API</h1>
+  <p>This server (<code>127.0.0.1:8000</code>) is the backend only — not the mobile app UI.</p>
+  <ul>
+    <li><a href="/docs">API docs (Swagger)</a></li>
+    <li><a href="/health?html=1">Health check</a> (<a href="/health">JSON</a>)</li>
+    <li>App preview: <a href="http://127.0.0.1:8082/preview-frame.html">http://127.0.0.1:8082/preview-frame.html</a> (Expo web; port 8083 if 8082 is busy)</li>
+  </ul>
+  <p>In VS Code/Cursor: <strong>Terminal → Run Build Task</strong>, or <strong>Ctrl+Shift+P</strong> → <em>Tasks: Run Build Task</em> → <em>YourStrat: Mobile Preview</em>, or <code>.\scripts\start-dev.ps1</code> from repo root. <em>Ctrl+Shift+B</em> only when the editor is focused; <strong>Ctrl+Alt+B</strong> in this workspace.</p>
+</body>
+</html>"""
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def root():
+    return HTMLResponse(_ROOT_HTML)
+
+
+_HEALTH_PAYLOAD = lambda: {
+    "ok": True,
+    "supabase": settings.SUPABASE_URL.startswith("https://"),
+}
+
+
 @app.get("/health")
-def health():
-    return {"ok": True, "supabase": settings.SUPABASE_URL.startswith("https://")}
+def health(request: Request):
+    payload = _HEALTH_PAYLOAD()
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept or request.query_params.get("html") is not None:
+        body = json.dumps(payload, indent=2)
+        return HTMLResponse(
+            f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><title>YourStrat /health</title>
+<style>body{{font-family:system-ui,sans-serif;margin:2rem;line-height:1.5;color:#1f2937}}
+pre{{background:#f3f4f6;padding:1rem;border-radius:8px}}</style></head>
+<body><h1>Health</h1><pre>{body}</pre>
+<p><a href="/">API home</a> · <a href="/health">JSON only</a></p></body></html>"""
+        )
+    return JSONResponse(content=payload, media_type="application/json")

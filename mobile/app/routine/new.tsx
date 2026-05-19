@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 
 import { DayScheduleModal } from "@/components/DayScheduleModal";
 import { ExerciseSwipePicker } from "@/components/ExerciseSwipePicker";
+import { ChevronDown } from "@/components/icons";
 import { Screen, Button, Input, BackHeader, toastError, toastSuccess } from "@/components/ui";
 import { createRoutine } from "@/lib/api";
 import {
@@ -15,11 +16,57 @@ import { resolveCatalogToExercises } from "@/lib/resolveExercises";
 import { suggestRoutineName } from "@/lib/routineName";
 import { colors } from "@/theme/colors";
 
+const REST_PRESETS_SEC = [30, 60, 90, 120];
+const DEFAULT_REST_SEC = 60;
+
+function formatRest(sec: number): string {
+  if (sec >= 60) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return s === 0 ? `${m}m` : `${m}:${String(s).padStart(2, "0")}`;
+  }
+  return `${sec}s`;
+}
+
+type RestRowProps = { value: number; onChange: (sec: number) => void };
+function RestRow({ value, onChange }: RestRowProps) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+      <Text style={{ color: colors.textMuted, fontSize: 12, marginRight: 2 }}>Rest</Text>
+      {REST_PRESETS_SEC.map((sec) => {
+        const active = sec === value;
+        return (
+          <Pressable
+            key={sec}
+            onPress={() => onChange(sec)}
+            accessibilityRole="button"
+            accessibilityLabel={`Rest ${formatRest(sec)}`}
+            accessibilityState={{ selected: active }}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 999,
+              borderWidth: 1,
+              borderColor: active ? colors.star : colors.border,
+              backgroundColor: active ? `${colors.star}22` : "transparent",
+            }}
+          >
+            <Text style={{ color: active ? colors.star : colors.textSecondary, fontSize: 12, fontWeight: "600" }}>
+              {formatRest(sec)}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function NewRoutineScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [nameExpanded, setNameExpanded] = useState(false);
   const [selected, setSelected] = useState<CatalogExercise[]>([]);
+  const [restBySlug, setRestBySlug] = useState<Record<string, number>>({});
   const [picksOpen, setPicksOpen] = useState(false);
   const [dayModal, setDayModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,15 +83,30 @@ export default function NewRoutineScreen() {
       const have = new Set(prev.map((p) => p.slug));
       return [...prev, ...items.filter((i) => !have.has(i.slug))];
     });
+    setRestBySlug((prev) => {
+      const next = { ...prev };
+      for (const it of items) if (next[it.slug] === undefined) next[it.slug] = DEFAULT_REST_SEC;
+      return next;
+    });
   };
 
   const addExercise = (exercise: CatalogExercise) => {
     if (selectedSlugs.has(exercise.slug)) return;
     setSelected((s) => [...s, exercise]);
+    setRestBySlug((r) => (r[exercise.slug] === undefined ? { ...r, [exercise.slug]: DEFAULT_REST_SEC } : r));
   };
 
   const removeExercise = (slug: string) => {
     setSelected((s) => s.filter((e) => e.slug !== slug));
+    setRestBySlug((r) => {
+      const next = { ...r };
+      delete next[slug];
+      return next;
+    });
+  };
+
+  const setRestFor = (slug: string, sec: number) => {
+    setRestBySlug((r) => ({ ...r, [slug]: sec }));
   };
 
   const openSave = () => {
@@ -67,12 +129,14 @@ export default function NewRoutineScreen() {
         routineName,
         exercises.map((ex, i) => {
           const cat = selected.find((c) => c.name === ex.name);
+          const slug = cat?.slug;
           return {
             exercise_id: ex.id,
             position: i,
             sets: cat?.default_sets ?? ex.default_sets ?? 3,
             reps: cat?.default_reps ?? ex.default_reps ?? 10,
             duration_sec: cat?.default_duration_sec ?? ex.default_duration_sec ?? null,
+            rest_sec: slug ? restBySlug[slug] ?? DEFAULT_REST_SEC : DEFAULT_REST_SEC,
           };
         }),
         scheduledDays
@@ -156,32 +220,53 @@ export default function NewRoutineScreen() {
           selectedCount={selected.length}
           onAdd={addExercise}
           onSkip={() => {}}
+          onRemove={removeExercise}
         />
       </View>
 
       {selected.length > 0 ? (
         <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 }}>
-          <Pressable onPress={() => setPicksOpen((o) => !o)} style={{ paddingVertical: 8 }}>
+          <Pressable
+            onPress={() => setPicksOpen((o) => !o)}
+            accessibilityRole="button"
+            accessibilityLabel={picksOpen ? "Collapse your picks" : "Expand your picks"}
+            accessibilityState={{ expanded: picksOpen }}
+            style={{ paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+          >
             <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-              Your picks ({selected.length}) {picksOpen ? "▲" : "▼"}
+              Your picks ({selected.length})
             </Text>
+            <View style={{ transform: [{ rotate: picksOpen ? "180deg" : "0deg" }] }}>
+              <ChevronDown color={colors.textPrimary} size={18} />
+            </View>
           </Pressable>
           {picksOpen
             ? selected.map((ex) => (
-                <Pressable
+                <View
                   key={ex.slug}
-                  onPress={() => removeExercise(ex.slug)}
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
                     paddingVertical: 8,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.border,
                   }}
                 >
-                  <Text style={{ color: colors.textPrimary, flex: 1 }} numberOfLines={1}>
-                    {ex.name}
-                  </Text>
-                  <Text style={{ color: colors.textMuted, marginLeft: 8 }}>Remove</Text>
-                </Pressable>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ color: colors.textPrimary, flex: 1 }} numberOfLines={1}>
+                      {ex.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => removeExercise(ex.slug)}
+                      accessibilityLabel={`Remove ${ex.name}`}
+                      hitSlop={8}
+                    >
+                      <Text style={{ color: colors.textMuted, marginLeft: 8 }}>Remove</Text>
+                    </Pressable>
+                  </View>
+                  <RestRow
+                    value={restBySlug[ex.slug] ?? DEFAULT_REST_SEC}
+                    onChange={(sec) => setRestFor(ex.slug, sec)}
+                  />
+                </View>
               ))
             : null}
         </View>

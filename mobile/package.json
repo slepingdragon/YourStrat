@@ -7,6 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "preview": "expo start --web --port 8082 --clear",
     "typecheck": "tsc --noEmit",
     "build:ios": "eas build --platform ios"
   },

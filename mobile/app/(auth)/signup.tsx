@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Link, useRouter } from "expo-router";
-import { Screen, Button, Input, toastError, toastSuccess } from "@/components/ui";
+import { useRouter } from "expo-router";
+import { Screen, Button, Input, LinkButton, toastError, toastSuccess } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/theme/colors";
 
@@ -51,9 +51,8 @@ export default function SignupScreen() {
       <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       <View style={{ height: 24 }} />
       <Button label="Sign up" onPress={signUp} loading={loading} />
-      <Link href="/(auth)/login" style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
-        Already have an account
-      </Link>
+      <View style={{ height: 8 }} />
+      <LinkButton href="/(auth)/login" label="Already have an account" />
     </Screen>
   );
 }

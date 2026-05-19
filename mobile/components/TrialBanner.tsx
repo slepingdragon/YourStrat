@@ -5,14 +5,23 @@ import { Card } from "@/components/ui";
 import { normalizeTrial, type TrialStatus } from "@/lib/api";
 import { colors } from "@/theme/colors";
 
-const DISMISS_PREFIX = "yourstrat_trial_banner_dismissed_";
+const DISMISS_KEY = "yourstrat_trial_banner_dismissed_on";
+const LEGACY_DISMISS_PREFIX = "yourstrat_trial_banner_dismissed_";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function dismissStorageKey() {
-  return `${DISMISS_PREFIX}${todayKey()}`;
+async function cleanupLegacyKeys() {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const stale = keys.filter(
+      (k) => k.startsWith(LEGACY_DISMISS_PREFIX) && k !== DISMISS_KEY
+    );
+    if (stale.length) await AsyncStorage.multiRemove(stale);
+  } catch {
+    /* ignore */
+  }
 }
 
 type Props = {
@@ -32,13 +41,14 @@ export function TrialBanner({ trial: trialProp }: Props) {
       setVisible(true);
       return;
     }
-    AsyncStorage.getItem(dismissStorageKey()).then((v) => {
-      setVisible(v !== "1");
+    AsyncStorage.getItem(DISMISS_KEY).then((dismissedOn) => {
+      setVisible(dismissedOn !== todayKey());
     });
+    void cleanupLegacyKeys();
   }, [trial]);
 
   const dismiss = async () => {
-    await AsyncStorage.setItem(dismissStorageKey(), "1");
+    await AsyncStorage.setItem(DISMISS_KEY, todayKey());
     setVisible(false);
   };
 
@@ -61,11 +71,19 @@ export function TrialBanner({ trial: trialProp }: Props) {
   }
 
   return (
-    <Card style={{ marginBottom: 16, width: "100%", maxWidth: 400, alignSelf: "center" }}>
+    <Card
+      style={{
+        marginBottom: 16,
+        width: "100%",
+        maxWidth: 400,
+        alignSelf: "center",
+        borderColor: urgent ? colors.urgent : colors.border,
+      }}
+    >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: urgent ? colors.spark : colors.textPrimary, fontWeight: "600", fontSize: 15 }}>
-            {title}
+          <Text style={{ color: urgent ? colors.urgent : colors.textPrimary, fontWeight: "600", fontSize: 15 }}>
+            {urgent ? "⚠ " : ""}{title}
           </Text>
           <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 6 }}>{body}</Text>
         </View>
@@ -73,7 +91,7 @@ export function TrialBanner({ trial: trialProp }: Props) {
           onPress={dismiss}
           accessibilityRole="button"
           accessibilityLabel="Dismiss trial reminder"
-          hitSlop={8}
+          hitSlop={12}
         >
           <Text style={{ color: colors.textMuted, fontSize: 18, lineHeight: 20 }}>×</Text>
         </Pressable>

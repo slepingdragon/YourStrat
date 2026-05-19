@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Screen, Button, BackHeader, toastError } from "@/components/ui";
+import { Screen, Button, BackHeader, Skeleton, toastError } from "@/components/ui";
 import { ExerciseRow } from "@/components/ExerciseRow";
 import { getRoutine, startSession, type Routine } from "@/lib/api";
+import { displayRoutineName } from "@/lib/routineName";
 import { colors } from "@/theme/colors";
 
 export default function RoutineDetailScreen() {
@@ -38,7 +39,15 @@ export default function RoutineDetailScreen() {
     return (
       <Screen>
         <BackHeader />
-        <Text style={{ color: colors.textMuted }}>Loading...</Text>
+        <Skeleton width="60%" height={28} radius={6} />
+        <View style={{ height: 12 }} />
+        <Skeleton width="40%" height={16} radius={6} />
+        <View style={{ height: 24 }} />
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={{ marginBottom: 12 }}>
+            <Skeleton height={56} radius={12} />
+          </View>
+        ))}
       </Screen>
     );
   }
@@ -49,7 +58,9 @@ export default function RoutineDetailScreen() {
   return (
     <Screen scroll>
       <BackHeader />
-      <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700" }}>{routine.name}</Text>
+      <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700" }}>
+        {displayRoutineName(routine.name)}
+      </Text>
       <Text style={{ color: colors.textSecondary, marginTop: 8, marginBottom: 16 }}>
         {canStart ? `${exercises.length} exercises` : "No exercises in this routine yet."}
       </Text>

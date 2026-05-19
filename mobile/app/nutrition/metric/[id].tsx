@@ -174,6 +174,8 @@ export default function NutritionMetricDetailScreen() {
             <Pressable
               key={row.id}
               onPress={() => router.push({ pathname: "/meal/[id]", params: { id: row.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`Open meal ${row.title}`}
             >
               <Card style={{ marginBottom: 12, flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
                 <Text style={{ color: colors.textPrimary, fontWeight: "600", flex: 1 }} numberOfLines={2}>

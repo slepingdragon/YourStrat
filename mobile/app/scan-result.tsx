@@ -88,11 +88,13 @@ export default function ScanResultScreen() {
 
       } else if (field === "calories" || field === "sodium_mg") {
 
-        (n as Record<string, unknown>)[field] = parseInt(value, 10) || 0;
+        const parsed = parseInt(value, 10);
+        (n as Record<string, unknown>)[field] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 
       } else {
 
-        (n as Record<string, unknown>)[field] = parseFloat(value) || 0;
+        const parsed = parseFloat(value);
+        (n as Record<string, unknown>)[field] = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 
       }
 

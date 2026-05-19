@@ -12,11 +12,20 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   compact?: boolean;
+  fullWidth?: boolean;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function Button({ label, onPress, variant = "primary", disabled, loading, compact }: Props) {
+export function Button({
+  label,
+  onPress,
+  variant = "primary",
+  disabled,
+  loading,
+  compact,
+  fullWidth = true,
+}: Props) {
   const scale = useSharedValue(1);
   const isDisabled = disabled || loading;
 
@@ -52,7 +61,7 @@ export function Button({ label, onPress, variant = "primary", disabled, loading,
           paddingHorizontal: compact ? 20 : 24,
           alignItems: "center",
           justifyContent: "center",
-          width: "100%",
+          ...(fullWidth ? { width: "100%" } : { alignSelf: "flex-start" }),
           ...(Platform.OS === "web" ? { cursor: isDisabled ? "not-allowed" : "pointer" } : {}),
         },
         animatedStyle,

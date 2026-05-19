@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YourStrat — mobile preview</title>
+    <script>
+      // file:// tabs cannot embed the app reliably — use the http preview instead
+      if (location.protocol === "file:") {
+        location.replace("http://127.0.0.1:8081/preview-frame.html");
+      }
+    </script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #0c0c10;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        color: #9ca3af;
+      }
+      h1 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #6b7280;
+      }
+      .phone {
+        width: 448px;
+        height: 968px;
+        border-radius: 48px;
+        padding: 14px;
+        background: linear-gradient(145deg, #2a2a32, #141418);
+        box-shadow:
+          0 0 0 1px #3f3f46,
+          0 32px 64px rgba(0, 0, 0, 0.55);
+        flex-shrink: 0;
+      }
+      .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 36px;
+        background: #08080b;
+        overflow: hidden;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #08080b;
+      }
+      .loading,
+      .blocked {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 24px;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.5;
+        background: #08080b;
+        color: #a1a1aa;
+      }
+      .hidden {
+        display: none;
+      }
+      .blocked a,
+      .hint a {
+        color: #60a5fa;
+      }
+      .hint {
+        max-width: 448px;
+        font-size: 12px;
+        line-height: 1.5;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YourStrat mobile preview</h1>
+    <div class="phone" aria-label="Phone preview frame">
+      <div class="screen">
+        <div class="loading" id="loading">Loading app…</div>
+        <div class="blocked hidden" id="blocked">
+          <span>Preview did not load.</span>
+          <a href="http://127.0.0.1:8081/preview-frame.html">Open preview in browser panel</a>
+        </div>
+        <iframe
+          id="app"
+          src="http://127.0.0.1:8081/"
+          title="YourStrat app"
+          allow="local-network-access"
+        ></iframe>
+      </div>
+    </div>
+    <p class="hint">
+      Use this URL in Simple Browser:
+      <a href="http://127.0.0.1:8081/preview-frame.html">http://127.0.0.1:8081/preview-frame.html</a>
+      · Metro: <strong>Terminal → Run Build Task</strong>, or Ctrl+Shift+P → Tasks: Run Build Task → YourStrat: Mobile Preview, or <code>.\scripts\start-dev.ps1</code>. Ctrl+Alt+B in this workspace. Ctrl+Shift+B only when the editor is focused—not in Simple Browser.
+    </p>
+    <script>
+      const frame = document.getElementById("app");
+      const loading = document.getElementById("loading");
+      const blocked = document.getElementById("blocked");
+      frame.addEventListener("load", () => loading.classList.add("hidden"));
+      setTimeout(() => {
+        if (!loading.classList.contains("hidden")) {
+          loading.classList.add("hidden");
+          blocked.classList.remove("hidden");
+        }
+      }, 12000);
+    </script>
+  </body>
+</html>

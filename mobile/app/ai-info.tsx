@@ -2,6 +2,7 @@ import { useCallback, useState, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Screen, BackHeader, Card, toastError } from "@/components/ui";
+import { ChevronDown } from "@/components/icons";
 import { getAiStats, type AiStats } from "@/lib/api";
 import { colors } from "@/theme/colors";
 
@@ -112,7 +113,9 @@ export default function AiInfoScreen() {
         style={styles.eduHeader}
       >
         <Text style={styles.sectionTitle}>Nutrition basics</Text>
-        <Text style={{ color: colors.textMuted, fontSize: 14 }}>{eduOpen ? "▲" : "▼"}</Text>
+        <View style={{ transform: [{ rotate: eduOpen ? "180deg" : "0deg" }] }}>
+          <ChevronDown color={colors.textMuted} size={20} />
+        </View>
       </Pressable>
 
       {eduOpen ? (

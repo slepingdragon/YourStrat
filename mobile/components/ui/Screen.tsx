@@ -7,12 +7,21 @@ import { colors } from "@/theme/colors";
 type Props = {
   children: ReactNode;
   scroll?: boolean;
+  /** When false, scroll content does not stretch to fill the viewport (shorter lists). */
+  scrollGrow?: boolean;
   edges?: Edge[];
   padding?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 };
 
-export function Screen({ children, scroll = false, edges = ["top", "bottom"], padding = true, contentStyle }: Props) {
+export function Screen({
+  children,
+  scroll = false,
+  scrollGrow = true,
+  edges = ["top", "bottom"],
+  padding = true,
+  contentStyle,
+}: Props) {
   const content = (
     <View
       style={[
@@ -31,7 +40,7 @@ export function Screen({ children, scroll = false, edges = ["top", "bottom"], pa
         {scroll ? (
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+            contentContainerStyle={{ flexGrow: scrollGrow ? 1 : 0, paddingBottom: 40 }}
             keyboardShouldPersistTaps="handled"
           >
             {content}

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "YourStrat: Mobile Preview (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8082",
+      "webRoot": "${workspaceFolder}/mobile",
+      "preLaunchTask": "YourStrat: Start web (Expo port 8082)"
+    }
+  ]
+}

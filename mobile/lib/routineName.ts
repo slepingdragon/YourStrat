@@ -27,3 +27,24 @@ export function suggestRoutineName(opts: {
   const day = WEEKDAY_SHORT[new Date().getDay()];
   return `Workout · ${day}`;
 }
+
+/** Consistent title-style label for lists and headers (does not change stored name). */
+export function displayRoutineName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "Routine";
+  return trimmed
+    .split(/\s+/)
+    .map((word) => {
+      if (word.length > 1 && word === word.toUpperCase()) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
+export function routineExerciseCount(routine: {
+  exercise_count?: number;
+  exercises?: unknown[] | null;
+}): number {
+  if (typeof routine.exercise_count === "number") return routine.exercise_count;
+  return routine.exercises?.length ?? 0;
+}

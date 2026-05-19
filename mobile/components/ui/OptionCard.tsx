@@ -11,6 +11,9 @@ export function OptionCard({ label, selected, onPress }: Props) {
         Haptics.selectionAsync();
         onPress();
       }}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
       style={{
         borderWidth: 2,
         borderColor: selected ? colors.star : "rgba(255,255,255,0.2)",
@@ -18,7 +21,6 @@ export function OptionCard({ label, selected, onPress }: Props) {
         minHeight: 56,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 12,
         paddingHorizontal: 20,
       }}
     >

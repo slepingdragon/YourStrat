@@ -1,7 +1,33 @@
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+/** Native uses EXPO_PUBLIC_API_URL; web uses Metro /api proxy (same origin, no CORS). */
+export function getApiBaseUrl(): string {
+  if (Platform.OS === "web") {
+    return "/api";
+  }
+  return (process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000").trim();
+}
+
+function apiUrl(path: string): string {
+  const base = getApiBaseUrl().replace(/\/$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/** Dev/preview: verify API is reachable (web → /api/health via Metro proxy). */
+export async function pingApiHealth(): Promise<boolean> {
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, "");
+    const res = await apiFetch(`${base}/health`);
+    if (!res.ok) return false;
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("json")) return false;
+    const body = (await res.json()) as { ok?: boolean };
+    return body?.ok === true;
+  } catch {
+    return false;
+  }
+}
 
 async function authHeader(): Promise<Record<string, string>> {
   const {
@@ -33,6 +59,16 @@ function formatDetail(detail: unknown): string {
   return "Something went wrong. Try again.";
 }
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status}).`;
@@ -42,13 +78,23 @@ async function handle<T>(res: Response): Promise<T> {
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    throw new ApiError(detail, res.status);
   }
   return (await res.json()) as T;
 }
 
+export function isApiError(e: unknown): e is ApiError {
+  return e instanceof ApiError;
+}
+
+export function isUnauthorized(e: unknown): boolean {
+  return isApiError(e) && e.status === 401;
+}
+
 export function isNetworkError(e: unknown): boolean {
-  return e instanceof TypeError && /failed to fetch|network request failed|load failed/i.test(e.message ?? "");
+  if (isApiError(e)) return false;
+  const msg = e instanceof Error ? e.message : "";
+  return /failed to fetch|network request failed|load failed/i.test(msg);
 }
 
 export type TrialStatus = {
@@ -157,6 +203,7 @@ export type RoutineExercise = {
   sets?: number | null;
   reps?: number | null;
   duration_sec?: number | null;
+  rest_sec?: number | null;
   exercise?: Exercise | null;
 };
 
@@ -166,6 +213,7 @@ export type Routine = {
   created_at?: string | null;
   exercises?: RoutineExercise[];
   scheduled_days?: number[];
+  exercise_count?: number;
 };
 
 export type Session = {
@@ -189,7 +237,7 @@ export type OnboardingInput = {
 
 export async function onboard(body: OnboardingInput) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/profile/onboard`, {
+  const res = await apiFetch(apiUrl("/profile/onboard"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -199,19 +247,19 @@ export async function onboard(body: OnboardingInput) {
 
 export async function getProfile() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/profile/`, { headers });
+  const res = await apiFetch(apiUrl("/profile/"), { headers });
   return normalizeProfile(await handle<Profile>(res));
 }
 
 export async function getTrialStatus() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/profile/trial`, { headers });
+  const res = await apiFetch(apiUrl("/profile/trial"), { headers });
   return normalizeTrial(await handle<TrialStatus>(res));
 }
 
 export async function updateProfile(body: Partial<OnboardingInput>) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/profile/`, {
+  const res = await apiFetch(apiUrl("/profile/"), {
     method: "PUT",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -229,7 +277,7 @@ export type AiStats = {
 
 export async function getAiStats() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/profile/ai-stats`, { headers });
+  const res = await apiFetch(apiUrl("/profile/ai-stats"), { headers });
   return handle<AiStats>(res);
 }
 
@@ -255,13 +303,13 @@ export type NutritionJournal = {
 
 export async function getNutritionJournal(days = 14) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/meals/journal?days=${days}`, { headers });
+  const res = await apiFetch(apiUrl(`/meals/journal?days=${days}`), { headers });
   return handle<NutritionJournal>(res);
 }
 
 export async function getToday() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/today/`, { headers });
+  const res = await apiFetch(apiUrl("/today/"), { headers });
   const data = await handle<TodaySnapshot>(res);
   return { ...data, targets: normalizeProfile(data.targets) };
 }
@@ -279,7 +327,7 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
       type: mime,
     } as unknown as Blob);
   }
-  const res = await apiFetch(`${API_URL}/meals/scan`, {
+  const res = await apiFetch(apiUrl("/meals/scan"), {
     method: "POST",
     headers: { ...headers },
     body: form,
@@ -289,7 +337,7 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
 
 export async function saveMeal(photoUrl: string | null, items: MealItem[]) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/meals/`, {
+  const res = await apiFetch(apiUrl("/meals/"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ photo_url: photoUrl, items }),
@@ -299,25 +347,25 @@ export async function saveMeal(photoUrl: string | null, items: MealItem[]) {
 
 export async function getMeal(id: string) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/meals/${id}`, { headers });
+  const res = await apiFetch(apiUrl(`/meals/${id}`), { headers });
   return handle<Meal>(res);
 }
 
 export async function deleteMeal(id: string) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/meals/${id}`, { method: "DELETE", headers });
+  const res = await apiFetch(apiUrl(`/meals/${id}`), { method: "DELETE", headers });
   return handle<{ ok: boolean }>(res);
 }
 
 export async function listExercises() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/exercises/`, { headers });
+  const res = await apiFetch(apiUrl("/exercises/"), { headers });
   return handle<Exercise[]>(res);
 }
 
 export async function createExercise(body: Omit<Exercise, "id" | "met_value"> & { met_value?: number }) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/exercises/`, {
+  const res = await apiFetch(apiUrl("/exercises/"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -327,19 +375,19 @@ export async function createExercise(body: Omit<Exercise, "id" | "met_value"> & 
 
 export async function listRoutines() {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/routines/`, { headers });
+  const res = await apiFetch(apiUrl("/routines/"), { headers });
   return handle<Routine[]>(res);
 }
 
 export async function getRoutine(id: string) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/routines/${id}`, { headers });
+  const res = await apiFetch(apiUrl(`/routines/${id}`), { headers });
   return handle<Routine>(res);
 }
 
 export async function createRoutine(name: string, exercises: RoutineExercise[], scheduledDays: number[] = []) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/routines/`, {
+  const res = await apiFetch(apiUrl("/routines/"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ name, exercises, scheduled_days: scheduledDays }),
@@ -349,7 +397,7 @@ export async function createRoutine(name: string, exercises: RoutineExercise[], 
 
 export async function startSession(routineId: string | null) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/sessions/start`, {
+  const res = await apiFetch(apiUrl("/sessions/start"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ routine_id: routineId }),
@@ -357,9 +405,9 @@ export async function startSession(routineId: string | null) {
   return handle<Session>(res);
 }
 
-export async function appendSet(sessionId: string, body: { exercise_id: string; position: number; reps?: number; duration_sec?: number }) {
+export async function appendSet(sessionId: string, body: { exercise_id: string; position: number; reps?: number; weight_kg?: number; duration_sec?: number }) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/sessions/${sessionId}/sets`, {
+  const res = await apiFetch(apiUrl(`/sessions/${sessionId}/sets`), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -369,6 +417,6 @@ export async function appendSet(sessionId: string, body: { exercise_id: string; 
 
 export async function finishSession(sessionId: string) {
   const headers = await authHeader();
-  const res = await apiFetch(`${API_URL}/sessions/${sessionId}/finish`, { method: "POST", headers });
+  const res = await apiFetch(apiUrl(`/sessions/${sessionId}/finish`), { method: "POST", headers });
   return handle<Session>(res);
 }

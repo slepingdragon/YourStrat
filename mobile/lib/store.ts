@@ -2,15 +2,18 @@ import type { Session } from "@supabase/supabase-js";
 import { create } from "zustand";
 import { normalizeProfile, type Profile, type TodaySnapshot } from "./api";
 
+export type ToastAction = { label: string; onPress: () => void };
+export type Toast = { message: string; action?: ToastAction };
+
 type State = {
   session: Session | null;
   profile: Profile | null;
   today: TodaySnapshot | null;
-  toast: string | null;
+  toast: Toast | null;
   setSession: (s: Session | null) => void;
   setProfile: (p: Profile | null) => void;
   setToday: (t: TodaySnapshot | null) => void;
-  showToast: (msg: string) => void;
+  showToast: (toast: Toast) => void;
   clearToast: () => void;
 };
 

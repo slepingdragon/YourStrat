@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Text, View } from "react-native";
 import { colors } from "@/theme/colors";
 
@@ -9,7 +10,7 @@ type Props = {
   drag?: boolean;
 };
 
-export function ExerciseRow({ name, sets, reps, durationSec, drag }: Props) {
+function ExerciseRowImpl({ name, sets, reps, durationSec, drag }: Props) {
   const detail =
     durationSec != null
       ? `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, "0")}`
@@ -37,3 +38,5 @@ export function ExerciseRow({ name, sets, reps, durationSec, drag }: Props) {
     </View>
   );
 }
+
+export const ExerciseRow = memo(ExerciseRowImpl);

@@ -1,23 +1,139 @@
 {
   "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "openMobilePreviewFrame",
+      "type": "command",
+      "command": "simpleBrowser.show",
+      "args": ["http://127.0.0.1:8081/preview-frame.html"]
+    },
+    {
+      "id": "openAppFullWidth",
+      "type": "command",
+      "command": "simpleBrowser.show",
+      "args": ["http://127.0.0.1:8081"]
+    }
+  ],
   "tasks": [
     {
-      "label": "YourStrat: Start web (Expo port 8082)",
+      "label": "YourStrat: Start backend (port 8000)",
       "type": "shell",
-      "command": "npx expo start --web --port 8082",
-      "options": { "cwd": "${workspaceFolder}/mobile" },
+      "command": "${workspaceFolder}/backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "options": {
+        "cwd": "${workspaceFolder}/backend",
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command"]
+        },
+        "env": {
+          "PYTHONUNBUFFERED": "1"
+        }
+      },
       "isBackground": true,
-      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1,
+        "reevaluateOnRerun": true
+      },
+      "problemMatcher": {
+        "owner": "uvicorn",
+        "pattern": {
+          "regexp": "^(INFO|WARNING|ERROR):\\s+(.+)$",
+          "severity": 1,
+          "message": 2
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^INFO:",
+          "endsPattern": "(Uvicorn running|Application startup complete|Started server process \\[)"
+        }
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "yourstrat"
+        "group": "yourstrat",
+        "showReuseMessage": false
       }
     },
     {
-      "label": "YourStrat: Open in Simple Browser",
-      "command": "simpleBrowser.show",
-      "args": ["http://localhost:8082"]
+      "label": "YourStrat: Start web (Expo port 8081)",
+      "type": "shell",
+      "command": "npx expo start --web --port 8081 --clear",
+      "options": {
+        "cwd": "${workspaceFolder}/mobile",
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command"]
+        },
+        "env": {
+          "EXPO_NO_TELEMETRY": "1"
+        }
+      },
+      "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1,
+        "reevaluateOnRerun": true
+      },
+      "problemMatcher": {
+        "owner": "expo",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "(localhost:8081|127\\.0\\.0\\.1:8081|Web is waiting|webpack compiled|Logs for your project|Metro waiting|Bundled|Web Bundled)"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "yourstrat",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "YourStrat: Start dev servers",
+      "dependsOn": [
+        "YourStrat: Start backend (port 8000)",
+        "YourStrat: Start web (Expo port 8081)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "YourStrat: Open mobile preview frame",
+      "type": "shell",
+      "command": "echo ${input:openMobilePreviewFrame}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "echo": false,
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "YourStrat: Open app (full width)",
+      "type": "shell",
+      "command": "echo ${input:openAppFullWidth}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "echo": false,
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "YourStrat: Mobile Preview",
+      "dependsOn": [
+        "YourStrat: Start dev servers",
+        "YourStrat: Open mobile preview frame"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     }
   ]
 }
