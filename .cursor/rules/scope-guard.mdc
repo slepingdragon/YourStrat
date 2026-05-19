@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+# YourStrat Scope Guard
+
+Do NOT build: streaks, badges, leaderboards, social, push notifications, AI meal commentary, tips/learn/library, celebrations/confetti, subscriptions, admin panels, multi-model AI pipelines, stat graphs beyond 7-day sparkline, or any feature not in YOURSTRAT_BUILD.md §4.1.
+
+If something seems missing, stop and ask the user. Do not invent features.

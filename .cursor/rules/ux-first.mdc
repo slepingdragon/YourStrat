@@ -1,0 +1,16 @@
+---
+description: Proactive UX polish for mobile and UI flows
+globs: mobile/**/*
+alwaysApply: false
+---
+
+# UX-first polish
+
+After building or changing UI, do a quick first-time-user pass:
+
+- **Visual hierarchy** — primary action/content first (e.g. swipe card before filters/search).
+- **Defaults** — optional fields collapsed; auto-name when empty; allow save with sensible empty states.
+- **Less clutter** — horizontal chips for filters; one labeled section instead of scattered controls.
+- **Copy** — short hints at decision points (save with zero picks, rename vs add name).
+
+Fix obvious friction in the same task. Do not add features outside YOURSTRAT_BUILD.md.

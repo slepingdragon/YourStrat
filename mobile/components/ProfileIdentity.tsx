@@ -1,0 +1,163 @@
+import { useCallback, useEffect, useState } from "react";
+import { Image, Platform, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import { Button } from "@/components/ui";
+import { Star } from "@/components/icons/Star";
+import type { Profile } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { cmToIn, kgToLbs } from "@/lib/targets";
+import { colors } from "@/theme/colors";
+
+export const PROFILE_PHOTO_KEY = "yourstrat_profile_photo";
+
+const AVATAR_SIZE = 120;
+
+const GOAL_LABELS: Record<string, string> = {
+  lose: "Lose",
+  maintain: "Maintain",
+  gain: "Gain",
+};
+
+function initialsFromEmail(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[._-]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  }
+  if (parts[0]?.length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (local[0] ?? "?").toUpperCase();
+}
+
+function displayWeight(kg: number, units: "metric" | "imperial") {
+  return units === "metric" ? String(Math.round(kg * 10) / 10) : String(Math.round(kgToLbs(kg) * 10) / 10);
+}
+
+function displayHeight(cm: number, units: "metric" | "imperial") {
+  return units === "metric" ? String(Math.round(cm)) : String(Math.round(cmToIn(cm) * 10) / 10);
+}
+
+function formatStatsLine(profile: Profile): string {
+  const wUnit = profile.units === "metric" ? "kg" : "lb";
+  const hUnit = profile.units === "metric" ? "cm" : "in";
+  const w = displayWeight(profile.weight_kg, profile.units);
+  const h = displayHeight(profile.height_cm, profile.units);
+  return `${w} ${wUnit} · ${h} ${hUnit} · ${profile.age} yr`;
+}
+
+type Props = {
+  profile: Profile;
+};
+
+export function ProfileIdentity({ profile }: Props) {
+  const [email, setEmail] = useState<string | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+
+  const loadPhoto = useCallback(async () => {
+    const stored = await AsyncStorage.getItem(PROFILE_PHOTO_KEY);
+    setPhotoUri(stored);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setEmail(data.session?.user?.email ?? null);
+    });
+    loadPhoto();
+  }, [loadPhoto]);
+
+  const pickPhoto = async () => {
+    if (Platform.OS !== "web") {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") return;
+    }
+    setPicking(true);
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.85,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+      if (!res.canceled && res.assets[0]?.uri) {
+        const uri = res.assets[0].uri;
+        await AsyncStorage.setItem(PROFILE_PHOTO_KEY, uri);
+        setPhotoUri(uri);
+      }
+    } finally {
+      setPicking(false);
+    }
+  };
+
+  const initials = email ? initialsFromEmail(email) : "?";
+  const goalLabel = GOAL_LABELS[profile.goal] ?? profile.goal;
+
+  return (
+    <View style={{ alignItems: "center", paddingTop: 8, paddingBottom: 4 }}>
+      <View
+        style={{
+          width: AVATAR_SIZE,
+          height: AVATAR_SIZE,
+          borderRadius: AVATAR_SIZE / 2,
+          overflow: "hidden",
+          backgroundColor: colors.surfaceElevated,
+          borderWidth: 1,
+          borderColor: colors.border,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} resizeMode="cover" />
+        ) : (
+          <>
+            <Text style={{ color: colors.textPrimary, fontSize: 40, fontWeight: "700" }}>{initials}</Text>
+            <View style={{ position: "absolute", bottom: 6, right: 8, opacity: 0.35 }}>
+              <Star size={18} />
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={{ marginTop: 16, width: "100%", maxWidth: 280 }}>
+        <Button label="Change photo" variant="secondary" onPress={pickPhoto} loading={picking} />
+      </View>
+
+      <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 20, letterSpacing: 0.3 }}>
+        Your profile
+      </Text>
+      {email ? (
+        <Text
+          style={{
+            color: colors.textPrimary,
+            fontSize: 17,
+            fontWeight: "600",
+            marginTop: 4,
+            textAlign: "center",
+          }}
+          numberOfLines={1}
+        >
+          {email}
+        </Text>
+      ) : null}
+
+      <View
+        style={{
+          marginTop: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 6,
+          borderRadius: 999,
+          backgroundColor: colors.surfaceElevated,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "600" }}>{goalLabel}</Text>
+      </View>
+
+      <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 12 }}>{formatStatsLine(profile)}</Text>
+    </View>
+  );
+}

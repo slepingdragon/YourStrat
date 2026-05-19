@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+# YourStrat Build Order
+
+Follow YOURSTRAT_BUILD.md §11 week by week. Verify each screen/endpoint end-to-end before the next.
+
+- Week 1: skeleton, auth, onboarding, Today empty state
+- Week 2: food scan loop, Today with meals
+- Week 3: workouts, profile, net calories, ship prep
+
+Use shared UI from `mobile/components/ui/`. Errors → Toast, not Alert.

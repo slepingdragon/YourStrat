@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "YourStrat: Start web (Expo port 8082)",
+      "type": "shell",
+      "command": "npx expo start --web --port 8082",
+      "options": { "cwd": "${workspaceFolder}/mobile" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "yourstrat"
+      }
+    },
+    {
+      "label": "YourStrat: Open in Simple Browser",
+      "command": "simpleBrowser.show",
+      "args": ["http://localhost:8082"]
+    }
+  ]
+}
