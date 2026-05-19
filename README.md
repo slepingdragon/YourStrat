@@ -45,7 +45,7 @@ From the repo root:
 
 ```powershell
 git add -A
-git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>" -m "describe your change"
+git commit -m "describe your change"
 git push origin main
 ```
 
