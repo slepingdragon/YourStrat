@@ -5,6 +5,7 @@ import {
   targetsFromProfile,
 } from "@/lib/nutritionTargets";
 import { roundCal, roundG } from "@/lib/targets";
+import type { TodayMetricId } from "@/lib/todayMetrics";
 
 /** Real, number-derived bullets for Today — no generic wellness copy. */
 export function buildTodayInsights(today: TodaySnapshot, profile: Profile | null): string[] {
@@ -120,6 +121,92 @@ export function buildTodayHighlight(today: TodaySnapshot, profile: Profile | nul
 
   const nearLimit = lines.find((l) => l.includes("left before"));
   if (nearLimit) return nearLimit;
+
+  return null;
+}
+
+export type WatchlistMetric = {
+  id: TodayMetricId;
+  headline: string;
+  sub: string;
+  tone: "error" | "warning";
+};
+
+/** Pick at most one nutrient that needs attention right now. Structured for a card UI. */
+export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | null): WatchlistMetric | null {
+  const t = today.targets ?? profile;
+  if (!t) return null;
+
+  const consumed = {
+    carbs_g: today.consumed_carbs_g,
+    fat_g: today.consumed_fat_g,
+    sugar_g: today.consumed_sugar_g ?? 0,
+    sodium_mg: today.consumed_sodium_mg ?? 0,
+  };
+
+  const sodiumOver = consumed.sodium_mg - HEART_LIMITS.sodium_mg;
+  if (sodiumOver >= 1) {
+    return {
+      id: "sodium",
+      headline: "Sodium",
+      sub: `${roundG(sodiumOver)}mg over the ${HEART_LIMITS.sodium_mg.toLocaleString()}mg guide`,
+      tone: "error",
+    };
+  }
+
+  const sugarOver = consumed.sugar_g - HEART_LIMITS.sugar_g;
+  if (sugarOver >= 1) {
+    return {
+      id: "sugar",
+      headline: "Sugar",
+      sub: `${roundG(sugarOver)}g over the ${HEART_LIMITS.sugar_g}g guide`,
+      tone: "error",
+    };
+  }
+
+  const carbsOver = consumed.carbs_g - t.daily_carbs_target_g;
+  if (carbsOver >= 1) {
+    return {
+      id: "carbs",
+      headline: "Carbs",
+      sub: `${roundG(carbsOver)}g over target`,
+      tone: "warning",
+    };
+  }
+
+  const fatOver = consumed.fat_g - t.daily_fat_target_g;
+  if (fatOver >= 1) {
+    return {
+      id: "fat",
+      headline: "Fat",
+      sub: `${roundG(fatOver)}g over target`,
+      tone: "warning",
+    };
+  }
+
+  if (consumed.sugar_g > 0) {
+    const sugarLeft = HEART_LIMITS.sugar_g - consumed.sugar_g;
+    if (sugarLeft <= 15) {
+      return {
+        id: "sugar",
+        headline: "Sugar",
+        sub: `${roundG(sugarLeft)}g left before the ${HEART_LIMITS.sugar_g}g guide`,
+        tone: "warning",
+      };
+    }
+  }
+
+  if (consumed.sodium_mg > 0) {
+    const sodiumLeft = HEART_LIMITS.sodium_mg - consumed.sodium_mg;
+    if (sodiumLeft <= 400) {
+      return {
+        id: "sodium",
+        headline: "Sodium",
+        sub: `${roundG(sodiumLeft)}mg left before the ${HEART_LIMITS.sodium_mg.toLocaleString()}mg guide`,
+        tone: "warning",
+      };
+    }
+  }
 
   return null;
 }

@@ -2,7 +2,16 @@ from datetime import date, datetime, time, timezone
 
 from supabase import Client
 
-from app.models.schemas import MealOut, MealItemOut, Profile, TodaySnapshot, TrialStatus
+from app.models.schemas import (
+    ActiveSessionInfo,
+    CompletedSessionInfo,
+    MealOut,
+    MealItemOut,
+    Profile,
+    ScheduledRoutineInfo,
+    TodaySnapshot,
+    TrialStatus,
+)
 from app.services.trial import build_trial_status
 
 
@@ -112,15 +121,8 @@ def fetch_today(sb: Client, user_id: str, profile_row: dict) -> TodaySnapshot:
         consumed["sugar_g"] += float(m["total_sugar_g"])
         consumed["sodium_mg"] += m["total_sodium_mg"]
 
-    sessions_res = (
-        sb.table("sessions")
-        .select("calories_burned")
-        .eq("user_id", user_id)
-        .gte("started_at", start)
-        .lte("started_at", end)
-        .execute()
-    )
-    burned = sum(s.get("calories_burned", 0) for s in (sessions_res.data or []))
+    burned, active, completed = _fetch_workout_state(sb, user_id, start, end)
+    scheduled = _scheduled_routine_today(sb, user_id)
 
     remaining = profile.daily_calorie_target + burned - consumed["calories"]
     net = consumed["calories"] - burned
@@ -139,4 +141,90 @@ def fetch_today(sb: Client, user_id: str, profile_row: dict) -> TodaySnapshot:
         net_calories=net,
         callouts=build_callouts(profile, consumed),
         meals=meals_out,
+        active_session=active,
+        last_completed_session_today=completed,
+        scheduled_routine_today=scheduled,
     )
+
+
+def _fetch_workout_state(
+    sb: Client, user_id: str, start: str, end: str
+) -> tuple[int, ActiveSessionInfo | None, CompletedSessionInfo | None]:
+    sessions_res = (
+        sb.table("sessions")
+        .select("id, routine_id, started_at, ended_at, duration_sec, calories_burned")
+        .eq("user_id", user_id)
+        .gte("started_at", start)
+        .lte("started_at", end)
+        .order("started_at", desc=True)
+        .execute()
+    )
+    rows = sessions_res.data or []
+
+    burned = sum(int(s.get("calories_burned", 0) or 0) for s in rows)
+
+    routine_ids = [s["routine_id"] for s in rows if s.get("routine_id")]
+    routine_names: dict[str, str] = {}
+    if routine_ids:
+        names_res = (
+            sb.table("routines")
+            .select("id, name")
+            .in_("id", list(set(routine_ids)))
+            .execute()
+        )
+        routine_names = {r["id"]: r["name"] for r in (names_res.data or [])}
+
+    active: ActiveSessionInfo | None = None
+    completed: CompletedSessionInfo | None = None
+    for s in rows:
+        rid = s.get("routine_id")
+        rname = routine_names.get(rid) if rid else None
+        if s.get("ended_at") is None and active is None:
+            active = ActiveSessionInfo(
+                id=str(s["id"]),
+                routine_id=str(rid) if rid else None,
+                routine_name=rname,
+                started_at=s["started_at"],
+            )
+        elif s.get("ended_at") is not None and completed is None:
+            completed = CompletedSessionInfo(
+                id=str(s["id"]),
+                routine_id=str(rid) if rid else None,
+                routine_name=rname,
+                duration_sec=s.get("duration_sec"),
+                calories_burned=int(s.get("calories_burned", 0) or 0),
+            )
+        if active is not None and completed is not None:
+            break
+
+    return burned, active, completed
+
+
+def _scheduled_routine_today(sb: Client, user_id: str) -> ScheduledRoutineInfo | None:
+    # routine_days.day_of_week uses 0=Sun..6=Sat.
+    # Python date.weekday(): 0=Mon..6=Sun. Convert: (weekday + 1) % 7.
+    dow = (date.today().weekday() + 1) % 7
+
+    days_res = (
+        sb.table("routine_days")
+        .select("routine_id")
+        .eq("day_of_week", dow)
+        .execute()
+    )
+    routine_ids = [r["routine_id"] for r in (days_res.data or [])]
+    if not routine_ids:
+        return None
+
+    routines_res = (
+        sb.table("routines")
+        .select("id, name, created_at")
+        .eq("user_id", user_id)
+        .in_("id", routine_ids)
+        .order("created_at", desc=False)
+        .limit(1)
+        .execute()
+    )
+    rows = routines_res.data or []
+    if not rows:
+        return None
+    return ScheduledRoutineInfo(id=str(rows[0]["id"]), name=rows[0]["name"])

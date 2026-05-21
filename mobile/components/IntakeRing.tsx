@@ -12,6 +12,8 @@ type Props = {
   unit?: Unit;
   size?: number;
   overColor?: string;
+  hideCenter?: boolean;
+  hideLabel?: boolean;
 };
 
 function formatCenter(value: number, target: number, unit: Unit) {
@@ -29,6 +31,8 @@ export function IntakeRing({
   unit = "g",
   size = 88,
   overColor = colors.error,
+  hideCenter = false,
+  hideLabel = false,
 }: Props) {
   const stroke = Math.max(6, Math.round(size * 0.09));
   const r = (size - stroke) / 2;
@@ -43,7 +47,7 @@ export function IntakeRing({
   const { main, sub } = formatCenter(value, target, unit);
 
   return (
-    <View style={{ alignItems: "center", width: size + 8, minHeight: size + 36 }}>
+    <View style={{ alignItems: "center", width: size + 8, minHeight: hideLabel ? size : size + 36 }}>
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
         <Svg width={size} height={size} style={{ position: "absolute" }}>
           <Circle cx={cx} cy={cx} r={r} stroke={colors.border} strokeWidth={stroke} fill="none" />
@@ -78,31 +82,35 @@ export function IntakeRing({
             />
           ) : null}
         </Svg>
-        <View style={{ alignItems: "center", paddingHorizontal: 4 }}>
-          <Text
-            style={{
-              color: over ? overColor : colors.textPrimary,
-              fontWeight: "700",
-              fontSize: Math.max(12, Math.round(size * 0.16)),
-              fontVariant: ["tabular-nums"],
-            }}
-            numberOfLines={1}
-          >
-            {main}
-          </Text>
-          <Text
-            style={{
-              color: colors.textMuted,
-              fontSize: Math.max(9, Math.round(size * 0.11)),
-              fontVariant: ["tabular-nums"],
-            }}
-          >
-            {sub}
-          </Text>
-        </View>
+        {hideCenter ? null : (
+          <View style={{ alignItems: "center", paddingHorizontal: 4 }}>
+            <Text
+              style={{
+                color: over ? overColor : colors.textPrimary,
+                fontWeight: "700",
+                fontSize: Math.max(12, Math.round(size * 0.16)),
+                fontVariant: ["tabular-nums"],
+              }}
+              numberOfLines={1}
+            >
+              {main}
+            </Text>
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: Math.max(9, Math.round(size * 0.11)),
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {sub}
+            </Text>
+          </View>
+        )}
       </View>
-      <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 6, textAlign: "center" }}>{label}</Text>
-      {over ? (
+      {hideLabel ? null : (
+        <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 6, textAlign: "center" }}>{label}</Text>
+      )}
+      {!hideLabel && over ? (
         <Text style={{ color: overColor, fontSize: 10, fontWeight: "600", marginTop: 2 }}>Over limit</Text>
       ) : null}
     </View>

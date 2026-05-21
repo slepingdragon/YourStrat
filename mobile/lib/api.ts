@@ -29,12 +29,17 @@ export async function pingApiHealth(): Promise<boolean> {
   }
 }
 
-async function authHeader(): Promise<Record<string, string>> {
+async function authHeader(accessToken?: string): Promise<Record<string, string>> {
+  if (accessToken) return { Authorization: `Bearer ${accessToken}` };
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) throw new Error("Not authenticated");
   return { Authorization: `Bearer ${session.access_token}` };
+}
+
+export function isProfileNotFound(err: unknown): boolean {
+  return err instanceof Error && /profile not found/i.test(err.message);
 }
 
 async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -171,6 +176,26 @@ export type Meal = {
   items?: MealItem[];
 };
 
+export type ActiveSessionInfo = {
+  id: string;
+  routine_id: string | null;
+  routine_name: string | null;
+  started_at: string;
+};
+
+export type CompletedSessionInfo = {
+  id: string;
+  routine_id: string | null;
+  routine_name: string | null;
+  duration_sec: number | null;
+  calories_burned: number;
+};
+
+export type ScheduledRoutineInfo = {
+  id: string;
+  name: string;
+};
+
 export type TodaySnapshot = {
   targets: Profile;
   consumed_calories: number;
@@ -185,6 +210,9 @@ export type TodaySnapshot = {
   net_calories: number;
   callouts: string[];
   meals: Meal[];
+  active_session?: ActiveSessionInfo | null;
+  last_completed_session_today?: CompletedSessionInfo | null;
+  scheduled_routine_today?: ScheduledRoutineInfo | null;
 };
 
 export type Exercise = {
@@ -245,8 +273,8 @@ export async function onboard(body: OnboardingInput) {
   return normalizeProfile(await handle<Profile>(res));
 }
 
-export async function getProfile() {
-  const headers = await authHeader();
+export async function getProfile(accessToken?: string) {
+  const headers = await authHeader(accessToken);
   const res = await apiFetch(apiUrl("/profile/"), { headers });
   return normalizeProfile(await handle<Profile>(res));
 }

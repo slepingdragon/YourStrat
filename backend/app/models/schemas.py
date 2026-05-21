@@ -179,6 +179,26 @@ class NutritionJournal(BaseModel):
     days: list[NutritionDay] = []
 
 
+class ActiveSessionInfo(BaseModel):
+    id: str
+    routine_id: str | None
+    routine_name: str | None
+    started_at: str
+
+
+class CompletedSessionInfo(BaseModel):
+    id: str
+    routine_id: str | None
+    routine_name: str | None
+    duration_sec: int | None
+    calories_burned: int
+
+
+class ScheduledRoutineInfo(BaseModel):
+    id: str
+    name: str
+
+
 class TodaySnapshot(BaseModel):
     targets: Profile
     consumed_calories: int = 0
@@ -193,3 +213,6 @@ class TodaySnapshot(BaseModel):
     net_calories: int = 0
     callouts: list[str] = []
     meals: list[MealOut] = []
+    active_session: ActiveSessionInfo | None = None
+    last_completed_session_today: CompletedSessionInfo | None = None
+    scheduled_routine_today: ScheduledRoutineInfo | None = None

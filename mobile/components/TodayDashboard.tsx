@@ -1,147 +1,54 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { IntakeRing } from "@/components/IntakeRing";
 import { MealCard } from "@/components/MealCard";
-import { Button } from "@/components/ui";
-import type { Meal, Profile, TodaySnapshot } from "@/lib/api";
-import type { NutritionTargets } from "@/lib/nutritionTargets";
+import { CalorieSparkline } from "@/components/today/CalorieSparkline";
+import { NextActionButton } from "@/components/today/NextActionButton";
+import { TodayHeader } from "@/components/today/TodayHeader";
+import { TodayTrioCards } from "@/components/today/TodayTrioCards";
+import type { Meal, NutritionDay, Profile, Routine, TodaySnapshot } from "@/lib/api";
 import { roundCal } from "@/lib/targets";
-import { buildTodayHighlight } from "@/lib/todayInsights";
-import {
-  getMetricTarget,
-  getMetricValue,
-  metricGridCard,
-  TODAY_GRID_METRICS,
-  TODAY_METRIC_SPECS,
-  type TodayMetricId,
-} from "@/lib/todayMetrics";
 import { colors } from "@/theme/colors";
 
 const CONTENT_MAX_WIDTH = 400;
-const GRID_GAP = 10;
+const HERO_SIZE = 200;
 
 type Props = {
   today: TodaySnapshot | null;
   profile: Profile | null;
-  nutritionTargets: NutritionTargets | null;
+  routines: Routine[] | null;
+  journalDays: NutritionDay[] | null;
 };
 
 function formatHeroNumber(n: number) {
   return roundCal(Math.abs(n)).toLocaleString();
 }
 
-function MetricGridCard({
-  id,
-  today,
-  targets,
-}: {
-  id: TodayMetricId;
-  today: TodaySnapshot;
-  targets: NutritionTargets;
-}) {
-  const router = useRouter();
-  const spec = TODAY_METRIC_SPECS[id];
-  const consumed = getMetricValue(today, id);
-  const target = getMetricTarget(targets, id);
-  const { headline, subline, over, progress } = metricGridCard(id, consumed, target);
-  const barColor = over ? colors.error : spec.color;
-
-  return (
-    <Pressable
-      onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id } })}
-      style={({ pressed }) => ({
-        width: "48%",
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
-        padding: 14,
-        opacity: pressed ? 0.85 : 1,
-      })}
-      accessibilityRole="button"
-      accessibilityLabel={`${spec.label}, ${headline}, ${subline}${over ? ", over target" : ""}`}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6, gap: 6 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600" }}>
-          {spec.label}
-        </Text>
-        {over ? (
-          <Text style={{ color: colors.error, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 }}>
-            ⚠ OVER
-          </Text>
-        ) : null}
-      </View>
-      <Text
-        style={{
-          color: over ? colors.error : colors.textPrimary,
-          fontSize: 18,
-          fontWeight: "700",
-          fontVariant: ["tabular-nums"],
-        }}
-        numberOfLines={1}
-      >
-        {headline}
-      </Text>
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontSize: 11,
-          marginTop: 4,
-          fontVariant: ["tabular-nums"],
-        }}
-        numberOfLines={1}
-      >
-        {subline}
-      </Text>
-      <View
-        style={{
-          height: 3,
-          backgroundColor: colors.border,
-          borderRadius: 2,
-          marginTop: 10,
-          overflow: "hidden",
-        }}
-      >
-        <View style={{ height: 3, width: `${progress * 100}%`, backgroundColor: barColor, borderRadius: 2 }} />
-      </View>
-    </Pressable>
-  );
-}
-
-export function TodayDashboard({ today, profile, nutritionTargets }: Props) {
+export function TodayDashboard({ today, profile, routines, journalDays }: Props) {
   const router = useRouter();
   const t = today?.targets ?? profile;
   const empty = !today?.meals?.length;
 
-  const highlight = useMemo(
-    () => (today ? buildTodayHighlight(today, profile) : null),
-    [today, profile]
-  );
-
   const hero = today
     ? {
         value: formatHeroNumber(today.remaining_calories),
-        label: today.remaining_calories < 0 ? "calories over today" : "calories left today",
+        label: today.remaining_calories < 0 ? "calories over" : "calories left",
         over: today.remaining_calories < 0,
+        consumed: today.consumed_calories,
         burned: today.burned_calories,
+        target: today.targets?.daily_calorie_target ?? 0,
       }
     : null;
 
+  const mealsTotalCal = useMemo(() => {
+    if (!today?.meals?.length) return 0;
+    return today.meals.reduce((s, m) => s + (m.total_calories ?? 0), 0);
+  }, [today?.meals]);
+
   return (
     <View style={{ width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center" }}>
-      <Text
-        style={{
-          color: colors.textMuted,
-          fontSize: 13,
-          fontWeight: "600",
-          textAlign: "center",
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
-          marginBottom: 20,
-        }}
-      >
-        Today
-      </Text>
+      <TodayHeader />
 
       {!t ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 32 }}>
@@ -152,38 +59,68 @@ export function TodayDashboard({ today, profile, nutritionTargets }: Props) {
       {hero ? (
         <Pressable
           onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id: "calories" } })}
-          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, marginBottom: 8 })}
+          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, marginBottom: 16, alignItems: "center" })}
           accessibilityRole="button"
           accessibilityLabel={`${hero.value} ${hero.label}. Open nutrition details.`}
         >
-          <Text
+          <View
             style={{
-              color: hero.over ? colors.error : colors.textPrimary,
-              fontSize: 56,
-              fontWeight: "800",
-              textAlign: "center",
-              fontVariant: ["tabular-nums"],
-              letterSpacing: -1,
+              width: HERO_SIZE,
+              height: HERO_SIZE,
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
             }}
           >
-            {hero.value}
-          </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 16, textAlign: "center", marginTop: 6 }}>
-            {hero.label}
-          </Text>
-          {hero.burned > 0 ? (
-            <Text
-              style={{
-                color: colors.textMuted,
-                fontSize: 14,
-                textAlign: "center",
-                marginTop: 8,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {hero.burned.toLocaleString()} burned today
-            </Text>
-          ) : null}
+            <View style={{ position: "absolute" }}>
+              <IntakeRing
+                label=""
+                value={hero.consumed}
+                target={hero.target}
+                color={colors.star}
+                unit="cal"
+                size={HERO_SIZE}
+                hideCenter
+                hideLabel
+              />
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <Text
+                style={{
+                  color: hero.over ? colors.error : colors.textPrimary,
+                  fontSize: 52,
+                  fontWeight: "800",
+                  fontVariant: ["tabular-nums"],
+                  letterSpacing: -1,
+                }}
+              >
+                {hero.value}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 2 }}>{hero.label}</Text>
+            </View>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 10,
+              gap: 8,
+            }}
+          >
+            <EquationCell value={hero.consumed} unit="in" color={colors.textSecondary} />
+            <EquationDot />
+            <EquationCell
+              value={hero.burned}
+              unit="burned"
+              color={hero.burned > 0 ? colors.spark : colors.textMuted}
+            />
+            <EquationDot />
+            <EquationCell
+              value={Math.abs(today!.remaining_calories)}
+              unit={hero.over ? "over" : "left"}
+              color={hero.over ? colors.error : colors.textSecondary}
+            />
+          </View>
         </Pressable>
       ) : t ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", marginBottom: 16 }}>
@@ -191,65 +128,44 @@ export function TodayDashboard({ today, profile, nutritionTargets }: Props) {
         </Text>
       ) : null}
 
-      {today && nutritionTargets ? (
-        <>
-          <Text
-            style={{
-              color: colors.textMuted,
-              fontSize: 12,
-              fontWeight: "600",
-              textAlign: "center",
-              letterSpacing: 0.4,
-              textTransform: "uppercase",
-              marginTop: 16,
-              marginBottom: 12,
-            }}
-          >
-            Right now
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-              rowGap: GRID_GAP,
-              marginBottom: highlight ? 12 : 20,
-            }}
-          >
-            {TODAY_GRID_METRICS.map((id) => (
-              <MetricGridCard key={id} id={id} today={today} targets={nutritionTargets} />
-            ))}
-          </View>
-
-          {highlight ? (
-            <Text
-              style={{
-                color: colors.warning,
-                fontSize: 13,
-                lineHeight: 20,
-                textAlign: "center",
-                marginBottom: 20,
-                paddingHorizontal: 8,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {highlight}
-            </Text>
-          ) : null}
-        </>
+      {today ? (
+        <View style={{ width: "100%", marginBottom: 16 }}>
+          <NextActionButton today={today} routines={routines} />
+        </View>
       ) : null}
 
-      <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 12, textAlign: "center" }}>Meals</Text>
+      {today ? (
+        <View style={{ marginBottom: 16 }}>
+          <TodayTrioCards today={today} profile={profile} />
+        </View>
+      ) : null}
+
+      {journalDays && journalDays.length >= 2 ? (
+        <View style={{ marginBottom: 20 }}>
+          <CalorieSparkline days={journalDays} target={t?.daily_calorie_target ?? 0} />
+        </View>
+      ) : null}
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "baseline",
+          marginBottom: 12,
+          justifyContent: empty ? "center" : "space-between",
+        }}
+      >
+        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Meals</Text>
+        {!empty ? (
+          <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+            {today!.meals.length} logged · {roundCal(mealsTotalCal).toLocaleString()} cal
+          </Text>
+        ) : null}
+      </View>
 
       {empty ? (
-        <View style={{ alignItems: "center", gap: 14 }}>
-          <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>
-            Nothing logged yet. Scan your first meal when you&apos;re ready.
-          </Text>
-          <View style={{ width: "100%", maxWidth: 240 }}>
-            <Button label="Log food" onPress={() => router.push("/scan")} compact />
-          </View>
-        </View>
+        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>
+          No meals yet today.
+        </Text>
       ) : (
         today?.meals.map((m: Meal) => (
           <MealCard key={m.id} meal={m} onPress={() => router.push(`/meal/${m.id}`)} />
@@ -258,4 +174,15 @@ export function TodayDashboard({ today, profile, nutritionTargets }: Props) {
     </View>
   );
 }
-
+
+function EquationCell({ value, unit, color }: { value: number; unit: string; color: string }) {
+  return (
+    <Text style={{ color, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+      {Math.round(value).toLocaleString()} {unit}
+    </Text>
+  );
+}
+
+function EquationDot() {
+  return <Text style={{ color: colors.textMuted, fontSize: 12 }}>·</Text>;
+}

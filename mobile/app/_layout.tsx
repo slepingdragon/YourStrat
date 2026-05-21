@@ -57,6 +57,7 @@ export default function RootLayout() {
       setProfileResolved(false);
       return;
     }
+    let cancelled = false;
     setProfileResolved(false);
     (async () => {
       const onPublicAuth = isPublicAuthRoute(segments, pathname);
@@ -69,22 +70,29 @@ export default function RootLayout() {
         }
       }
       try {
-        const p = await getProfile();
-        setProfile(p);
-        setProfileResolved(true);
+        const p = await getProfile(session.access_token);
+        if (!cancelled) {
+          setProfile(p);
+          setProfileResolved(true);
+        }
       } catch (e) {
         const msg = (e as Error).message ?? "";
         console.error(e);
-        if (isUnauthorized(e) || /profile not found/i.test(msg)) {
-          setProfile(null);
-          setProfileResolved(true);
-        } else if (isNetworkError(e) && !onPublicAuth) {
-          toastError(msg);
-        } else {
-          setProfileResolved(true);
+        if (!cancelled) {
+          if (isUnauthorized(e) || /profile not found/i.test(msg)) {
+            setProfile(null);
+            setProfileResolved(true);
+          } else if (isNetworkError(e) && !onPublicAuth) {
+            toastError(msg);
+          } else {
+            setProfileResolved(true);
+          }
         }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [session, setProfile, segments, pathname]);
 
   useEffect(() => {

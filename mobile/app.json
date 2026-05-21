@@ -7,7 +7,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#08080B",
+    "icon": "./assets/logo/yourstrat-star.png",
     "splash": {
+      "image": "./assets/logo/yourstrat-star.png",
       "backgroundColor": "#08080B",
       "resizeMode": "contain"
     },
@@ -21,16 +23,41 @@
     },
     "android": {
       "package": "com.yourstrat.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo/yourstrat-star.png",
+        "backgroundColor": "#08080B"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
-      ["expo-camera", { "cameraPermission": "YourStrat uses the camera to scan meals." }],
-      ["expo-image-picker", { "photosPermission": "YourStrat needs photo library access." }]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "YourStrat uses the camera to scan meals."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "YourStrat needs photo library access."
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
-      "eas": { "projectId": "REPLACE_WITH_EAS_PROJECT_ID" }
-    }
+      "router": {},
+      "eas": {
+        "projectId": "a5c5a8b9-7fbf-4521-8ce5-275a427a0062"
+      }
+    },
+    "owner": "baniabradyy"
   }
 }

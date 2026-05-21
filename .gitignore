@@ -9,3 +9,12 @@ __pycache__/
 .DS_Store
 
 mobile/.env
+
+.claude/settings.local.json
+mobile/eas-build.log*
+mobile/expo-smoke.log
+
+# Google Play service account key — used by `eas submit` for Android.
+# Never commit this; download from Play Console → API access.
+mobile/play-service-account.json
+play-service-account.json
