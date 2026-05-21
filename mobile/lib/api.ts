@@ -54,6 +54,25 @@ export function getApiBaseUrl(): string {
   return normalizeLocalApiUrl(base);
 }
 
+/** Native release builds: missing EXPO_PUBLIC_API_URL at EAS build time → localhost fallback (unreachable on device). */
+export function getNativeApiConfigError(): string | null {
+  if (Platform.OS === "web") return null;
+  const raw = (process.env.EXPO_PUBLIC_API_URL ?? "").trim();
+  if (!raw) {
+    return "API URL not set for this build. In Expo (expo.dev) → Project → Environment variables, add EXPO_PUBLIC_API_URL (e.g. https://yourstrat-production.up.railway.app) for the preview-apk profile, then rebuild the APK.";
+  }
+  const base = getApiBaseUrl();
+  try {
+    const host = new URL(base).hostname.toLowerCase();
+    if (host === "127.0.0.1" || host === "localhost") {
+      return "This build points at a local API (127.0.0.1). Set EXPO_PUBLIC_API_URL to your deployed HTTPS API in EAS environment variables and rebuild.";
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 function apiUrl(path: string): string {
   const base = getApiBaseUrl().replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
@@ -91,8 +110,10 @@ async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<R
   try {
     return await fetch(input, init);
   } catch (e) {
+    const original = e instanceof Error ? e.message : String(e);
+    console.error("apiFetch failed:", input, original);
     if (isNetworkError(e)) {
-      throw new Error("Failed to fetch");
+      throw new Error(`Failed to fetch: ${original}`);
     }
     throw e;
   }

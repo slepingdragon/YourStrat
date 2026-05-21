@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { getApiBaseUrl } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
@@ -71,9 +72,18 @@ export function ToastHost() {
 
 function friendlyError(message: string) {
   if (/network request failed|failed to fetch|load failed/i.test(message)) {
-    return "Cannot reach the API. Check your connection and try again.";
+    let base = "";
+    try {
+      base = getApiBaseUrl();
+    } catch {
+      /* ignore */
+    }
+    const causeMatch = /failed to fetch:\s*(.+)/i.exec(message);
+    const cause = causeMatch ? ` Reason: ${causeMatch[1].slice(0, 160)}` : "";
+    const target = base ? ` at ${base}` : "";
+    return `Cannot reach the API${target}.${cause}`;
   }
-  if (message.length > 120) return "Something went wrong. Try again.";
+  if (message.length > 280) return "Something went wrong. Try again.";
   return message;
 }
 
