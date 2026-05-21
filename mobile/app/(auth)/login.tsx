@@ -3,7 +3,18 @@ import { Text, View } from "react-native";
 import { Screen, Button, Input, LinkButton, toastError } from "@/components/ui";
 import { Star } from "@/components/icons";
 import { supabase } from "@/lib/supabase";
+import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
+
+function signInErrorMessage(message: string): string {
+  if (/email not confirmed/i.test(message)) {
+    return "Confirm your email from the signup link, then sign in again.";
+  }
+  if (/invalid login credentials/i.test(message)) {
+    return "Email or password is incorrect.";
+  }
+  return message;
+}
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -21,12 +32,21 @@ export default function LoginScreen() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
-    setLoading(false);
-    if (error) {
-      console.error(error);
-      toastError(error.message);
-      return;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
+      if (error) {
+        console.error(error);
+        toastError(signInErrorMessage(error.message));
+        return;
+      }
+      if (data.session) {
+        useStore.getState().setSession(data.session);
+      }
+    } catch (e) {
+      console.error(e);
+      toastError((e as Error).message ?? "Sign in failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 

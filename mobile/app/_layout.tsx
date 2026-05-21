@@ -35,9 +35,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const pathname = usePathname();
   const router = useRouter();
-  const toast = useStore((s) => s.toast);
-  const clearToast = useStore((s) => s.clearToast);
-
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setReady(true);
@@ -82,7 +79,7 @@ export default function RootLayout() {
           if (isUnauthorized(e) || /profile not found/i.test(msg)) {
             setProfile(null);
             setProfileResolved(true);
-          } else if (isNetworkError(e) && !onPublicAuth) {
+          } else if (isNetworkError(e)) {
             toastError(msg);
           } else {
             setProfileResolved(true);
@@ -96,26 +93,20 @@ export default function RootLayout() {
   }, [session, setProfile, segments, pathname]);
 
   useEffect(() => {
-    if (toast && isPublicAuthRoute(segments, pathname)) {
-      clearToast();
-    }
-  }, [toast, segments, pathname, clearToast]);
-
-  useEffect(() => {
     if (!isSupabaseConfigured || !ready) return;
-    const inAuth = segments[0] === "(auth)";
-    const authScreen = segments[1] as string | undefined;
+    const inAuthGroup = segments[0] === "(auth)";
+    const authScreen = (inAuthGroup ? segments[1] : segments[0]) as string | undefined;
     const onPublicAuth = isPublicAuthRoute(segments, pathname);
 
     if (!session && !onPublicAuth) {
       router.replace("/(auth)/login");
       return;
     }
-    if (session && profileResolved && !profile && authScreen !== "onboarding") {
+    if (session && profileResolved && !profile && authScreen !== "onboarding" && (inAuthGroup || onPublicAuth)) {
       router.replace("/(auth)/onboarding");
       return;
     }
-    if (session && profile && inAuth) {
+    if (session && profile && (inAuthGroup || onPublicAuth)) {
       router.replace("/(tabs)");
     }
   }, [ready, session, profile, profileResolved, segments, pathname, router]);
