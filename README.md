@@ -65,6 +65,21 @@ If the app shows **Cannot reach the API** on sign-in screens:
 
 Native builds use `EXPO_PUBLIC_API_URL` directly (no `/api` proxy).
 
+### Browser + Railway only
+
+Use a deployed backend without running local uvicorn or `start-dev.ps1`:
+
+1. In `mobile/.env`, set `EXPO_PUBLIC_API_URL` to your Railway HTTPS API URL (e.g. `https://yourstrat-production.up.railway.app`). Include `https://` — bare hostnames are auto-normalized, but the explicit scheme avoids confusion.
+2. Verify deploy: `Invoke-WebRequest https://YOUR_APP.up.railway.app/health` should return `{"ok":true,...}`. If it fails while the service is “Online”, check Railway **Networking → Public domain target port** matches the port uvicorn binds to (`$PORT` in `backend/railway.json`; Railway sets `PORT` automatically — do not change the service port in the UI unless you know the app is listening on a different port).
+3. Ensure the same Supabase keys as production and that Railway CORS allows your Expo web origin (ports **8081–8083** on `localhost` / `127.0.0.1` are in `backend/app/main.py`).
+4. From `mobile/`:
+
+```powershell
+npm run web:remote
+```
+
+Open the URL Expo prints (default `http://localhost:8081`). The app calls Railway directly; no Metro `/api` proxy.
+
 ### Deploy
 
 - **Railway:** connect repo, set root to `backend`, env vars from `.env.example`

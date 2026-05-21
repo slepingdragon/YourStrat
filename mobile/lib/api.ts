@@ -1,12 +1,57 @@
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
 
-/** Native uses EXPO_PUBLIC_API_URL; web uses Metro /api proxy (same origin, no CORS). */
+/** Bare hostnames (no scheme) → https:// for Railway etc.; localhost → http:// */
+function normalizeExpoApiUrl(url: string): string {
+  const trimmed = url.trim().replace(/\/$/, "");
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const hostPart = trimmed.split("/")[0].split(":")[0].toLowerCase();
+  if (hostPart === "localhost" || hostPart === "127.0.0.1") {
+    return `http://${trimmed}`;
+  }
+  return `https://${trimmed}`;
+}
+
+function isRemoteApiUrl(url: string): boolean {
+  const trimmed = normalizeExpoApiUrl(url);
+  if (!trimmed.toLowerCase().startsWith("https://")) return false;
+  try {
+    const host = new URL(trimmed).hostname.toLowerCase();
+    return host !== "localhost" && host !== "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+/** Local hosts: normalize localhost → 127.0.0.1 (native / local HTTP only). */
+function normalizeLocalApiUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    const host = u.hostname.toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1") {
+      u.hostname = "127.0.0.1";
+      return u.toString().replace(/\/$/, "");
+    }
+  } catch {
+    /* fall through */
+  }
+  return trimmed.replace(/\/$/, "");
+}
+
+/** Web: remote EXPO_PUBLIC_API_URL (HTTPS) or Metro /api proxy. Native: EXPO_PUBLIC_API_URL. */
 export function getApiBaseUrl(): string {
+  const envUrl = normalizeExpoApiUrl(process.env.EXPO_PUBLIC_API_URL || "");
   if (Platform.OS === "web") {
+    if (envUrl && isRemoteApiUrl(envUrl)) {
+      return envUrl;
+    }
     return "/api";
   }
-  return (process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000").trim();
+  const base = envUrl || "http://127.0.0.1:8000";
+  return normalizeLocalApiUrl(base);
 }
 
 function apiUrl(path: string): string {

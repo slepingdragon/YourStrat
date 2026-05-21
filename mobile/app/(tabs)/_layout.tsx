@@ -53,8 +53,8 @@ export default function TabsLayout() {
                 backgroundColor: colors.star,
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 18,
-                marginTop: -4,
+                marginBottom: 10,
+                marginTop: 0,
               }}
             >
               <Camera color={colors.bg} size={24} />

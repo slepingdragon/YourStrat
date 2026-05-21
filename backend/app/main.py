@@ -46,7 +46,7 @@ def log_supabase_host():
     logger.info("Supabase host: %s", host)
 
 
-_ROOT_HTML = """<!DOCTYPE html>
+_ROOT_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
