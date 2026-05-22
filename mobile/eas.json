@@ -8,7 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jjxjonywrjqoindvfdon.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_X5AOox4ZNoJ2h-SExTdzsQ_K30NCqcK"
       }
     },
     "preview": {
@@ -17,7 +19,9 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jjxjonywrjqoindvfdon.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_X5AOox4ZNoJ2h-SExTdzsQ_K30NCqcK"
       }
     },
     "preview-apk": {
@@ -26,13 +30,17 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jjxjonywrjqoindvfdon.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_X5AOox4ZNoJ2h-SExTdzsQ_K30NCqcK"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jjxjonywrjqoindvfdon.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_X5AOox4ZNoJ2h-SExTdzsQ_K30NCqcK"
       }
     }
   },

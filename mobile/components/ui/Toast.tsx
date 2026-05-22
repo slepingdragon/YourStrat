@@ -71,17 +71,22 @@ export function ToastHost() {
 }
 
 function friendlyError(message: string) {
-  if (/network request failed|failed to fetch|load failed/i.test(message)) {
+  // Errors thrown by our apiFetch are prefixed "Failed to fetch:" — those are the only
+  // errors we can confidently attribute to the API host.
+  const apiFetchMatch = /^Failed to fetch:\s*(.+)/i.exec(message);
+  if (apiFetchMatch) {
     let base = "";
     try {
       base = getApiBaseUrl();
     } catch {
       /* ignore */
     }
-    const causeMatch = /failed to fetch:\s*(.+)/i.exec(message);
-    const cause = causeMatch ? ` Reason: ${causeMatch[1].slice(0, 160)}` : "";
     const target = base ? ` at ${base}` : "";
-    return `Cannot reach the API${target}.${cause}`;
+    return `Cannot reach the API${target}. Reason: ${apiFetchMatch[1].slice(0, 160)}`;
+  }
+  // Generic network errors from elsewhere (Supabase auth, third-party SDKs).
+  if (/network request failed|failed to fetch|load failed/i.test(message)) {
+    return `Network error: ${message.slice(0, 200)}`;
   }
   if (message.length > 280) return "Something went wrong. Try again.";
   return message;
