@@ -33,6 +33,10 @@ export function TrialBanner({ trial: trialProp }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (trial.is_admin) {
+      setVisible(false);
+      return;
+    }
     if (!trial.trial_active) {
       setVisible(false);
       return;

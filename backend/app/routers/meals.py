@@ -78,7 +78,7 @@ async def scan_meal(
     profile = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    check_scan_allowed(sb, user["id"], profile.data)
+    check_scan_allowed(sb, user["id"], profile.data, user.get("email"))
     increment_scan_count(sb, user["id"])
     data = await file.read()
     mime = file.content_type or "image/jpeg"
@@ -153,7 +153,7 @@ def meals_today(user: dict = Depends(get_current_user)):
     profile = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    snap = fetch_today(sb, user["id"], profile.data)
+    snap = fetch_today(sb, user["id"], profile.data, user.get("email"))
     return {"meals": snap.meals, "totals": {
         "calories": snap.consumed_calories,
         "protein_g": snap.consumed_protein_g,

@@ -5,9 +5,9 @@
       "name": "YourStrat: Mobile Preview (Chrome)",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:8082",
+      "url": "http://localhost:18081/preview-frame.html",
       "webRoot": "${workspaceFolder}/mobile",
-      "preLaunchTask": "YourStrat: Start web (Expo port 8082)"
+      "preLaunchTask": "YourStrat: Start web (Expo port 18081)"
     }
   ]
 }

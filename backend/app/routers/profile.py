@@ -88,7 +88,7 @@ def onboard(body: OnboardingInput, user: dict = Depends(get_current_user)):
     if not res.data:
         raise HTTPException(status_code=500, detail="Could not save profile.")
     saved = res.data[0]
-    trial_data = build_trial_status(sb, user["id"], saved)
+    trial_data = build_trial_status(sb, user["id"], saved, user.get("email"))
     return _row_to_profile(saved, TrialStatus(**trial_data))
 
 
@@ -98,7 +98,7 @@ def get_trial(user: dict = Depends(get_current_user)):
     res = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return TrialStatus(**build_trial_status(sb, user["id"], res.data))
+    return TrialStatus(**build_trial_status(sb, user["id"], res.data, user.get("email")))
 
 
 @router.get("/ai-stats", response_model=AiStats)
@@ -113,7 +113,7 @@ def get_profile(user: dict = Depends(get_current_user)):
     res = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    trial_data = build_trial_status(sb, user["id"], res.data)
+    trial_data = build_trial_status(sb, user["id"], res.data, user.get("email"))
     return _row_to_profile(res.data, TrialStatus(**trial_data))
 
 
@@ -128,5 +128,5 @@ def update_profile(body: ProfileUpdate, user: dict = Depends(get_current_user)):
     if not res.data:
         raise HTTPException(status_code=500, detail="Could not update profile")
     saved = res.data[0]
-    trial_data = build_trial_status(sb, user["id"], saved)
+    trial_data = build_trial_status(sb, user["id"], saved, user.get("email"))
     return _row_to_profile(saved, TrialStatus(**trial_data))

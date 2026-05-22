@@ -1,9 +1,11 @@
 import { Tabs } from "expo-router";
 import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Book, Camera, Dumbbell, Profile, Star } from "@/components/icons";
 import { colors } from "@/theme/colors";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       initialRouteName="index"
@@ -12,9 +14,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: 72,
+          height: 72 + insets.bottom,
           paddingTop: 4,
-          paddingBottom: 10,
+          paddingBottom: insets.bottom + 10,
         },
         tabBarItemStyle: { paddingVertical: 2 },
         tabBarActiveTintColor: colors.star,

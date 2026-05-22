@@ -32,7 +32,7 @@ Before writing code:
 Before saying "done":
 
 1. **Type-check passes.** `cd mobile && npx tsc --noEmit`. Zero errors.
-2. **Screen renders end-to-end.** Web preview (`scripts/start-dev.ps1` → http://127.0.0.1:8082/preview-frame.html), navigate to the screen, exercise the happy path **and** one edge case (empty, error, slow network).
+2. **Screen renders end-to-end.** Web preview (`scripts/start-dev.ps1` → http://127.0.0.1:18082/preview-frame.html), navigate to the screen, exercise the happy path **and** one edge case (empty, error, slow network).
 3. **Backend call actually fires.** Check the uvicorn log for the request. A green UI with no network request is a bug.
 4. **No console errors, no console warnings** in the browser devtools while exercising the flow.
 
@@ -117,7 +117,7 @@ Every interactive UI element must trace to a real backend operation. The contrac
 2. **No new button without a working backend call in the same PR.** Dead UI lies to the user.
 3. **All routes require `Authorization: Bearer <jwt>`.** The wrapper in [api.ts](mobile/lib/api.ts) does this — go through it. Never call `fetch` directly from a screen.
 4. **Schema is the contract.** When you change a Pydantic model in [backend/app/models/schemas.py](backend/app/models/schemas.py), update the matching TS type in `mobile/lib/api.ts` in the same change. Type drift = bugs.
-5. **Web preview proxies through Metro** (`/api/*` → `127.0.0.1:8000`). Native uses `EXPO_PUBLIC_API_URL` directly. Test both paths exist before claiming done — see [mobile/metro.config.js](mobile/metro.config.js).
+5. **Web preview proxies through Metro** (`/api/*` → `127.0.0.1:18000`). Native uses `EXPO_PUBLIC_API_URL` directly. Test both paths exist before claiming done — see [mobile/metro.config.js](mobile/metro.config.js).
 6. **RLS is on.** When testing, you are a real user. If a query returns empty, check the auth token before assuming the data is missing.
 
 ---
@@ -174,18 +174,18 @@ Asking costs 30 seconds. Guessing wrong costs hours.
 ## 9. Commands you'll actually use
 
 ```powershell
-# Run everything (API on 8000, web preview on 8082)
+# Run everything (API on 18000, web preview on 18082)
 .\scripts\start-dev.ps1
 
 # Type-check the mobile app
 cd mobile; npx tsc --noEmit
 
 # Run the API alone
-cd backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+cd backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 0.0.0.0 --port 18000 --reload
 
 # Sanity-check the API is up
-# open http://127.0.0.1:8000/health  → expect {"ok":true,...}
-# open http://127.0.0.1:8082/preview-frame.html  → phone frame preview
+# open http://127.0.0.1:18000/health  → expect {"ok":true,...}
+# open http://127.0.0.1:18082/preview-frame.html  → phone frame preview
 ```
 
 ---

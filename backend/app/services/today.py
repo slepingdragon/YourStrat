@@ -50,8 +50,8 @@ def build_callouts(profile: Profile, consumed: dict) -> list[str]:
     return callouts
 
 
-def _profile_from_row(sb: Client, user_id: str, row: dict) -> Profile:
-    trial = TrialStatus(**build_trial_status(sb, user_id, row))
+def _profile_from_row(sb: Client, user_id: str, row: dict, user_email: str | None = None) -> Profile:
+    trial = TrialStatus(**build_trial_status(sb, user_id, row, user_email))
     return Profile(
         id=str(row["id"]),
         units=row["units"],
@@ -69,8 +69,8 @@ def _profile_from_row(sb: Client, user_id: str, row: dict) -> Profile:
     )
 
 
-def fetch_today(sb: Client, user_id: str, profile_row: dict) -> TodaySnapshot:
-    profile = _profile_from_row(sb, user_id, profile_row)
+def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | None = None) -> TodaySnapshot:
+    profile = _profile_from_row(sb, user_id, profile_row, user_email)
     start, end = _today_bounds()
 
     meals_res = (

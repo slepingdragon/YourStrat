@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.0-flash"
     DAILY_SCAN_LIMIT: int = 10
+    # Comma-separated list of emails that bypass trial gating and scan limits.
+    ADMIN_EMAILS: str = "giskanianurzara@gmail.com,baniabradyy@gmail.com"
 
 
 settings = Settings()
+
+
+def admin_email_set() -> frozenset[str]:
+    return frozenset(e.strip().lower() for e in settings.ADMIN_EMAILS.split(",") if e.strip())

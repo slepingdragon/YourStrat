@@ -547,7 +547,7 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 18000 --reload
 ```
 
 ---
@@ -558,7 +558,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:8000
+EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:18000
 ```
 
 ### `backend/.env`

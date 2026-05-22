@@ -78,7 +78,7 @@ export default function OnboardingScreen() {
     } catch (e) {
       console.error(e);
       const msg = isNetworkError(e) || /failed to fetch/i.test((e as Error).message ?? "")
-        ? "Cannot reach the API at 127.0.0.1:8000. Start servers: Terminal → Run Build Task, or Ctrl+Shift+P → Tasks: Run Build Task → YourStrat: Mobile Preview, or .\\scripts\\start-dev.ps1 from repo root. Wi‑Fi does not block localhost."
+        ? "Cannot reach the API at 127.0.0.1:18000. Start servers: Terminal → Run Build Task, or Ctrl+Shift+P → Tasks: Run Build Task → YourStrat: Mobile Preview, or .\\scripts\\start-dev.ps1 from repo root. Wi‑Fi does not block localhost."
         : (e as Error).message;
       toastError(msg);
     } finally {

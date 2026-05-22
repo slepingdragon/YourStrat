@@ -194,9 +194,14 @@ export default function ProfileScreen() {
 
       <ProfileIdentity profile={profile} />
 
-      <Text style={styles.sectionTitle}>Free trial</Text>
+      <Text style={styles.sectionTitle}>{trial.is_admin ? "Access" : "Free trial"}</Text>
       <Card style={CARD_PAD}>
-        {trial.trial_active ? (
+        {trial.is_admin ? (
+          <>
+            <Text style={styles.targetCalories}>Admin access</Text>
+            <Text style={styles.targetMacros}>Unlimited food scans · no trial limit.</Text>
+          </>
+        ) : trial.trial_active ? (
           <>
             <Text style={styles.targetCalories}>
               {trial.days_remaining} day{trial.days_remaining === 1 ? "" : "s"} left

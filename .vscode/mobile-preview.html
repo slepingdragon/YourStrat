@@ -7,7 +7,7 @@
     <script>
       // file:// tabs cannot embed the app reliably — use the http preview instead
       if (location.protocol === "file:") {
-        location.replace("http://127.0.0.1:8081/preview-frame.html");
+        location.replace("http://127.0.0.1:18081/preview-frame.html");
       }
     </script>
     <style>
@@ -98,11 +98,11 @@
         <div class="loading" id="loading">Loading app…</div>
         <div class="blocked hidden" id="blocked">
           <span>Preview did not load.</span>
-          <a href="http://127.0.0.1:8081/preview-frame.html">Open preview in browser panel</a>
+          <a href="http://127.0.0.1:18081/preview-frame.html">Open preview in browser panel</a>
         </div>
         <iframe
           id="app"
-          src="http://127.0.0.1:8081/"
+          src="http://127.0.0.1:18081/"
           title="YourStrat app"
           allow="local-network-access"
         ></iframe>
@@ -110,7 +110,7 @@
     </div>
     <p class="hint">
       Use this URL in Simple Browser:
-      <a href="http://127.0.0.1:8081/preview-frame.html">http://127.0.0.1:8081/preview-frame.html</a>
+      <a href="http://127.0.0.1:18081/preview-frame.html">http://127.0.0.1:18081/preview-frame.html</a>
       · Metro: <strong>Terminal → Run Build Task</strong>, or Ctrl+Shift+P → Tasks: Run Build Task → YourStrat: Mobile Preview, or <code>.\scripts\start-dev.ps1</code>. Ctrl+Alt+B in this workspace. Ctrl+Shift+B only when the editor is focused—not in Simple Browser.
     </p>
     <script>

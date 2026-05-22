@@ -4,9 +4,15 @@ from datetime import date, datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
-from app.config import settings
+from app.config import admin_email_set, settings
 
 TRIAL_DAYS = 7
+
+
+def is_admin_email(email: str | None) -> bool:
+    if not email:
+        return False
+    return email.strip().lower() in admin_email_set()
 
 
 def _parse_ts(value: str | datetime | None) -> datetime | None:
@@ -75,19 +81,30 @@ def increment_scan_count(sb, user_id: str) -> int:
     return new_count
 
 
-def build_trial_status(sb, user_id: str, profile_row: dict) -> dict:
+def build_trial_status(sb, user_id: str, profile_row: dict, user_email: str | None = None) -> dict:
     limit = settings.DAILY_SCAN_LIMIT
     scans_today = get_scans_today(sb, user_id)
+    if is_admin_email(user_email):
+        return {
+            "trial_active": True,
+            "days_remaining": 36500,
+            "scans_today": scans_today,
+            "scans_limit": 10_000,
+            "is_admin": True,
+        }
     active = is_trial_active(profile_row)
     return {
         "trial_active": active,
         "days_remaining": days_remaining(profile_row) if active else 0,
         "scans_today": scans_today,
         "scans_limit": limit,
+        "is_admin": False,
     }
 
 
-def check_scan_allowed(sb, user_id: str, profile_row: dict) -> None:
+def check_scan_allowed(sb, user_id: str, profile_row: dict, user_email: str | None = None) -> None:
+    if is_admin_email(user_email):
+        return
     if not is_trial_active(profile_row):
         raise HTTPException(
             status_code=403,

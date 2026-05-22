@@ -34,6 +34,7 @@ class TrialStatus(BaseModel):
     days_remaining: int
     scans_today: int
     scans_limit: int
+    is_admin: bool = False
 
 
 class Profile(BaseModel):

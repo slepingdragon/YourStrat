@@ -27,6 +27,7 @@ function NutrientTrendRowImpl({ metricId, values7d, today, target, onPress }: Pr
       accessibilityRole="button"
       accessibilityLabel={`${spec.label} trend. ${formatMetricAmount(today, spec.unit)} today, target ${formatMetricAmount(target, spec.unit)}. Tap for detail.`}
       style={({ pressed }) => ({
+        width: "100%",
         backgroundColor: colors.surface,
         borderColor: colors.border,
         borderWidth: 1,

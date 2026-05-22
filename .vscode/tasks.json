@@ -5,20 +5,20 @@
       "id": "openMobilePreviewFrame",
       "type": "command",
       "command": "simpleBrowser.show",
-      "args": ["http://127.0.0.1:8081/preview-frame.html"]
+      "args": ["http://127.0.0.1:18081/preview-frame.html"]
     },
     {
       "id": "openAppFullWidth",
       "type": "command",
       "command": "simpleBrowser.show",
-      "args": ["http://127.0.0.1:8081"]
+      "args": ["http://127.0.0.1:18081"]
     }
   ],
   "tasks": [
     {
-      "label": "YourStrat: Start backend (port 8000)",
+      "label": "YourStrat: Start backend (port 18000)",
       "type": "shell",
-      "command": "${workspaceFolder}/backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "command": "${workspaceFolder}/backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 18000 --reload",
       "options": {
         "cwd": "${workspaceFolder}/backend",
         "shell": {
@@ -55,9 +55,9 @@
       }
     },
     {
-      "label": "YourStrat: Start web (Expo port 8081)",
+      "label": "YourStrat: Start web (Expo port 18081)",
       "type": "shell",
-      "command": "npx expo start --web --port 8081 --clear",
+      "command": "npx expo start --web --port 18081 --clear",
       "options": {
         "cwd": "${workspaceFolder}/mobile",
         "shell": {
@@ -79,7 +79,7 @@
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".",
-          "endsPattern": "(localhost:8081|127\\.0\\.0\\.1:8081|Web is waiting|webpack compiled|Logs for your project|Metro waiting|Bundled|Web Bundled)"
+          "endsPattern": "(localhost:18081|127\\.0\\.0\\.1:18081|Web is waiting|webpack compiled|Logs for your project|Metro waiting|Bundled|Web Bundled)"
         }
       },
       "presentation": {
@@ -92,8 +92,8 @@
     {
       "label": "YourStrat: Start dev servers",
       "dependsOn": [
-        "YourStrat: Start backend (port 8000)",
-        "YourStrat: Start web (Expo port 8081)"
+        "YourStrat: Start backend (port 18000)",
+        "YourStrat: Start web (Expo port 18081)"
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []

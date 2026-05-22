@@ -50,7 +50,7 @@ export function getApiBaseUrl(): string {
     }
     return "/api";
   }
-  const base = envUrl || "http://127.0.0.1:8000";
+  const base = envUrl || "http://127.0.0.1:18000";
   return normalizeLocalApiUrl(base);
 }
 
@@ -191,6 +191,7 @@ export type TrialStatus = {
   days_remaining: number;
   scans_today: number;
   scans_limit: number;
+  is_admin: boolean;
 };
 
 export const DEFAULT_TRIAL_STATUS: TrialStatus = {
@@ -198,6 +199,7 @@ export const DEFAULT_TRIAL_STATUS: TrialStatus = {
   days_remaining: 0,
   scans_today: 0,
   scans_limit: 10,
+  is_admin: false,
 };
 
 export function normalizeTrial(raw?: Partial<TrialStatus> | null): TrialStatus {
@@ -209,6 +211,7 @@ export function normalizeTrial(raw?: Partial<TrialStatus> | null): TrialStatus {
     days_remaining: raw.days_remaining ?? 0,
     scans_today: raw.scans_today ?? 0,
     scans_limit: raw.scans_limit ?? DEFAULT_TRIAL_STATUS.scans_limit,
+    is_admin: raw.is_admin ?? false,
   };
 }
 

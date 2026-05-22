@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -9,6 +10,49 @@ import { scanMeal } from "@/lib/api";
 import { colors } from "@/theme/colors";
 
 const isWeb = Platform.OS === "web";
+
+function ShutterButton({ onPress, loading }: { onPress: () => void; loading: boolean }) {
+  const scale = useSharedValue(1);
+  const innerStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={loading}
+      onPressIn={() => {
+        scale.value = withSpring(0.86, { damping: 14, stiffness: 280 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 14, stiffness: 220 });
+      }}
+      accessibilityRole="button"
+      accessibilityLabel="Capture photo"
+      hitSlop={12}
+      style={{
+        width: 84,
+        height: 84,
+        borderRadius: 42,
+        borderWidth: 4,
+        borderColor: "rgba(255,255,255,0.95)",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "transparent",
+      }}
+    >
+      <Animated.View
+        style={[
+          {
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: loading ? "rgba(255,255,255,0.55)" : "white",
+          },
+          innerStyle,
+        ]}
+      />
+    </Pressable>
+  );
+}
 
 export default function ScanScreen() {
   const focused = useIsFocused();
@@ -75,16 +119,41 @@ export default function ScanScreen() {
   }
 
   return (
-    <Screen padding={false}>
-      <View style={{ flex: 1 }}>
+    <Screen padding={false} edges={["top"]}>
+      <View style={{ flex: 1, backgroundColor: "#000" }}>
         {focused ? (
           <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />
         ) : (
           <View style={{ flex: 1, backgroundColor: colors.surface }} />
         )}
-        <View style={{ padding: 24, gap: 12 }}>
-          <Button label="Capture" onPress={capture} loading={loading} />
-          <Button label="Photo library" variant="secondary" onPress={pickLibrary} disabled={loading} />
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            bottom: 28,
+            left: 0,
+            right: 0,
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          <ShutterButton onPress={capture} loading={loading} />
+          <Pressable onPress={pickLibrary} disabled={loading} hitSlop={12} accessibilityRole="button">
+            <Text
+              style={{
+                color: "white",
+                fontSize: 13,
+                fontWeight: "600",
+                letterSpacing: 0.3,
+                opacity: loading ? 0.4 : 0.85,
+                textShadowColor: "rgba(0,0,0,0.6)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              Photo library
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Screen>

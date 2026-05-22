@@ -1,9 +1,9 @@
-/** Dev-only: proxy /api/* → FastAPI on 127.0.0.1:8000 (same origin on web, no CORS). */
+/** Dev-only: proxy /api/* → FastAPI on 127.0.0.1:18000 (same origin on web, no CORS). */
 const http = require("http");
 const connect = require("connect");
 
 const API_HOST = "127.0.0.1";
-const API_PORT = 8000;
+const API_PORT = 18000;
 
 function proxyApiRequest(req, res) {
   const upstreamPath = (req.url || "").replace(/^\/api/, "") || "/";

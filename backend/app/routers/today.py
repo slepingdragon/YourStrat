@@ -13,4 +13,4 @@ def get_today(user: dict = Depends(get_current_user)):
     profile = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return fetch_today(sb, user["id"], profile.data)
+    return fetch_today(sb, user["id"], profile.data, user.get("email"))

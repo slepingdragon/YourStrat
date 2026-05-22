@@ -14,12 +14,12 @@ app = FastAPI(title="YourStrat API", version="1.0.0")
 
 # Credentials + wildcard origin is invalid in browsers; allow Expo web preview hosts.
 _CORS_ORIGINS = [
-    "http://localhost:8081",
-    "http://127.0.0.1:8081",
-    "http://localhost:8082",
-    "http://127.0.0.1:8082",
-    "http://localhost:8083",
-    "http://127.0.0.1:8083",
+    "http://localhost:18081",
+    "http://127.0.0.1:18081",
+    "http://localhost:18082",
+    "http://127.0.0.1:18082",
+    "http://localhost:18083",
+    "http://127.0.0.1:18083",
     "http://localhost:19006",
     "http://127.0.0.1:19006",
 ]
@@ -63,11 +63,11 @@ _ROOT_HTML = r"""<!DOCTYPE html>
 </head>
 <body>
   <h1>YourStrat API</h1>
-  <p>This server (<code>127.0.0.1:8000</code>) is the backend only — not the mobile app UI.</p>
+  <p>This server (<code>127.0.0.1:18000</code>) is the backend only — not the mobile app UI.</p>
   <ul>
     <li><a href="/docs">API docs (Swagger)</a></li>
     <li><a href="/health?html=1">Health check</a> (<a href="/health">JSON</a>)</li>
-    <li>App preview: <a href="http://127.0.0.1:8082/preview-frame.html">http://127.0.0.1:8082/preview-frame.html</a> (Expo web; port 8083 if 8082 is busy)</li>
+    <li>App preview: <a href="http://127.0.0.1:18082/preview-frame.html">http://127.0.0.1:18082/preview-frame.html</a> (Expo web; port 18083 if 18082 is busy)</li>
   </ul>
   <p>In VS Code/Cursor: <strong>Terminal → Run Build Task</strong>, or <strong>Ctrl+Shift+P</strong> → <em>Tasks: Run Build Task</em> → <em>YourStrat: Mobile Preview</em>, or <code>.\scripts\start-dev.ps1</code> from repo root. <em>Ctrl+Shift+B</em> only when the editor is focused; <strong>Ctrl+Alt+B</strong> in this workspace.</p>
 </body>

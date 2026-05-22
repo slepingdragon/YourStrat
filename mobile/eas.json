@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://yourstrat-production.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://jjxjonywrjqoindvfdon.supabase.co",

@@ -57,9 +57,13 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
       ) : null}
 
       {hero ? (
+        <View style={{ width: "100%", alignItems: "center", marginBottom: 16 }}>
         <Pressable
           onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id: "calories" } })}
-          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, marginBottom: 16, alignItems: "center" })}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.85 : 1,
+            alignItems: "center",
+          })}
           accessibilityRole="button"
           accessibilityLabel={`${hero.value} ${hero.label}. Open nutrition details.`}
         >
@@ -122,6 +126,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
             />
           </View>
         </Pressable>
+        </View>
       ) : t ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", marginBottom: 16 }}>
           {t.daily_calorie_target.toLocaleString()} cal target

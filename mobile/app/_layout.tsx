@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SetupEnvScreen } from "@/components/SetupEnvScreen";
 import { ToastHost, toastError } from "@/components/ui";
-import { getProfile, isNetworkError, isUnauthorized, pingApiHealth } from "@/lib/api";
+import { getNativeApiConfigError, getProfile, isNetworkError, isUnauthorized, pingApiHealth } from "@/lib/api";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 
@@ -66,6 +67,11 @@ export default function RootLayout() {
           return;
         }
       }
+      const nativeApiConfig = getNativeApiConfigError();
+      if (nativeApiConfig && !onPublicAuth) {
+        toastError(nativeApiConfig);
+        return;
+      }
       try {
         const p = await getProfile(session.access_token);
         if (!cancelled) {
@@ -113,28 +119,32 @@ export default function RootLayout() {
 
   if (!isSupabaseConfigured) {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SetupEnvScreen />
-      </GestureHandlerRootView>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SetupEnvScreen />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#08080B" } }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="scan-result" />
-        <Stack.Screen name="ai-info" />
-        <Stack.Screen name="meal/[id]" />
-        <Stack.Screen name="nutrition/metric/[id]" />
-        <Stack.Screen name="nutrition/day/[date]" />
-        <Stack.Screen name="routine/new" />
-        <Stack.Screen name="routine/[id]" />
-        <Stack.Screen name="session/[id]/index" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="session/[id]/summary" />
-      </Stack>
-      <ToastHost />
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#08080B" } }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="scan-result" />
+          <Stack.Screen name="ai-info" />
+          <Stack.Screen name="meal/[id]" />
+          <Stack.Screen name="nutrition/metric/[id]" />
+          <Stack.Screen name="nutrition/day/[date]" />
+          <Stack.Screen name="routine/new" />
+          <Stack.Screen name="routine/[id]" />
+          <Stack.Screen name="session/[id]/index" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="session/[id]/summary" />
+        </Stack>
+        <ToastHost />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
