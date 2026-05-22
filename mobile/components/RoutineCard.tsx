@@ -1,7 +1,7 @@
 import { memo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { Button, Card } from "@/components/ui";
-import { ChevronRight } from "@/components/icons";
+import { ChevronRight, Trash } from "@/components/icons";
 import type { Routine } from "@/lib/api";
 import { formatScheduledDays } from "@/lib/scheduleDays";
 import { displayRoutineName, routineExerciseCount } from "@/lib/routineName";
@@ -12,6 +12,7 @@ type Props = {
   routine: Routine;
   onOpen: () => void;
   onStart: () => void;
+  onDelete?: () => void;
 };
 
 function exerciseMetaLine(count: number, scheduledDays?: number[]): string {
@@ -27,7 +28,22 @@ function exerciseMetaLine(count: number, scheduledDays?: number[]): string {
   return exercisePart;
 }
 
-function RoutineCardImpl({ routine, onOpen, onStart }: Props) {
+function confirmDelete(name: string, onConfirm: () => void) {
+  const title = `Delete "${name}"?`;
+  const message = "This permanently removes the routine and all its exercises. This cannot be undone.";
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined" && window.confirm(`${title}\n\n${message}`)) {
+      onConfirm();
+    }
+    return;
+  }
+  Alert.alert(title, message, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Delete", style: "destructive", onPress: onConfirm },
+  ]);
+}
+
+function RoutineCardImpl({ routine, onOpen, onStart, onDelete }: Props) {
   const count = routineExerciseCount(routine);
   const title = displayRoutineName(routine.name);
   const meta = exerciseMetaLine(count, routine.scheduled_days);
@@ -75,15 +91,40 @@ function RoutineCardImpl({ routine, onOpen, onStart }: Props) {
           borderTopColor: colors.border,
           paddingHorizontal: spacing.lg,
           paddingVertical: spacing.md,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.sm,
         }}
       >
-        <Button
-          label="Start"
-          variant="secondary"
-          compact
-          disabled={!canStart}
-          onPress={onStart}
-        />
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Start"
+            variant="secondary"
+            compact
+            disabled={!canStart}
+            onPress={onStart}
+          />
+        </View>
+        {onDelete ? (
+          <Pressable
+            onPress={() => confirmDelete(title, onDelete)}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete routine ${title}`}
+            hitSlop={10}
+            style={({ pressed }) => ({
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: pressed ? colors.surface : "transparent",
+            })}
+          >
+            <Trash color={colors.textMuted} size={18} />
+          </Pressable>
+        ) : null}
       </View>
     </Card>
   );

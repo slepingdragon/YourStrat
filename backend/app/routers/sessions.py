@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_current_user, get_supabase
-from app.models.schemas import SessionOut, SessionSetInput, SessionStart
+from app.models.schemas import SessionFinish, SessionOut, SessionSetInput, SessionStart
 from app.services.met import calories_burned
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -17,6 +17,7 @@ def start_session(body: SessionStart, user: dict = Depends(get_current_user)):
         "routine_id": body.routine_id,
         "started_at": datetime.now(timezone.utc).isoformat(),
         "calories_burned": 0,
+        "planned_rpe": body.planned_rpe,
     }
     res = sb.table("sessions").insert(row).execute()
     if not res.data:
@@ -27,6 +28,7 @@ def start_session(body: SessionStart, user: dict = Depends(get_current_user)):
         routine_id=s.get("routine_id"),
         started_at=s["started_at"],
         calories_burned=s.get("calories_burned", 0),
+        planned_rpe=s.get("planned_rpe"),
     )
 
 
@@ -47,8 +49,36 @@ def append_set(session_id: str, body: SessionSetInput, user: dict = Depends(get_
     return {"ok": True}
 
 
+@router.post("/{session_id}/rate", response_model=SessionOut)
+def rate_session(session_id: str, body: SessionFinish, user: dict = Depends(get_current_user)):
+    sb = get_supabase()
+    session = sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]).maybe_single().execute()
+    if not session.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if body.actual_rpe is None:
+        raise HTTPException(status_code=400, detail="actual_rpe is required")
+    res = (
+        sb.table("sessions")
+        .update({"actual_rpe": body.actual_rpe})
+        .eq("id", session_id)
+        .eq("user_id", user["id"])
+        .execute()
+    )
+    s = res.data[0] if res.data else session.data
+    return SessionOut(
+        id=s["id"],
+        routine_id=s.get("routine_id"),
+        started_at=s["started_at"],
+        ended_at=s.get("ended_at"),
+        duration_sec=s.get("duration_sec"),
+        calories_burned=s.get("calories_burned", 0),
+        planned_rpe=s.get("planned_rpe"),
+        actual_rpe=s.get("actual_rpe"),
+    )
+
+
 @router.post("/{session_id}/finish", response_model=SessionOut)
-def finish_session(session_id: str, user: dict = Depends(get_current_user)):
+def finish_session(session_id: str, body: SessionFinish | None = None, user: dict = Depends(get_current_user)):
     sb = get_supabase()
     session = sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]).maybe_single().execute()
     if not session.data:
@@ -81,11 +111,13 @@ def finish_session(session_id: str, user: dict = Depends(get_current_user)):
                 dur = row.get("duration_sec") or (row.get("sets") or 1) * (row.get("reps") or 10) * 3
                 total_burn += calories_burned(met, weight_kg, dur)
 
-    update = {
+    update: dict = {
         "ended_at": ended.isoformat(),
         "duration_sec": duration_sec,
         "calories_burned": total_burn,
     }
+    if body and body.actual_rpe is not None:
+        update["actual_rpe"] = body.actual_rpe
     res = sb.table("sessions").update(update).eq("id", session_id).execute()
     s2 = res.data[0] if res.data else {**s, **update}
     return SessionOut(
@@ -95,4 +127,6 @@ def finish_session(session_id: str, user: dict = Depends(get_current_user)):
         ended_at=s2.get("ended_at"),
         duration_sec=s2.get("duration_sec"),
         calories_burned=s2.get("calories_burned", 0),
+        planned_rpe=s2.get("planned_rpe"),
+        actual_rpe=s2.get("actual_rpe"),
     )

@@ -141,6 +141,11 @@ class RoutineOut(BaseModel):
 
 class SessionStart(BaseModel):
     routine_id: str | None = None
+    planned_rpe: int | None = Field(default=None, ge=1, le=10)
+
+
+class SessionFinish(BaseModel):
+    actual_rpe: int | None = Field(default=None, ge=1, le=10)
 
 
 class SessionSetInput(BaseModel):
@@ -158,6 +163,8 @@ class SessionOut(BaseModel):
     ended_at: str | None = None
     duration_sec: int | None = None
     calories_burned: int = 0
+    planned_rpe: int | None = None
+    actual_rpe: int | None = None
 
 
 class NutritionDayTotals(BaseModel):

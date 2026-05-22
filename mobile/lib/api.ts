@@ -338,6 +338,8 @@ export type Session = {
   ended_at?: string | null;
   duration_sec?: number | null;
   calories_burned: number;
+  planned_rpe?: number | null;
+  actual_rpe?: number | null;
 };
 
 export type OnboardingInput = {
@@ -510,12 +512,28 @@ export async function createRoutine(name: string, exercises: RoutineExercise[], 
   return handle<Routine>(res);
 }
 
-export async function startSession(routineId: string | null) {
+export async function deleteRoutine(id: string) {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl(`/routines/${id}`), { method: "DELETE", headers });
+  return handle<{ ok: boolean }>(res);
+}
+
+export async function startSession(routineId: string | null, plannedRpe?: number) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/sessions/start"), {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ routine_id: routineId }),
+    body: JSON.stringify({ routine_id: routineId, planned_rpe: plannedRpe ?? null }),
+  });
+  return handle<Session>(res);
+}
+
+export async function rateSession(sessionId: string, actualRpe: number) {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl(`/sessions/${sessionId}/rate`), {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ actual_rpe: actualRpe }),
   });
   return handle<Session>(res);
 }

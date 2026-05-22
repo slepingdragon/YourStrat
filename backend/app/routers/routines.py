@@ -118,3 +118,20 @@ def create_routine(body: RoutineCreate, user: dict = Depends(get_current_user)):
 @router.get("/{routine_id}", response_model=RoutineOut)
 def get_routine(routine_id: str, user: dict = Depends(get_current_user)):
     return _routine_detail(get_supabase(), routine_id, user["id"])
+
+
+@router.delete("/{routine_id}")
+def delete_routine(routine_id: str, user: dict = Depends(get_current_user)):
+    sb = get_supabase()
+    existing = (
+        sb.table("routines")
+        .select("id")
+        .eq("id", routine_id)
+        .eq("user_id", user["id"])
+        .maybe_single()
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Routine not found")
+    sb.table("routines").delete().eq("id", routine_id).eq("user_id", user["id"]).execute()
+    return {"ok": True}
