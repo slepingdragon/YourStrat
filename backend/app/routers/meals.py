@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
@@ -9,6 +10,7 @@ from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
 from app.services.trial import check_scan_allowed, increment_scan_count
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/meals", tags=["meals"])
 
 
@@ -79,10 +81,29 @@ async def scan_meal(
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     check_scan_allowed(sb, user["id"], profile.data, user.get("email"))
-    increment_scan_count(sb, user["id"])
     data = await file.read()
     mime = file.content_type or "image/jpeg"
-    return await scan_food(data, mime)
+    try:
+        result = await scan_food(data, mime)
+    except Exception as e:
+        logger.exception("scan_food failed")
+        msg = str(e).lower()
+        if "api key" in msg or "api_key" in msg or "permission" in msg or "401" in msg or "403" in msg or "unauthenticated" in msg:
+            raise HTTPException(
+                status_code=503,
+                detail="Food scan service is unavailable: GEMINI_API_KEY missing or invalid on the backend.",
+            ) from e
+        if "quota" in msg or "rate" in msg or "429" in msg:
+            raise HTTPException(
+                status_code=503,
+                detail="Food scan service is temporarily over quota. Try again in a minute.",
+            ) from e
+        raise HTTPException(
+            status_code=503,
+            detail=f"Food scan failed: {str(e)[:200] or type(e).__name__}",
+        ) from e
+    increment_scan_count(sb, user["id"])
+    return result
 
 
 @router.post("/", response_model=MealOut)
