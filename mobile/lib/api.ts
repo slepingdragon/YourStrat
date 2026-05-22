@@ -106,16 +106,34 @@ export function isProfileNotFound(err: unknown): boolean {
   return err instanceof Error && /profile not found/i.test(err.message);
 }
 
+function describeError(e: unknown): string {
+  if (e instanceof Error) {
+    const parts: string[] = [];
+    if (e.name && e.name !== "Error") parts.push(e.name);
+    if (e.message && e.message.trim()) parts.push(e.message);
+    const code = (e as { code?: unknown }).code;
+    if (code !== undefined && code !== null) parts.push(`code=${String(code)}`);
+    const cause = (e as { cause?: unknown }).cause;
+    if (cause) parts.push(`cause=${cause instanceof Error ? cause.message : String(cause)}`);
+    if (parts.length === 0) parts.push(e.toString() || "Error with no message");
+    return parts.join(" | ");
+  }
+  if (e === null) return "null";
+  if (e === undefined) return "undefined";
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return String(e);
+  }
+}
+
 async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init);
   } catch (e) {
-    const original = e instanceof Error ? e.message : String(e);
-    console.error("apiFetch failed:", input, original);
-    if (isNetworkError(e)) {
-      throw new Error(`Failed to fetch: ${original}`);
-    }
-    throw e;
+    const description = describeError(e);
+    console.error("apiFetch failed:", input, description, e);
+    throw new Error(`Failed to fetch: ${description}`);
   }
 }
 
