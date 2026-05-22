@@ -36,7 +36,8 @@ export default function ResetScreen() {
         We will email you a link.
       </Text>
       <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-      <Button label="Send link" onPress={send} loading={loading} />
+      <View style={{ height: 24 }} />
+      <Button label="Send link" onPress={send} loading={loading} compact />
       <View style={{ height: 8 }} />
       <LinkButton href="/(auth)/login" label="Back to sign in" />
     </Screen>

@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { BurnTrendRow } from "@/components/nutrition/BurnTrendRow";
 import { NutrientTrendRow } from "@/components/nutrition/NutrientTrendRow";
 import { ScoreStrip } from "@/components/nutrition/ScoreStrip";
 import { NutritionPastDays } from "@/components/NutritionPastDays";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Screen, Skeleton, toastError } from "@/components/ui";
-import { getNutritionJournal, type NutritionDay, type NutritionDayTotals } from "@/lib/api";
+import { getNutritionJournal, getSessionStats, type NutritionDay, type NutritionDayTotals, type SessionStats } from "@/lib/api";
 import { computeSummaryStats } from "@/lib/nutritionSummaryStats";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
@@ -68,6 +69,7 @@ export function NutritionTrendsView() {
   const todaySnapshot = useStore((s) => s.today);
   const targets = targetsFromProfile(profile);
   const [days, setDays] = useState<NutritionDay[]>([]);
+  const [burnStats, setBurnStats] = useState<SessionStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [journalOffline, setJournalOffline] = useState(false);
   const [journalLoaded, setJournalLoaded] = useState(false);
@@ -92,19 +94,26 @@ export function NutritionTrendsView() {
     return map;
   }, [window7]);
 
+  const session = useStore((s) => s.session);
+
   const load = useCallback(async () => {
-    try {
-      const data = await getNutritionJournal();
-      setDays(data.days);
+    if (!session) return;
+    const [journalRes, statsRes] = await Promise.allSettled([getNutritionJournal(), getSessionStats()]);
+    if (journalRes.status === "fulfilled") {
+      setDays(journalRes.value.days);
       setJournalOffline(false);
-    } catch (e) {
-      console.error(e);
+    } else {
+      console.error(journalRes.reason);
       setJournalOffline(true);
-      toastError((e as Error).message, () => void load());
-    } finally {
-      setJournalLoaded(true);
+      toastError((journalRes.reason as Error).message, () => void load());
     }
-  }, []);
+    if (statsRes.status === "fulfilled") {
+      setBurnStats(statsRes.value);
+    } else {
+      console.error(statsRes.reason);
+    }
+    setJournalLoaded(true);
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {
@@ -206,6 +215,13 @@ export function NutritionTrendsView() {
                   }
                 />
               ))}
+
+              {burnStats ? (
+                <>
+                  <SectionLabel>Workouts</SectionLabel>
+                  <BurnTrendRow days={burnStats.burn_last_7_days} />
+                </>
+              ) : null}
 
               {pastDays.length > 0 ? (
                 <>

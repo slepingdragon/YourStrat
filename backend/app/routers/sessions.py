@@ -1,12 +1,69 @@
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_current_user, get_supabase
-from app.models.schemas import SessionFinish, SessionOut, SessionSetInput, SessionStart
+from app.models.schemas import BurnDay, SessionFinish, SessionOut, SessionSetInput, SessionStart, SessionStats
 from app.services.met import calories_burned
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
+
+
+@router.get("/stats", response_model=SessionStats)
+def session_stats(user: dict = Depends(get_current_user)):
+    sb = get_supabase()
+    # Lifetime totals
+    res = (
+        sb.table("sessions")
+        .select("id, started_at, calories_burned, actual_rpe, ended_at")
+        .eq("user_id", user["id"])
+        .execute()
+    )
+    rows = res.data or []
+    lifetime_burn = 0
+    lifetime_sessions = 0
+    rpe_sum = 0
+    rpe_count = 0
+    for s in rows:
+        # Only count finished sessions in lifetime totals.
+        if not s.get("ended_at"):
+            continue
+        lifetime_sessions += 1
+        lifetime_burn += int(s.get("calories_burned", 0) or 0)
+        rpe = s.get("actual_rpe")
+        if rpe is not None:
+            rpe_sum += int(rpe)
+            rpe_count += 1
+
+    avg_rpe = (rpe_sum / rpe_count) if rpe_count > 0 else None
+
+    # Last 7 days burn — bucket by local date.
+    today = date.today()
+    seven_days_ago = today - timedelta(days=6)
+    by_day: dict[str, int] = defaultdict(int)
+    for s in rows:
+        if not s.get("ended_at"):
+            continue
+        started = s.get("started_at", "")
+        day_key = started[:10] if started else ""
+        if not day_key:
+            continue
+        if day_key < seven_days_ago.isoformat():
+            continue
+        by_day[day_key] += int(s.get("calories_burned", 0) or 0)
+
+    days_out: list[BurnDay] = []
+    for i in range(7):
+        d = (seven_days_ago + timedelta(days=i)).isoformat()
+        days_out.append(BurnDay(date=d, calories=by_day.get(d, 0)))
+
+    return SessionStats(
+        lifetime_calories_burned=lifetime_burn,
+        lifetime_sessions=lifetime_sessions,
+        avg_actual_rpe=round(avg_rpe, 1) if avg_rpe is not None else None,
+        burn_last_7_days=days_out,
+    )
 
 
 @router.post("/start", response_model=SessionOut)

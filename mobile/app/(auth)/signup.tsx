@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Button, Input, LinkButton, toastError, toastSuccess } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
+import { signInWithGoogle, supabase } from "@/lib/supabase";
 import { colors } from "@/theme/colors";
 
 export default function SignupScreen() {
@@ -10,6 +10,19 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const onGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      console.error(e);
+      toastError((e as Error).message ?? "Google sign in failed. Try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const signUp = async () => {
     const trimmed = email.trim();
@@ -51,6 +64,8 @@ export default function SignupScreen() {
       <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       <View style={{ height: 24 }} />
       <Button label="Sign up" onPress={signUp} loading={loading} />
+      <View style={{ height: 12 }} />
+      <Button label="Continue with Google" onPress={onGoogle} loading={googleLoading} variant="secondary" />
       <View style={{ height: 8 }} />
       <LinkButton href="/(auth)/login" label="Already have an account" />
     </Screen>

@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
 import { ChevronDown } from "@/components/icons";
 import { Screen, Button, Input, OptionCard, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
-import { getProfile, normalizeTrial, updateProfile } from "@/lib/api";
+import { getProfile, getSessionStats, normalizeTrial, updateProfile, type SessionStats } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { cmToIn, computeTargets, inToCm, kgToLbs, lbsToKg } from "@/lib/targets";
@@ -30,10 +30,12 @@ function displayHeight(cm: number, units: "metric" | "imperial") {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const session = useStore((s) => s.session);
   const profile = useStore((s) => s.profile);
   const setProfile = useStore((s) => s.setProfile);
   const setSession = useStore((s) => s.setSession);
 
+  const [stats, setStats] = useState<SessionStats | null>(null);
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
@@ -63,6 +65,7 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!session) return;
       getProfile()
         .then((p) => {
           setProfile(p);
@@ -72,7 +75,12 @@ export default function ProfileScreen() {
           console.error(e);
           toastError((e as Error).message);
         });
-    }, [hydrate, setProfile])
+      getSessionStats()
+        .then(setStats)
+        .catch((e) => {
+          console.error(e);
+        });
+    }, [session, hydrate, setProfile])
   );
 
   const preview = useMemo(() => {
@@ -225,6 +233,21 @@ export default function ProfileScreen() {
           </>
         )}
       </Card>
+
+      {stats && stats.lifetime_sessions > 0 ? (
+        <>
+          <Text style={styles.sectionTitle}>Lifetime stats</Text>
+          <Card style={CARD_PAD}>
+            <Text style={styles.targetCalories}>
+              {stats.lifetime_calories_burned.toLocaleString()} cal burned
+            </Text>
+            <Text style={styles.targetMacros}>
+              {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"} logged
+              {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
+            </Text>
+          </Card>
+        </>
+      ) : null}
 
       <Text style={styles.sectionTitle}>Daily targets</Text>
       <Card style={CARD_PAD}>

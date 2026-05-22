@@ -6,6 +6,7 @@ import { RpePicker } from "@/components/RpePicker";
 import { Dumbbell } from "@/components/icons";
 import { Screen, Button, Card, toastError, toastSuccess } from "@/components/ui";
 import { deleteRoutine, getRoutine, listRoutines, startSession, type Routine } from "@/lib/api";
+import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -24,19 +25,21 @@ function dayOrderFromToday(): number[] {
 
 export default function WorkoutsScreen() {
   const router = useRouter();
+  const session = useStore((s) => s.session);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [pendingRoutineId, setPendingRoutineId] = useState<string | null>(null);
   const [plannedRpe, setPlannedRpe] = useState<number | null>(null);
   const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
+    if (!session) return;
     try {
       setRoutines(await listRoutines());
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);
     }
-  }, []);
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {

@@ -192,6 +192,7 @@ class ActiveSessionInfo(BaseModel):
     routine_id: str | None
     routine_name: str | None
     started_at: str
+    planned_rpe: int | None = None
 
 
 class CompletedSessionInfo(BaseModel):
@@ -200,6 +201,20 @@ class CompletedSessionInfo(BaseModel):
     routine_name: str | None
     duration_sec: int | None
     calories_burned: int
+    planned_rpe: int | None = None
+    actual_rpe: int | None = None
+
+
+class BurnDay(BaseModel):
+    date: str
+    calories: int
+
+
+class SessionStats(BaseModel):
+    lifetime_calories_burned: int
+    lifetime_sessions: int
+    avg_actual_rpe: float | None = None
+    burn_last_7_days: list[BurnDay] = Field(default_factory=list)
 
 
 class ScheduledRoutineInfo(BaseModel):

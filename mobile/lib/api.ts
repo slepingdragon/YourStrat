@@ -268,6 +268,7 @@ export type ActiveSessionInfo = {
   routine_id: string | null;
   routine_name: string | null;
   started_at: string;
+  planned_rpe?: number | null;
 };
 
 export type CompletedSessionInfo = {
@@ -276,6 +277,20 @@ export type CompletedSessionInfo = {
   routine_name: string | null;
   duration_sec: number | null;
   calories_burned: number;
+  planned_rpe?: number | null;
+  actual_rpe?: number | null;
+};
+
+export type BurnDay = {
+  date: string;
+  calories: number;
+};
+
+export type SessionStats = {
+  lifetime_calories_burned: number;
+  lifetime_sessions: number;
+  avg_actual_rpe: number | null;
+  burn_last_7_days: BurnDay[];
 };
 
 export type ScheduledRoutineInfo = {
@@ -552,4 +567,10 @@ export async function finishSession(sessionId: string) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl(`/sessions/${sessionId}/finish`), { method: "POST", headers });
   return handle<Session>(res);
+}
+
+export async function getSessionStats() {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl("/sessions/stats"), { headers });
+  return handle<SessionStats>(res);
 }

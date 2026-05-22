@@ -139,6 +139,8 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         </View>
       ) : null}
 
+      <EffortRecap today={today} />
+
       {today ? (
         <View style={{ marginBottom: 16 }}>
           <TodayTrioCards today={today} profile={profile} />
@@ -190,4 +192,63 @@ function EquationCell({ value, unit, color }: { value: number; unit: string; col
 
 function EquationDot() {
   return <Text style={{ color: colors.textMuted, fontSize: 12 }}>·</Text>;
+}
+
+function EffortRecap({ today }: { today: TodaySnapshot | null }) {
+  const planned = today?.active_session?.planned_rpe;
+  const actual = today?.last_completed_session_today?.actual_rpe;
+  const burn = today?.burned_calories ?? 0;
+  if (!today || (planned == null && actual == null && burn === 0)) {
+    return null;
+  }
+  return (
+    <View
+      style={{
+        width: "100%",
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 16,
+        gap: 6,
+      }}
+    >
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 11,
+          fontWeight: "700",
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+        }}
+      >
+        Today's effort
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        {burn > 0 ? (
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontVariant: ["tabular-nums"] }}>
+            {Math.round(burn).toLocaleString()} cal burned
+          </Text>
+        ) : null}
+        {planned != null ? (
+          <>
+            {burn > 0 ? <EquationDot /> : null}
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              planned {planned}/10
+            </Text>
+          </>
+        ) : null}
+        {actual != null ? (
+          <>
+            {(burn > 0 || planned != null) ? <EquationDot /> : null}
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
+              actual {actual}/10
+            </Text>
+          </>
+        ) : null}
+      </View>
+    </View>
+  );
 }

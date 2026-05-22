@@ -152,7 +152,7 @@ def _fetch_workout_state(
 ) -> tuple[int, ActiveSessionInfo | None, CompletedSessionInfo | None]:
     sessions_res = (
         sb.table("sessions")
-        .select("id, routine_id, started_at, ended_at, duration_sec, calories_burned")
+        .select("id, routine_id, started_at, ended_at, duration_sec, calories_burned, planned_rpe, actual_rpe")
         .eq("user_id", user_id)
         .gte("started_at", start)
         .lte("started_at", end)
@@ -185,6 +185,7 @@ def _fetch_workout_state(
                 routine_id=str(rid) if rid else None,
                 routine_name=rname,
                 started_at=s["started_at"],
+                planned_rpe=s.get("planned_rpe"),
             )
         elif s.get("ended_at") is not None and completed is None:
             completed = CompletedSessionInfo(
@@ -193,6 +194,8 @@ def _fetch_workout_state(
                 routine_name=rname,
                 duration_sec=s.get("duration_sec"),
                 calories_burned=int(s.get("calories_burned", 0) or 0),
+                planned_rpe=s.get("planned_rpe"),
+                actual_rpe=s.get("actual_rpe"),
             )
         if active is not None and completed is not None:
             break

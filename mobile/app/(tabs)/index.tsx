@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
 export default function TodayScreen() {
+  const session = useStore((s) => s.session);
   const today = useStore((s) => s.today);
   const profile = useStore((s) => s.profile);
   const routines = useStore((s) => s.routines);
@@ -19,6 +20,7 @@ export default function TodayScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
+    if (!session) return;
     const [todayRes, routinesRes, journalRes] = await Promise.allSettled([
       getToday(),
       listRoutines(),
@@ -40,7 +42,7 @@ export default function TodayScreen() {
     } else {
       console.error(journalRes.reason);
     }
-  }, [setToday, setRoutines, setSparkline]);
+  }, [session, setToday, setRoutines, setSparkline]);
 
   useFocusEffect(
     useCallback(() => {

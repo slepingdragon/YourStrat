@@ -47,7 +47,8 @@
         {
           "photosPermission": "YourStrat needs photo library access."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
