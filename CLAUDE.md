@@ -190,7 +190,36 @@ cd backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 0.0.0.0 --
 
 ---
 
-## 10. Final Word
+## 10. Running the dev server (one-click, phone-first)
+
+For the **mobile dev-client + Metro tunnel** loop — the workflow Brady uses when iterating against the installed APK on his phone — there is a one-click launcher. No terminal needed.
+
+**Launch:** double-click `YourStrat Dev` on the Windows desktop (or run [mobile/play.cmd](mobile/play.cmd) directly). It opens a terminal, checks the port, prints the LAN `exp://<your-IP>:8888` URL, and starts Metro with `--dev-client --port 8888`.
+
+**LAN mode by default** — phone + desktop must be on the same WiFi. The tunnel (`--tunnel`) variant exists for cellular testing but is broken on Expo SDK 51+ unless you have your own `@expo/ngrok` account; Expo's bundled shared account was deprecated. Daily dev on the same network → LAN. If you need tunnel later, edit `MODE_FLAGS` in `play.cmd`.
+
+**Port: 8888.** Picked because:
+- **8081** is Etsy OAuth's registered callback and Metro's historical default — both cause callback collisions if Etsy work is ever in scope.
+- **8082–8083** are Metro's auto-fallback range; using them defeats the purpose of pinning.
+- **8088** is already used on Brady's desktop by another dev server.
+- 8888 is memorable, in nobody's reserved range, and matches the "alternate web port" muscle memory.
+
+**Hot reload** is assumed. JS/TS/asset edits trigger a Fast Refresh in the dev-client app in ~1–2 sec — no rebuild. You only need a new APK build (`eas build --profile development --platform android`) when a native dependency or `app.json` plugin changes.
+
+**Connect** by either scanning the QR code Metro prints, or pasting the `exp://<LAN-IP>:8888` URL into the dev-client's "Enter URL manually" screen. The LAN IP is auto-detected from `ipconfig` and printed at startup.
+
+**Firewall:** Windows Defender prompts on first run — click **Allow**. To pre-create the rule (elevated PowerShell):
+```powershell
+New-NetFirewallRule -DisplayName "YourStrat dev (Metro 8888)" -Direction Inbound -Protocol TCP -LocalPort 8888 -Action Allow -Profile Private,Domain
+```
+
+**Stop:** `Ctrl+C` twice in the launcher window, or just close it.
+
+The script keeps the window open after exit so you can read errors (no vanishing on crash).
+
+---
+
+## 11. Final Word
 
 YourStrat is a **disciplined, premium product**. The bar is: a stranger picks up the phone, opens the app, logs a meal and a workout in under 60 seconds, and walks away thinking "this is a real, finished app." Every commit either moves us closer to that bar or it doesn't ship.
 
