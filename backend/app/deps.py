@@ -11,6 +11,19 @@ def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
+class _EmptySingle:
+    """Stand-in for a postgrest response when maybe_single() matched 0 rows.
+    Newer postgrest-py returns None entirely instead of Response(data=None)."""
+    data = None
+
+
+def safe_single(query):
+    """Run `.maybe_single().execute()` and always return an object with `.data`.
+    Use instead of `.maybe_single().execute()` directly."""
+    res = query.maybe_single().execute()
+    return res if res is not None else _EmptySingle()
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:

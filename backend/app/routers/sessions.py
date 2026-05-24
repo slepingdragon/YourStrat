@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.deps import get_current_user, get_supabase
+from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import BurnDay, SessionFinish, SessionOut, SessionSetInput, SessionStart, SessionStats
 from app.services.met import calories_burned
 
@@ -92,7 +92,7 @@ def start_session(body: SessionStart, user: dict = Depends(get_current_user)):
 @router.post("/{session_id}/sets")
 def append_set(session_id: str, body: SessionSetInput, user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    session = sb.table("sessions").select("id").eq("id", session_id).eq("user_id", user["id"]).maybe_single().execute()
+    session = safe_single(sb.table("sessions").select("id").eq("id", session_id).eq("user_id", user["id"]))
     if not session.data:
         raise HTTPException(status_code=404, detail="Session not found")
     sb.table("session_sets").insert({
@@ -109,7 +109,7 @@ def append_set(session_id: str, body: SessionSetInput, user: dict = Depends(get_
 @router.post("/{session_id}/rate", response_model=SessionOut)
 def rate_session(session_id: str, body: SessionFinish, user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    session = sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]).maybe_single().execute()
+    session = safe_single(sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]))
     if not session.data:
         raise HTTPException(status_code=404, detail="Session not found")
     if body.actual_rpe is None:
@@ -137,11 +137,11 @@ def rate_session(session_id: str, body: SessionFinish, user: dict = Depends(get_
 @router.post("/{session_id}/finish", response_model=SessionOut)
 def finish_session(session_id: str, body: SessionFinish | None = None, user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    session = sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]).maybe_single().execute()
+    session = safe_single(sb.table("sessions").select("*").eq("id", session_id).eq("user_id", user["id"]))
     if not session.data:
         raise HTTPException(status_code=404, detail="Session not found")
     s = session.data
-    profile = sb.table("profiles").select("weight_kg").eq("id", user["id"]).maybe_single().execute()
+    profile = safe_single(sb.table("profiles").select("weight_kg").eq("id", user["id"]))
     weight_kg = float(profile.data["weight_kg"]) if profile.data else 70.0
 
     sets_res = sb.table("session_sets").select("exercise_id,duration_sec").eq("session_id", session_id).execute()
@@ -151,7 +151,7 @@ def finish_session(session_id: str, body: SessionFinish | None = None, user: dic
     duration_sec = int((ended - started).total_seconds())
 
     for row in sets_res.data or []:
-        ex = sb.table("exercises").select("met_value,type").eq("id", row["exercise_id"]).maybe_single().execute()
+        ex = safe_single(sb.table("exercises").select("met_value,type").eq("id", row["exercise_id"]))
         met = 5.0
         if ex.data:
             met = float(ex.data["met_value"])
@@ -163,7 +163,7 @@ def finish_session(session_id: str, body: SessionFinish | None = None, user: dic
         if routine_id:
             re = sb.table("routine_exercises").select("exercise_id,duration_sec,sets,reps").eq("routine_id", routine_id).execute()
             for row in re.data or []:
-                ex = sb.table("exercises").select("met_value").eq("id", row["exercise_id"]).maybe_single().execute()
+                ex = safe_single(sb.table("exercises").select("met_value").eq("id", row["exercise_id"]))
                 met = float(ex.data["met_value"]) if ex.data else 5.0
                 dur = row.get("duration_sec") or (row.get("sets") or 1) * (row.get("reps") or 10) * 3
                 total_burn += calories_burned(met, weight_kg, dur)

@@ -2,7 +2,7 @@ from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.deps import get_current_user, get_supabase
+from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import ExerciseOut, RoutineCreate, RoutineExerciseOut, RoutineOut
 
 router = APIRouter(prefix="/routines", tags=["routines"])
@@ -20,7 +20,7 @@ def _scheduled_days(sb, routine_id: str) -> list[int]:
 
 
 def _routine_detail(sb, routine_id: str, user_id: str) -> RoutineOut:
-    routine = sb.table("routines").select("*").eq("id", routine_id).eq("user_id", user_id).maybe_single().execute()
+    routine = safe_single(sb.table("routines").select("*").eq("id", routine_id).eq("user_id", user_id))
     if not routine.data:
         raise HTTPException(status_code=404, detail="Routine not found")
     r = routine.data
@@ -33,7 +33,7 @@ def _routine_detail(sb, routine_id: str, user_id: str) -> RoutineOut:
     )
     exercises_out: list[RoutineExerciseOut] = []
     for row in re.data or []:
-        ex = sb.table("exercises").select("*").eq("id", row["exercise_id"]).maybe_single().execute()
+        ex = safe_single(sb.table("exercises").select("*").eq("id", row["exercise_id"]))
         ex_out = None
         if ex.data:
             e = ex.data

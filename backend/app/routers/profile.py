@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.deps import get_current_user, get_supabase
+from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import AiStats, OnboardingInput, Profile, ProfileUpdate, TrialStatus
 from app.services.ai_stats import fetch_ai_stats
 from app.services.targets import compute_targets
@@ -95,7 +95,7 @@ def onboard(body: OnboardingInput, user: dict = Depends(get_current_user)):
 @router.get("/trial", response_model=TrialStatus)
 def get_trial(user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    res = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
+    res = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     return TrialStatus(**build_trial_status(sb, user["id"], res.data, user.get("email")))
@@ -110,7 +110,7 @@ def get_ai_stats(user: dict = Depends(get_current_user)):
 @router.get("/", response_model=Profile)
 def get_profile(user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    res = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
+    res = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     trial_data = build_trial_status(sb, user["id"], res.data, user.get("email"))
@@ -120,7 +120,7 @@ def get_profile(user: dict = Depends(get_current_user)):
 @router.put("/", response_model=Profile)
 def update_profile(body: ProfileUpdate, user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    existing = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
+    existing = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not existing.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     row = _merge_profile(existing.data, body)

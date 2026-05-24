@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from app.deps import get_current_user, get_supabase
+from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal
 from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
@@ -77,7 +77,7 @@ async def scan_meal(
     user: dict = Depends(get_current_user),
 ):
     sb = get_supabase()
-    profile = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
+    profile = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     check_scan_allowed(sb, user["id"], profile.data, user.get("email"))
@@ -171,7 +171,7 @@ def meals_today(user: dict = Depends(get_current_user)):
     from app.services.today import fetch_today
 
     sb = get_supabase()
-    profile = sb.table("profiles").select("*").eq("id", user["id"]).maybe_single().execute()
+    profile = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     snap = fetch_today(sb, user["id"], profile.data, user.get("email"))
@@ -186,7 +186,7 @@ def meals_today(user: dict = Depends(get_current_user)):
 @router.get("/{meal_id}", response_model=MealOut)
 def get_meal(meal_id: str, user: dict = Depends(get_current_user)):
     sb = get_supabase()
-    res = sb.table("meals").select("*").eq("id", meal_id).eq("user_id", user["id"]).maybe_single().execute()
+    res = safe_single(sb.table("meals").select("*").eq("id", meal_id).eq("user_id", user["id"]))
     if not res.data:
         raise HTTPException(status_code=404, detail="Meal not found")
     return _meal_with_items(sb, res.data)
