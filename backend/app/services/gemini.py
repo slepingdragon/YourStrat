@@ -1,5 +1,6 @@
 import json
 import math
+from typing import TypedDict
 
 import google.generativeai as genai
 
@@ -7,6 +8,27 @@ from app.config import settings
 from app.prompts.food_scan import FOOD_SCAN_PROMPT
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
+
+
+# Structured Outputs (Cal-AI approach): a hard response schema the model is
+# constrained to, so the scan always returns clean, parseable, schema-shaped
+# JSON instead of free-form text. The normalization below still runs as
+# defense-in-depth (clamps absurd values, aligns calories↔macros).
+class _ScanItemSchema(TypedDict):
+    name: str
+    portion: str
+    calories: int
+    protein_g: float
+    carbs_g: float
+    fat_g: float
+    fiber_g: float
+    sugar_g: float
+    sodium_mg: int
+    confidence: float
+
+
+class _ScanResultSchema(TypedDict):
+    items: list[_ScanItemSchema]
 
 LOW_CONFIDENCE_THRESHOLD = 0.7
 MAX_ITEM_CALORIES = 2500
@@ -136,10 +158,11 @@ async def scan_food(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     model = genai.GenerativeModel(settings.GEMINI_MODEL)
     response = model.generate_content(
         [FOOD_SCAN_PROMPT, {"mime_type": mime_type, "data": image_bytes}],
-        generation_config={
-            "response_mime_type": "application/json",
-            "temperature": 0.2,
-        },
+        generation_config=genai.GenerationConfig(
+            response_mime_type="application/json",
+            response_schema=_ScanResultSchema,
+            temperature=0.2,
+        ),
     )
     try:
         data = json.loads(response.text)

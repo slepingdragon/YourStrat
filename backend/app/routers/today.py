@@ -8,9 +8,12 @@ router = APIRouter(prefix="/today", tags=["today"])
 
 
 @router.get("/", response_model=TodaySnapshot)
-def get_today(user: dict = Depends(get_current_user)):
+def get_today(
+    tz_offset_minutes: int | None = None,
+    user: dict = Depends(get_current_user),
+):
     sb = get_supabase()
     profile = safe_single(sb.table("profiles").select("*").eq("id", user["id"]))
     if not profile.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return fetch_today(sb, user["id"], profile.data, user.get("email"))
+    return fetch_today(sb, user["id"], profile.data, user.get("email"), tz_offset_minutes)

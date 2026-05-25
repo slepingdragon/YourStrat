@@ -4,10 +4,26 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.deps import get_current_user, get_supabase, safe_single
-from app.models.schemas import BurnDay, SessionFinish, SessionOut, SessionSetInput, SessionStart, SessionStats
+from app.models.schemas import (
+    ActiveSessionInfo,
+    BurnDay,
+    SessionFinish,
+    SessionOut,
+    SessionSetInput,
+    SessionStart,
+    SessionStats,
+)
 from app.services.met import calories_burned
+from app.services.today import fetch_active_session
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
+
+
+@router.get("/active", response_model=ActiveSessionInfo | None)
+def get_active_session(user: dict = Depends(get_current_user)) -> ActiveSessionInfo | None:
+    """The caller's unfinished session (any date), or null. Powers W-C2 cold-start restore."""
+    sb = get_supabase()
+    return fetch_active_session(sb, user["id"])
 
 
 @router.get("/stats", response_model=SessionStats)

@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from supabase import Client
 
@@ -28,6 +28,51 @@ def _round_cal(n: float) -> int:
 
 def _round_g(n: float) -> int:
     return int(round(n))
+
+
+# Piecewise-linear "expected intake by now" curve, keyed on local hour.
+# Front-loaded eating window (flat 0 before 7am, 1.0 from 23:00).
+# Source: today-tab-ux-design-2026-05-20.md §5.
+PACE_CURVE: list[tuple[float, float]] = [
+    (0.0, 0.0), (6.0, 0.0), (7.0, 0.0), (8.0, 0.10), (9.0, 0.15),
+    (10.0, 0.20), (11.0, 0.30), (12.0, 0.40), (13.0, 0.50), (14.0, 0.58),
+    (15.0, 0.64), (16.0, 0.68), (17.0, 0.72), (18.0, 0.75), (19.0, 0.80),
+    (20.0, 0.88), (21.0, 0.94), (22.0, 0.98), (23.0, 1.0),
+]
+
+
+def compute_pace_position(local_hour_float: float, target: int | float | None) -> float | None:
+    """Fraction (0.0–1.0) of the day's expected intake by `local_hour_float`.
+
+    Piecewise-linear interpolation over PACE_CURVE. None when there is no
+    meaningful target. Pure (no I/O) so it is trivially unit-testable.
+    """
+    if not target:
+        return None
+    if local_hour_float <= PACE_CURVE[0][0]:
+        return 0.0
+    if local_hour_float >= PACE_CURVE[-1][0]:
+        return 1.0
+    for (h0, f0), (h1, f1) in zip(PACE_CURVE, PACE_CURVE[1:]):
+        if h0 <= local_hour_float <= h1:
+            span = h1 - h0
+            frac = 0.0 if span == 0 else (local_hour_float - h0) / span
+            return max(0.0, min(1.0, f0 + frac * (f1 - f0)))
+    return 1.0
+
+
+# Real-world UTC offsets span UTC-12 (-720) to UTC+14 (+840). Clamp client input
+# so a garbage/absurd offset degrades to a sane hour instead of a meaningless one.
+_MIN_TZ_OFFSET = -720
+_MAX_TZ_OFFSET = 840
+
+
+def _local_hour_from_offset(tz_offset_minutes: int, now_utc: datetime | None = None) -> float:
+    """Local hour-of-day (with fractional minutes) for a UTC-offset in minutes east."""
+    offset = max(_MIN_TZ_OFFSET, min(_MAX_TZ_OFFSET, tz_offset_minutes))
+    now = now_utc or datetime.now(timezone.utc)
+    local = now + timedelta(minutes=offset)
+    return local.hour + local.minute / 60
 
 
 def build_callouts(profile: Profile, consumed: dict) -> list[str]:
@@ -69,7 +114,13 @@ def _profile_from_row(sb: Client, user_id: str, row: dict, user_email: str | Non
     )
 
 
-def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | None = None) -> TodaySnapshot:
+def fetch_today(
+    sb: Client,
+    user_id: str,
+    profile_row: dict,
+    user_email: str | None = None,
+    tz_offset_minutes: int | None = None,
+) -> TodaySnapshot:
     profile = _profile_from_row(sb, user_id, profile_row, user_email)
     start, end = _today_bounds()
 
@@ -127,6 +178,11 @@ def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | N
     remaining = profile.daily_calorie_target + burned - consumed["calories"]
     net = consumed["calories"] - burned
 
+    pace_position: float | None = None
+    if tz_offset_minutes is not None:
+        local_hour = _local_hour_from_offset(tz_offset_minutes)
+        pace_position = compute_pace_position(local_hour, profile.daily_calorie_target)
+
     return TodaySnapshot(
         targets=profile,
         consumed_calories=consumed["calories"],
@@ -144,6 +200,7 @@ def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | N
         active_session=active,
         last_completed_session_today=completed,
         scheduled_routine_today=scheduled,
+        pace_position=pace_position,
     )
 
 
@@ -201,6 +258,48 @@ def _fetch_workout_state(
             break
 
     return burned, active, completed
+
+
+def fetch_active_session(sb: Client, user_id: str) -> ActiveSessionInfo | None:
+    """The user's single unfinished session, regardless of when it started.
+
+    Distinct from `_fetch_workout_state`'s `active_session`, which is scoped to
+    today's local window: this powers `GET /sessions/active` (W-C2 cold-start
+    restore), so it must find a session started on any prior date too. Returns
+    None when nothing is in flight.
+    """
+    res = (
+        sb.table("sessions")
+        .select("id, routine_id, started_at, planned_rpe, ended_at")
+        .eq("user_id", user_id)
+        .is_("ended_at", "null")
+        .order("started_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = res.data or []
+    # Guard: the only active filter is the DB `.is_`; re-check in Python so a
+    # finished row can never leak through (and so the unit tests, whose mock
+    # ignores filters, exercise real behavior).
+    if not rows or rows[0].get("ended_at") is not None:
+        return None
+
+    s = rows[0]
+    rid = s.get("routine_id")
+    rname: str | None = None
+    if rid:
+        names_res = sb.table("routines").select("name").eq("id", rid).execute()
+        nrows = names_res.data or []
+        if nrows:
+            rname = nrows[0].get("name")
+
+    return ActiveSessionInfo(
+        id=str(s["id"]),
+        routine_id=str(rid) if rid else None,
+        routine_name=rname,
+        started_at=s["started_at"],
+        planned_rpe=s.get("planned_rpe"),
+    )
 
 
 def _scheduled_routine_today(sb: Client, user_id: str) -> ScheduledRoutineInfo | None:

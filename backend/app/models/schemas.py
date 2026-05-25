@@ -239,3 +239,4 @@ class TodaySnapshot(BaseModel):
     active_session: ActiveSessionInfo | None = None
     last_completed_session_today: CompletedSessionInfo | None = None
     scheduled_routine_today: ScheduledRoutineInfo | None = None
+    pace_position: float | None = None
