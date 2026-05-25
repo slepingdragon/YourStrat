@@ -58,7 +58,7 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
 - Hosting model (decided): the app's web presence lives on the **`yourstrat.xaeryx.com`** subdomain (off xaeryx.com, `<app>.xaeryx.com` pattern), privacy at **`https://yourstrat.xaeryx.com/privacy`**.
 - **Built & Xaeryx-themed** (self-contained static, no build step — monochrome dark, Inter, dot-grid + vignette, glass cards, shimmer, star): `site/index.html` (landing: star hero, features, Google Play CTA, family nav to xaeryx.com) + `site/privacy.html` (policy) + `site/styles.css`. See [`site/README.md`](site/README.md).
 - [ ] **Brady:** fill the **2 highlighted placeholders in `site/privacy.html`** — effective date + contact email (everything else is final; analytics line confirmed "none").
-- [ ] **Brady:** deploy `site/` to **`yourstrat.xaeryx.com`** (Cloudflare Pages → point the project at the `site/` dir; add the subdomain DNS). `/privacy` resolves from `privacy.html`.
+- [ ] **Brady:** deploy `site/` to **`yourstrat.xaeryx.com`** via **Vercel** — import the repo, **Root Directory = `site`**, add the domain, then CNAME `yourstrat` → `cname.vercel-dns.com` (DNS-only) in Cloudflare. `vercel.json` (cleanUrls) makes `/privacy` resolve. Steps in [`site/README.md`](site/README.md).
 - [ ] **Cross-project (xaeryx.com agent, Brady to coordinate):** add the YourStrat link on the xaeryx.com launcher → `https://yourstrat.xaeryx.com`. _(Not a YourStrat-repo change.)_
 
 ### Legal / compliance (Play will reject without these)

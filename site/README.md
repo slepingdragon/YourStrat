@@ -12,10 +12,10 @@ top vignette, glass cards, shimmer eyebrow, star mark). No build step.
 - Fill the **2 highlighted (`[DATE]`, `[CONTACT EMAIL]`) placeholders** in `privacy.html` (highlighted yellow). Everything else is final.
 - The Google Play link in `index.html` (`…?id=com.yourstrat.app`) goes live once the app is published.
 
-## Deploy (Cloudflare Pages, matches the xaeryx.com setup)
-1. New Pages project → connect this repo → **build output / root = `site/`** (no build command; it's static).
-2. Custom domain → **`yourstrat.xaeryx.com`** (Cloudflare adds the CNAME automatically since you own the zone).
-3. `https://yourstrat.xaeryx.com/privacy` resolves from `privacy.html` → use that as the Play Console privacy URL.
+## Deploy (Vercel → yourstrat.xaeryx.com)
+1. **Import** `slepingdragon/YourStrat` at vercel.com/new → set **Root Directory = `site`**, Framework = **Other**, no build command. Deploy. (`vercel.json` here enables clean URLs, so `/privacy` serves `privacy.html`.)
+2. Project → **Settings → Domains → Add `yourstrat.xaeryx.com`**. Vercel shows a CNAME target (`cname.vercel-dns.com`).
+3. In the xaeryx.com DNS (Cloudflare): add **CNAME `yourstrat` → `cname.vercel-dns.com`, Proxy = DNS only (grey cloud)**. Vercel issues SSL automatically.
+4. Live at `https://yourstrat.xaeryx.com`; the Play Console privacy URL is `https://yourstrat.xaeryx.com/privacy`.
 
-(Or drag-drop the `site/` folder into any static host.) The xaeryx.com launcher
-link **to** this subdomain is handled separately by the xaeryx.com-repo agent.
+(Pure static — `vercel --prod` from the `site/` dir, or drag-drop the folder, also work.) The xaeryx.com launcher link **to** this subdomain is the xaeryx.com-repo agent's task.
