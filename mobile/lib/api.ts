@@ -432,6 +432,9 @@ export type NutritionDay = {
 
 export type NutritionJournal = {
   days: NutritionDay[];
+  /** Today's kcal minus the recent daily average (Story 6.2); null when today is
+   * empty or there's no prior day with data. */
+  vs_avg_kcal: number | null;
 };
 
 export async function getNutritionJournal(days = 14) {

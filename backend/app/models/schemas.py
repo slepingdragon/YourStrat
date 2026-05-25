@@ -185,6 +185,9 @@ class NutritionDay(BaseModel):
 
 class NutritionJournal(BaseModel):
     days: list[NutritionDay] = []
+    # Today's kcal minus the recent daily average (Story 6.2); None when today is
+    # empty or there's no prior day with data. Drives the 6.4 "+N vs avg" pill.
+    vs_avg_kcal: int | None = None
 
 
 class ActiveSessionInfo(BaseModel):

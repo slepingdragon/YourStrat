@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal
+from app.services.nutrition import compute_vs_avg_kcal
 from app.services.barcode import lookup_barcode
 from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
@@ -176,11 +177,14 @@ def meals_journal(user: dict = Depends(get_current_user), days: int = 14):
         by_date[today_key] = []
 
     day_keys = sorted(by_date.keys(), reverse=True)
+    prior_kcals = [totals_by_date[d].calories for d in day_keys if d != today_key]
+    vs_avg_kcal = compute_vs_avg_kcal(prior_kcals, totals_by_date[today_key].calories)
     return NutritionJournal(
         days=[
             NutritionDay(date=d, meals=by_date[d], totals=totals_by_date[d])
             for d in day_keys
-        ]
+        ],
+        vs_avg_kcal=vs_avg_kcal,
     )
 
 
