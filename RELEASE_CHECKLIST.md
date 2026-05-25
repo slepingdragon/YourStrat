@@ -24,7 +24,8 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
 ## 🔧 Gate A — Brady action items to produce + upload an Internal-testing AAB
 
 ### Backend / data
-- [ ] **Run migration 008** in the Supabase SQL editor (same as 007). Then verify deletion end-to-end on a throwaway account (Profile → Delete account → confirm the row is gone in `auth.users` + data + photos).
+- [x] **Run migration 008** in the Supabase SQL editor — **done (Brady, 2026-05-25)**. `public.delete_user()` now exists.
+- [ ] **Verify deletion end-to-end** on a throwaway account (Profile → Delete account → confirm the row is gone in `auth.users` + data + the `meal-photos/{uid}/…` objects).
 - [ ] **Confirm the production backend is live + keyed:** `curl https://yourstrat-production.up.railway.app/health` → `{"ok":true,...}`; Railway has `GEMINI_API_KEY` (Tier-1 billing), `GEMINI_MODEL=gemini-2.5-flash`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`.
 - [ ] **Confirm the Supabase project + anon key in `eas.json`** (`nfwjmiauopafosltkbbq` / `sb_publishable_…`) is the intended production project and the `meal-photos` bucket exists (private).
 
@@ -48,17 +49,17 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
   - Flip each `review`→`done` in `sprint-status.yaml` as it passes.
 - [ ] **Cold-start + crash check** on a real device (first launch, sign-up → onboarding → scan → log workout, sign out, delete account).
 
-### Store listing assets
+### Store listing assets — **draft copy ready: [docs/STORE_LISTING.md](docs/STORE_LISTING.md)**
 - [ ] **App icon** — confirm `assets/logo/yourstrat-star.png` source is ≥1024×1024; provide the 512×512 hi-res icon for the listing.
-- [ ] **Feature graphic** (1024×500), **phone screenshots** (≥2; from Today/Scan/Workouts/Nutrition), short description (≤80 chars), full description.
-- [ ] **Category** (Health & Fitness), contact email, default language.
+- [ ] **Feature graphic** (1024×500) + **phone screenshots** (≥2; Today ring / Scan result / Workouts session / Nutrition trend).
+- [ ] **Title / short / full description + release notes + category** — paste from `docs/STORE_LISTING.md` (fill contact email).
 
 ### Legal / compliance (Play will reject without these)
-- [ ] **Privacy policy** — host one (e.g. `https://yourstrat.xaeryx.com/privacy`) and add the URL in Play Console. It must cover: account data (email), camera/photos (meal scanning), nutrition/fitness data, the AI food-scan (photos sent to Google Gemini), and how to delete data. _(Recommend also linking it from Profile once published — not wired yet to avoid a dead link.)_
-- [ ] **Data safety form** — declare: collects account info (email) + user content (meal photos, nutrition/workout logs); photos processed by a third party (Gemini) for the scan; whether data is shared; encryption in transit; **account deletion available in-app** (point to the in-app path + an external request URL).
+- [ ] **Privacy policy** — **draft ready: [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md)**. Fill the brackets, confirm the analytics/crash-SDK line, host it (e.g. `yourstrat.xaeryx.com/privacy`), add the URL in Play Console.
+- [ ] **Data safety form** — answer from the cheat-sheet in `docs/STORE_LISTING.md` (key row: meal **photos are *shared* with Google/Gemini**; email + health collected-not-shared; encrypted in transit; in-app deletion available).
 - [ ] **Content rating** questionnaire (likely Everyone).
-- [ ] **Target audience & ads** — not directed at children; declare no ads (unless added).
-- [ ] **Health apps declaration** — if Play prompts a Health/Fitness declaration, complete it (no Health Connect integration today).
+- [ ] **Target audience & ads** — not directed at children; declare no ads.
+- [ ] **Health apps declaration** — if Play prompts one, complete it (no Health Connect integration today).
 
 ---
 
