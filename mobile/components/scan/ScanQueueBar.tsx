@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, X } from "@/components/icons";
 import { useScanQueue, type QueuedScan, type ScanStatus } from "@/lib/scanQueueStore";
 import { formatKcal } from "@/lib/format";
-import { useT } from "@/lib/i18n";
+import { translate, useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { radius, spacing } from "@/theme/spacing";
 import { DiscardMealDialog } from "./DiscardMealDialog";
@@ -17,13 +17,15 @@ const MAX_STACK = 3; // how many layers we render before it's just the count
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-type Translate = (key: string, params?: Record<string, string | number>) => string;
-
-function subtitle(scan: QueuedScan, t: Translate): string {
-  if (scan.status === "pending") return t("queue.analyzing");
-  if (scan.status === "error") return t("queue.tapReview");
-  if (!scan.items.length) return t("queue.nothingFound");
-  return t("queue.kcal", { kcal: formatKcal(scan.calories) });
+// Uses the non-reactive translate() rather than a passed-in t, so this can't
+// crash if a Fast Refresh applies the signature change before its callers.
+// The component below subscribes via useT(), so it re-renders (and this re-runs
+// with the fresh language) whenever the language changes.
+function subtitle(scan: QueuedScan): string {
+  if (scan.status === "pending") return translate("queue.analyzing");
+  if (scan.status === "error") return translate("queue.tapReview");
+  if (!scan.items.length) return translate("queue.nothingFound");
+  return translate("queue.kcal", { kcal: formatKcal(scan.calories) });
 }
 
 function StatusIndicator({ status }: { status: ScanStatus }) {
@@ -145,7 +147,7 @@ export function ScanQueueBar() {
                         {scan.label}
                       </Text>
                       <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-                        {subtitle(scan, t)}
+                        {subtitle(scan)}
                       </Text>
                     </View>
                   </Pressable>
@@ -210,7 +212,7 @@ export function ScanQueueBar() {
                   accessibilityRole="button"
                   accessibilityLabel={
                     queue.length === 1
-                      ? t("queue.openOne", { label: front.label, sub: subtitle(front, t) })
+                      ? t("queue.openOne", { label: front.label, sub: subtitle(front) })
                       : t("queue.expandMany", { n: queue.length })
                   }
                 >
@@ -220,7 +222,7 @@ export function ScanQueueBar() {
                       {front.label}
                     </Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-                      {subtitle(front, t)}
+                      {subtitle(front)}
                     </Text>
                   </View>
                 </Pressable>
