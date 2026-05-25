@@ -5,12 +5,14 @@ import { Plus } from "@/components/icons";
 import type { Meal } from "@/lib/api";
 import {
   groupMealsBySlot,
-  MEAL_SLOT_LABELS,
+  MEAL_SLOT_LABEL_KEYS,
   MEAL_SLOT_ORDER,
   type MealSlot,
 } from "@/lib/nutritionSummaryStats";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 type Props = {
   meals: Meal[];
@@ -23,17 +25,19 @@ function slotCalTotal(meals: Meal[]): number {
 }
 
 function GhostRow({ slot, onPress }: { slot: MealSlot; onPress: () => void }) {
+  const t = useT();
+  const slotLabel = t(MEAL_SLOT_LABEL_KEYS[slot]).toLowerCase();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Add ${MEAL_SLOT_LABELS[slot]}`}
+      accessibilityLabel={t("nutrition.addSlot", { slot: slotLabel })}
       style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        paddingVertical: 16,
+        paddingVertical: spacing.lg,
         borderRadius: 12,
         borderWidth: 1,
         borderStyle: "dashed",
@@ -44,13 +48,14 @@ function GhostRow({ slot, onPress }: { slot: MealSlot; onPress: () => void }) {
     >
       <Plus color={colors.textMuted} size={16} />
       <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600" }}>
-        Add {MEAL_SLOT_LABELS[slot].toLowerCase()}
+        {t("nutrition.addSlot", { slot: slotLabel })}
       </Text>
     </Pressable>
   );
 }
 
 function MealSlotsListImpl({ meals, onMealPress, onLogPress }: Props) {
+  const t = useT();
   const groups = groupMealsBySlot(meals);
 
   return (
@@ -69,7 +74,7 @@ function MealSlotsListImpl({ meals, onMealPress, onLogPress }: Props) {
               }}
             >
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "700" }}>
-                {MEAL_SLOT_LABELS[slot]}
+                {t(MEAL_SLOT_LABEL_KEYS[slot])}
               </Text>
               {slotMeals.length > 0 ? (
                 <Text
@@ -79,7 +84,7 @@ function MealSlotsListImpl({ meals, onMealPress, onLogPress }: Props) {
                     fontVariant: ["tabular-nums"],
                   }}
                 >
-                  {formatKcal(cal)} cal
+                  {t("nutrition.slotCal", { kcal: formatKcal(cal) })}
                 </Text>
               ) : null}
             </View>

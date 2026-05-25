@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Text, View } from "react-native";
 import type { NutritionDay } from "@/lib/api";
 import type { NutritionTargets } from "@/lib/nutritionTargets";
+import { useT } from "@/lib/i18n";
 import { getMetricTarget, getMetricValueFromTotals } from "@/lib/todayMetrics";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
@@ -44,6 +45,7 @@ function adherenceColor(adherence: number): string {
  * list (per-nutrient detail lives in the metric drill-down).
  */
 function CalorieHeatmapStripImpl({ days, targets, todayKey }: Props) {
+  const t = useT();
   const calTarget = getMetricTarget(targets, "calories");
   return (
     <View
@@ -54,7 +56,7 @@ function CalorieHeatmapStripImpl({ days, targets, todayKey }: Props) {
         height: BAR_MAX_H + 20,
         paddingHorizontal: spacing.xs,
       }}
-      accessibilityLabel="Last 7 days calories vs target, colored by macro adherence"
+      accessibilityLabel={t("nutrition.heatmapA11y")}
     >
       {days.map((d) => {
         const kcal = d.totals.calories;

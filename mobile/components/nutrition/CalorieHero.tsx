@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -25,6 +26,7 @@ type Props = {
 };
 
 function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
+  const t = useT();
   const netConsumed = consumed - burned;
   const over = target > 0 && netConsumed > target;
   const remaining = Math.max(target - netConsumed, 0);
@@ -50,7 +52,7 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
   const ringColor = over ? colors.error : colors.star;
   const numberColor = over ? colors.error : colors.textPrimary;
   const headline = over ? formatKcal(overAmount) : formatKcal(remaining);
-  const headlineLabel = over ? "calories over" : "calories left";
+  const headlineLabel = over ? t("today.caloriesOver") : t("today.caloriesLeft");
 
   const inner = (
     <View
@@ -94,7 +96,7 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
               lineHeight: 60,
             }}
             numberOfLines={1}
-            accessibilityLabel={`${headline} ${headlineLabel}`}
+            accessibilityLabel={`${headline} ${headlineLabel}`.trim()}
           >
             {headline}
           </Text>
@@ -120,9 +122,10 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
           textAlign: "center",
         }}
       >
-        {formatKcal(consumed)} eaten
-        {burned > 0 ? ` · ${formatKcal(burned)} burned` : ""}
-        {` · ${formatKcal(target)} target`}
+        {burned > 0
+          ? t("nutrition.eatenBurned", { kcal: formatKcal(consumed), burned: formatKcal(burned) })
+          : t("nutrition.eaten", { kcal: formatKcal(consumed) })}
+        {t("nutrition.calTargetSuffix", { kcal: formatKcal(target) })}
       </Text>
     </View>
   );
@@ -132,7 +135,7 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${headline} ${headlineLabel}. Tap for calorie detail.`}
+      accessibilityLabel={t("nutrition.calorieHeroA11y", { headline, label: headlineLabel })}
     >
       {({ pressed }) => <View style={{ opacity: pressed ? 0.85 : 1 }}>{inner}</View>}
     </Pressable>

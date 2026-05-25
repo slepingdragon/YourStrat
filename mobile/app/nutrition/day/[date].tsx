@@ -5,6 +5,7 @@ import { Screen, toastError } from "@/components/ui";
 import { X } from "@/components/icons";
 import { getNutritionJournal, type Meal, type NutritionDay } from "@/lib/api";
 import { formatKcal, formatMacroGrams } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -15,13 +16,14 @@ function dayHeading(dateKey: string) {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 }
 
-function mealName(meal: Meal): string {
-  return meal.items?.slice(0, 2).map((i) => i.name).join(", ") || "Meal";
+function mealName(meal: Meal, fallback: string): string {
+  return meal.items?.slice(0, 2).map((i) => i.name).join(", ") || fallback;
 }
 
 export default function NutritionDayScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const router = useRouter();
+  const t = useT();
   const [day, setDay] = useState<NutritionDay | null>(null);
   const loadErrorShown = useRef(false);
 
@@ -46,7 +48,7 @@ export default function NutritionDayScreen() {
     }, [load])
   );
 
-  const title = useMemo(() => (date ? dayHeading(date) : "Day"), [date]);
+  const title = useMemo(() => (date ? dayHeading(date) : t("nutritionDay.day")), [date, t]);
   const totals = day?.totals ?? EMPTY_TOTALS;
   const meals = day?.meals ?? [];
 
@@ -59,12 +61,12 @@ export default function NutritionDayScreen() {
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
         <Text style={{ flex: 1, color: colors.textPrimary, fontSize: 28, fontWeight: "700", lineHeight: 34 }}>
-          {date ? title : "Missing date"}
+          {date ? title : t("nutritionDay.missingDate")}
         </Text>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t("nutritionDay.close")}
           hitSlop={12}
           style={({ pressed }) => ({
             width: 36,
@@ -85,7 +87,7 @@ export default function NutritionDayScreen() {
       <ScrollView style={{ flex: 1, marginTop: spacing.lg }} showsVerticalScrollIndicator={false}>
         {meals.length === 0 ? (
           <Text style={{ color: colors.textMuted, lineHeight: 22, marginTop: spacing.sm }}>
-            No meals logged this day.
+            {t("nutritionDay.noMeals")}
           </Text>
         ) : (
           meals.map((m) => (
@@ -93,7 +95,7 @@ export default function NutritionDayScreen() {
               key={m.id}
               onPress={() => router.push(`/meal/${m.id}`)}
               accessibilityRole="button"
-              accessibilityLabel={`${mealName(m)}, ${formatKcal(m.total_calories)} calories`}
+              accessibilityLabel={t("nutritionDay.mealA11y", { name: mealName(m, t("nutrition.mealFallback")), kcal: formatKcal(m.total_calories) })}
               style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
@@ -105,7 +107,7 @@ export default function NutritionDayScreen() {
               })}
             >
               <Text style={{ flex: 1, color: colors.textPrimary, fontSize: 15 }} numberOfLines={1}>
-                {mealName(m)}
+                {mealName(m, t("nutrition.mealFallback"))}
               </Text>
               <Text style={{ color: colors.textSecondary, fontSize: 15, fontVariant: ["tabular-nums"] }}>
                 {formatKcal(m.total_calories)}
@@ -119,14 +121,18 @@ export default function NutritionDayScreen() {
       <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.lg, marginTop: spacing.sm }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
           <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>
-            Total
+            {t("nutritionDay.total")}
           </Text>
           <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "800", fontVariant: ["tabular-nums"] }}>
-            {formatKcal(totals.calories)} cal
+            {t("nutritionDay.totalCal", { kcal: formatKcal(totals.calories) })}
           </Text>
         </View>
         <Text style={{ color: colors.textSecondary, fontSize: 14, fontVariant: ["tabular-nums"], marginTop: spacing.xs, textAlign: "right" }}>
-          P {formatMacroGrams(totals.protein_g)}g · C {formatMacroGrams(totals.carbs_g)}g · F {formatMacroGrams(totals.fat_g)}g
+          {t("nutritionDay.macroLine", {
+            p: formatMacroGrams(totals.protein_g),
+            c: formatMacroGrams(totals.carbs_g),
+            f: formatMacroGrams(totals.fat_g),
+          })}
         </Text>
       </View>
     </Screen>

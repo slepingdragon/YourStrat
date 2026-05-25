@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Tone = "limit" | "goal";
@@ -22,6 +23,7 @@ type Props = {
 };
 
 function MicroPinBarImpl({ label, value, target, unit, color, tone, onPress }: Props) {
+  const t = useT();
   const targetSafe = target > 0 ? target : 1;
   const baseRatio = Math.min(1, Math.max(0, value / targetSafe));
   const overRatio = Math.max(0, Math.min(1, (value - targetSafe) / targetSafe));
@@ -52,13 +54,13 @@ function MicroPinBarImpl({ label, value, target, unit, color, tone, onPress }: P
   const statusLabel = (() => {
     if (target <= 0) return "";
     if (tone === "limit") {
-      if (over) return "over limit";
-      if (value >= target * 0.85) return "near limit";
-      return "in range";
+      if (over) return t("nutrition.microOverLimit");
+      if (value >= target * 0.85) return t("nutrition.microNearLimit");
+      return t("nutrition.microInRange");
     }
-    if (value >= target) return "goal hit";
-    if (value >= target * 0.7) return "close";
-    return "low";
+    if (value >= target) return t("nutrition.microGoalHit");
+    if (value >= target * 0.7) return t("nutrition.microClose");
+    return t("nutrition.microLow");
   })();
 
   const statusColor = (() => {
@@ -75,7 +77,9 @@ function MicroPinBarImpl({ label, value, target, unit, color, tone, onPress }: P
 
   const baseFillColor = tone === "limit" && !over ? color : tone === "goal" ? color : colors.warning;
   const valueText =
-    unit === "mg" ? `${Math.round(value)} / ${Math.round(target)}mg` : `${Math.round(value)} / ${Math.round(target)}g`;
+    unit === "mg"
+      ? t("nutrition.macroValueMg", { value: Math.round(value), target: Math.round(target) })
+      : t("nutrition.macroValueG", { value: Math.round(value), target: Math.round(target) });
 
   const body = (
     <View style={{ paddingVertical: 10, paddingHorizontal: 4 }}>
@@ -123,7 +127,7 @@ function MicroPinBarImpl({ label, value, target, unit, color, tone, onPress }: P
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${valueText}, ${statusLabel}. Tap for detail.`}
+      accessibilityLabel={t("nutrition.microA11y", { label, value: valueText, status: statusLabel })}
     >
       {({ pressed }) => <View style={{ opacity: pressed ? 0.7 : 1 }}>{body}</View>}
     </Pressable>

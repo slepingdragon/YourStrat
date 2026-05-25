@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Text, View } from "react-native";
 import type { SummaryStats } from "@/lib/nutritionSummaryStats";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -66,7 +67,8 @@ function Chip({
 }
 
 function ScoreStripImpl({ stats }: Props) {
-  const streakValue = stats.streakDays > 0 ? `${stats.streakDays}d` : "—";
+  const t = useT();
+  const streakValue = stats.streakDays > 0 ? t("nutrition.scoreDays", { n: stats.streakDays }) : "—";
   const proteinHit =
     stats.proteinHitRate.total > 0
       ? `${stats.proteinHitRate.hit}/${stats.proteinHitRate.total}`
@@ -80,14 +82,14 @@ function ScoreStripImpl({ stats }: Props) {
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>
       <Chip
-        label="Streak"
+        label={t("nutrition.scoreStreak")}
         value={streakValue}
-        hint={stats.streakDays > 0 ? "days in a row" : "log to start"}
+        hint={stats.streakDays > 0 ? t("nutrition.scoreStreakHit") : t("nutrition.scoreStreakEmpty")}
         accent={stats.streakDays > 0 ? colors.spark : undefined}
       />
-      <Chip label="Protein" value={proteinHit} hint="hit goal" />
-      <Chip label="On target" value={onTarget} hint="±10% cal" />
-      <Chip label="Avg cal" value={avgCal} hint="last 7d" />
+      <Chip label={t("metric.protein")} value={proteinHit} hint={t("nutrition.scoreProteinHint")} />
+      <Chip label={t("nutrition.scoreOnTarget")} value={onTarget} hint={t("nutrition.scoreOnTargetHint")} />
+      <Chip label={t("nutrition.scoreAvgCal")} value={avgCal} hint={t("nutrition.scoreAvgCalHint")} />
     </View>
   );
 }

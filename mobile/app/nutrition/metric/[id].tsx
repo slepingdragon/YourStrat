@@ -5,6 +5,7 @@ import { IntakeRing } from "@/components/IntakeRing";
 import { SourceLinkRow } from "@/components/SourceLinkRow";
 import { Card, Screen, BackHeader, toastError } from "@/components/ui";
 import { getNutritionJournal, type Meal, type NutritionDayTotals } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { isNutritionMetricId, METRIC_INFO } from "@/lib/nutritionMetricCopy";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
@@ -17,6 +18,7 @@ import {
   TODAY_METRIC_SPECS,
 } from "@/lib/todayMetrics";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const EMPTY_TOTALS: NutritionDayTotals = {
   calories: 0,
@@ -30,13 +32,14 @@ const EMPTY_TOTALS: NutritionDayTotals = {
 
 const HERO_RING = 120;
 
-function mealTitle(meal: Meal) {
-  return meal.items?.slice(0, 2).map((i) => i.name).join(", ") || "Meal";
+function mealTitle(meal: Meal, fallback: string) {
+  return meal.items?.slice(0, 2).map((i) => i.name).join(", ") || fallback;
 }
 
 export default function NutritionMetricDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const t = useT();
   const profile = useStore((s) => s.profile);
   const targets = targetsFromProfile(profile);
   const metricId = id && isNutritionMetricId(id) ? id : null;
@@ -72,24 +75,27 @@ export default function NutritionMetricDetailScreen() {
     return meals
       .map((meal) => ({
         id: meal.id,
-        title: mealTitle(meal),
+        title: mealTitle(meal, t("nutrition.mealFallback")),
         amount: getMetricValueFromMeal(meal, metricId),
       }))
       .filter((row) => row.amount > 0);
-  }, [meals, metricId]);
+  }, [meals, metricId, t]);
 
   if (!metricId || !targets) {
     return (
       <Screen>
-        <BackHeader title="Nutrition" />
+        <BackHeader title={t("nutritionMetric.headerTitle")} />
         <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>
-          {!metricId ? "Unknown metric." : "Complete onboarding to set your targets."}
+          {!metricId ? t("nutritionMetric.unknown") : t("nutritionMetric.completeOnboarding")}
         </Text>
       </Screen>
     );
   }
 
   const info = METRIC_INFO[metricId];
+  const metricTitle = t(`nutritionMetric.${metricId}.title`);
+  const metricAbout = t(`nutritionMetric.${metricId}.about`);
+  const metricTip = t(`nutritionMetric.${metricId}.tip`);
   const spec = TODAY_METRIC_SPECS[metricId];
   const consumed = getMetricValueFromTotals(totals, metricId);
   const target = getMetricTarget(targets, metricId);
@@ -98,11 +104,11 @@ export default function NutritionMetricDetailScreen() {
   return (
     <Screen padding={false}>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
-        <BackHeader title={info.title} />
+        <BackHeader title={metricTitle} />
 
         <View style={{ alignItems: "center", marginTop: 8 }}>
           <IntakeRing
-            label={info.title}
+            label={metricTitle}
             value={consumed}
             target={target}
             color={spec.color}
@@ -125,15 +131,15 @@ export default function NutritionMetricDetailScreen() {
         </Text>
 
         <Card style={{ marginTop: 24 }}>
-          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 8 }}>Your numbers</Text>
+          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: spacing.sm }}>{t("nutritionMetric.yourNumbers")}</Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-            <Text style={{ color: colors.textSecondary }}>Today&apos;s total</Text>
+            <Text style={{ color: colors.textSecondary }}>{t("nutritionMetric.todaysTotal")}</Text>
             <Text style={{ color: colors.textPrimary, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
               {formatMetricAmount(consumed, spec.unit)}
             </Text>
           </View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.textSecondary }}>Your target</Text>
+            <Text style={{ color: colors.textSecondary }}>{t("nutritionMetric.yourTarget")}</Text>
             <Text style={{ color: colors.textPrimary, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
               {formatMetricAmount(target, spec.unit)}
             </Text>
@@ -141,15 +147,15 @@ export default function NutritionMetricDetailScreen() {
         </Card>
 
         <Card style={{ marginTop: 16 }}>
-          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 8 }}>What this is</Text>
-          <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>{info.about}</Text>
-          <Text style={{ color: colors.textMuted, lineHeight: 20, marginTop: 12, fontSize: 13 }}>{info.tip}</Text>
+          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: spacing.sm }}>{t("nutritionMetric.whatThisIs")}</Text>
+          <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>{metricAbout}</Text>
+          <Text style={{ color: colors.textMuted, lineHeight: 20, marginTop: spacing.md, fontSize: 13 }}>{metricTip}</Text>
         </Card>
 
         {info.learnMore.length > 0 ? (
           <Card style={{ marginTop: 16, paddingBottom: 8 }}>
             <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 4 }}>
-              Learn more (sources)
+              {t("nutritionMetric.learnMore")}
             </Text>
             {info.learnMore.map((source, index) => (
               <View key={source.url}>
@@ -163,11 +169,11 @@ export default function NutritionMetricDetailScreen() {
         ) : null}
 
         <Text style={{ color: colors.textPrimary, fontWeight: "600", marginTop: 28, marginBottom: 12 }}>
-          Meals today
+          {t("nutritionMetric.mealsToday")}
         </Text>
         {mealRows.length === 0 ? (
           <Text style={{ color: colors.textMuted, lineHeight: 22 }}>
-            Log a meal from the Camera tab to see updates here.
+            {t("nutritionMetric.logFromCamera")}
           </Text>
         ) : (
           mealRows.map((row) => (
@@ -175,7 +181,7 @@ export default function NutritionMetricDetailScreen() {
               key={row.id}
               onPress={() => router.push({ pathname: "/meal/[id]", params: { id: row.id } })}
               accessibilityRole="button"
-              accessibilityLabel={`Open meal ${row.title}`}
+              accessibilityLabel={t("nutritionMetric.openMeal", { name: row.title })}
             >
               <Card style={{ marginBottom: 12, flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
                 <Text style={{ color: colors.textPrimary, fontWeight: "600", flex: 1 }} numberOfLines={2}>

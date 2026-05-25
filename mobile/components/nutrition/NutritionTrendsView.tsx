@@ -9,6 +9,7 @@ import { ScoreStrip } from "@/components/nutrition/ScoreStrip";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Screen, Skeleton, toastError } from "@/components/ui";
 import { getNutritionJournal, getSessionStats, type NutritionDay, type NutritionDayTotals, type SessionStats } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { computeSummaryStats } from "@/lib/nutritionSummaryStats";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
@@ -61,6 +62,7 @@ function buildCalendarWindow(days: NutritionDay[]): NutritionDay[] {
 
 export function NutritionTrendsView() {
   const router = useRouter();
+  const t = useT();
   const profile = useStore((s) => s.profile);
   const todaySnapshot = useStore((s) => s.today);
   const session = useStore((s) => s.session);
@@ -149,7 +151,7 @@ export function NutritionTrendsView() {
             <TrialBanner trial={trial} />
             <View style={{ marginTop: 40, alignItems: "center" }}>
               <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "center" }}>
-                Set up your targets first
+                {t("nutrition.setupTargets")}
               </Text>
               <Text
                 style={{
@@ -161,7 +163,7 @@ export function NutritionTrendsView() {
                   maxWidth: 300,
                 }}
               >
-                Finish onboarding to see your daily calorie + macro goals and start tracking trends.
+                {t("nutrition.finishOnboardingTrends")}
               </Text>
             </View>
           </View>
@@ -205,23 +207,23 @@ export function NutritionTrendsView() {
 
       {journalOffline ? (
         <Text style={{ color: colors.textMuted, marginBottom: 8, fontSize: 12, lineHeight: 18 }}>
-          Meal history may be outdated — pull to refresh when you&apos;re back online.
+          {t("nutrition.historyOutdated")}
         </Text>
       ) : null}
 
       {showStats ? <ScoreStrip stats={stats} /> : null}
 
-      <SectionLabel>This week</SectionLabel>
+      <SectionLabel>{t("nutrition.thisWeek")}</SectionLabel>
       <CalorieHeatmapStrip days={window7} targets={targets} todayKey={todayKey} />
 
       {burnStats ? (
         <>
-          <SectionLabel>Workouts</SectionLabel>
+          <SectionLabel>{t("nutrition.workouts")}</SectionLabel>
           <BurnTrendRow days={burnStats.burn_last_7_days} />
         </>
       ) : null}
 
-      <SectionLabel>History</SectionLabel>
+      <SectionLabel>{t("nutrition.history")}</SectionLabel>
     </View>
   );
 
@@ -239,8 +241,8 @@ export function NutritionTrendsView() {
           )}
           ListHeaderComponent={ListHeader}
           ListEmptyComponent={
-            <Text style={{ color: colors.textMuted, fontSize: 14, paddingVertical: 8 }}>
-              No earlier days yet. Your logged days will appear here.
+            <Text style={{ color: colors.textMuted, fontSize: 14, paddingVertical: spacing.sm }}>
+              {t("nutrition.noEarlierDays")}
             </Text>
           }
           onViewableItemsChanged={onViewRef.current}

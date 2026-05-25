@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Text, View } from "react-native";
 import { Sparkline } from "@/components/nutrition/Sparkline";
 import { formatKcal, formatMacroGrams } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -38,6 +39,7 @@ function MacroColumn({ value, label, color }: { value: number; label: string; co
  * N-E2, no apology copy).
  */
 function NutritionHeroImpl({ todayKcal, target, sparklineValues, protein, carbs, fat, vsAvgKcal }: Props) {
+  const t = useT();
   const empty = todayKcal <= 0;
   const numberColor = target > 0 && todayKcal > target ? colors.error : colors.textPrimary;
 
@@ -66,7 +68,7 @@ function NutritionHeroImpl({ todayKcal, target, sparklineValues, protein, carbs,
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs }}>
         <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-          {empty ? `of ${formatKcal(target)} — eat something.` : "calories today"}
+          {empty ? t("nutrition.ofTargetEat", { target: formatKcal(target) }) : t("nutrition.caloriesToday")}
         </Text>
         {!empty && vsAvgKcal != null ? (
           <View
@@ -78,17 +80,16 @@ function NutritionHeroImpl({ todayKcal, target, sparklineValues, protein, carbs,
             }}
           >
             <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-              {vsAvgKcal > 0 ? "+" : ""}
-              {vsAvgKcal.toLocaleString()} vs 7-day avg
+              {t("nutrition.vsAvg", { sign: vsAvgKcal > 0 ? "+" : "", n: vsAvgKcal.toLocaleString() })}
             </Text>
           </View>
         ) : null}
       </View>
 
       <View style={{ flexDirection: "row", width: "100%", marginTop: spacing.lg }}>
-        <MacroColumn value={protein} label="protein" color={colors.protein} />
-        <MacroColumn value={carbs} label="carbs" color={colors.carbs} />
-        <MacroColumn value={fat} label="fat" color={colors.fat} />
+        <MacroColumn value={protein} label={t("nutrition.proteinLower")} color={colors.protein} />
+        <MacroColumn value={carbs} label={t("nutrition.carbsLower")} color={colors.carbs} />
+        <MacroColumn value={fat} label={t("nutrition.fatLower")} color={colors.fat} />
       </View>
     </View>
   );

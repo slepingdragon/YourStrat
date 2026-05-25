@@ -9,10 +9,11 @@ import { ScoreStrip } from "@/components/nutrition/ScoreStrip";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Button, Screen, Skeleton, toastError } from "@/components/ui";
 import { getNutritionJournal, type NutritionDay, type NutritionDayTotals } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import {
   classifyMealSlot,
   computeSummaryStats,
-  MEAL_SLOT_LABELS,
+  MEAL_SLOT_LABEL_KEYS,
   MEAL_SLOT_ORDER,
   type MealSlot,
 } from "@/lib/nutritionSummaryStats";
@@ -59,14 +60,15 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-const EMPTY_STATE_CTA_COPY: Record<MealSlot, string> = {
-  breakfast: "Log breakfast",
-  lunch: "Log lunch",
-  dinner: "Log dinner",
-  snack: "Log a snack",
+const EMPTY_STATE_CTA_KEYS: Record<MealSlot, string> = {
+  breakfast: "nextAction.logBreakfast",
+  lunch: "nextAction.logLunch",
+  dinner: "nextAction.logDinner",
+  snack: "nextAction.logSnack",
 };
 
 function MealsEmptyState({ onLogPress }: { onLogPress: () => void }) {
+  const t = useT();
   const currentSlot = classifyMealSlot(new Date().toISOString());
 
   return (
@@ -88,12 +90,17 @@ function MealsEmptyState({ onLogPress }: { onLogPress: () => void }) {
       >
         {MEAL_SLOT_ORDER.map((slot) => {
           const active = slot === currentSlot;
+          const slotLabel = t(MEAL_SLOT_LABEL_KEYS[slot]);
           return (
             <Pressable
               key={slot}
               onPress={onLogPress}
               accessibilityRole="button"
-              accessibilityLabel={`Log ${MEAL_SLOT_LABELS[slot].toLowerCase()}${active ? ", right now" : ""}`}
+              accessibilityLabel={
+                active
+                  ? t("nutrition.logSlotNow", { slot: slotLabel.toLowerCase() })
+                  : t("nutrition.logSlot", { slot: slotLabel.toLowerCase() })
+              }
               style={({ pressed }) => ({
                 flex: 1,
                 paddingVertical: 8,
@@ -114,19 +121,20 @@ function MealsEmptyState({ onLogPress }: { onLogPress: () => void }) {
                 }}
                 numberOfLines={1}
               >
-                {MEAL_SLOT_LABELS[slot]}
+                {slotLabel}
               </Text>
             </Pressable>
           );
         })}
       </View>
-      <Button label={EMPTY_STATE_CTA_COPY[currentSlot]} onPress={onLogPress} compact />
+      <Button label={t(EMPTY_STATE_CTA_KEYS[currentSlot])} onPress={onLogPress} compact />
     </View>
   );
 }
 
 export function NutritionDayView() {
   const router = useRouter();
+  const t = useT();
   const profile = useStore((s) => s.profile);
   const todaySnapshot = useStore((s) => s.today);
   const targets = targetsFromProfile(profile);
@@ -204,7 +212,7 @@ export function NutritionDayView() {
           >
             <View>
               <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", letterSpacing: 1 }}>
-                TODAY
+                {t("nutrition.todayLabel")}
               </Text>
               <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", marginTop: 2 }}>
                 {todayDateLabel()}
@@ -222,7 +230,7 @@ export function NutritionDayView() {
                 }}
               >
                 <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "700" }}>
-                  {stats.streakDays}-day streak
+                  {t("nutrition.streak", { n: stats.streakDays })}
                 </Text>
               </View>
             ) : null}
@@ -230,7 +238,7 @@ export function NutritionDayView() {
 
           {journalOffline ? (
             <Text style={{ color: colors.textMuted, marginTop: 8, fontSize: 12, lineHeight: 18 }}>
-              Meal history may be outdated — pull to refresh when you&apos;re back online.
+              {t("nutrition.historyOutdated")}
             </Text>
           ) : null}
 
@@ -244,7 +252,7 @@ export function NutritionDayView() {
                   textAlign: "center",
                 }}
               >
-                Set up your targets first
+                {t("nutrition.setupTargets")}
               </Text>
               <Text
                 style={{
@@ -256,7 +264,7 @@ export function NutritionDayView() {
                   maxWidth: 300,
                 }}
               >
-                Finish onboarding to see your daily calorie + macro goals and start tracking meals.
+                {t("nutrition.finishOnboardingMeals")}
               </Text>
             </View>
           ) : (
@@ -280,15 +288,15 @@ export function NutritionDayView() {
 
               {showStats ? (
                 <>
-                  <SectionLabel>This week</SectionLabel>
+                  <SectionLabel>{t("nutrition.thisWeek")}</SectionLabel>
                   <ScoreStrip stats={stats} />
                 </>
               ) : null}
 
-              <SectionLabel>Watch &amp; reach</SectionLabel>
+              <SectionLabel>{t("nutrition.watchReach")}</SectionLabel>
               <View style={{ gap: 4 }}>
                 <MicroPinBar
-                  label="Fiber"
+                  label={t("metric.fiber")}
                   value={todayDay.totals.fiber_g}
                   target={targets.fiber_g}
                   unit="g"
@@ -297,7 +305,7 @@ export function NutritionDayView() {
                   onPress={() => openMetric("fiber")}
                 />
                 <MicroPinBar
-                  label="Sodium"
+                  label={t("metric.sodium")}
                   value={todayDay.totals.sodium_mg}
                   target={targets.sodium_mg}
                   unit="mg"
@@ -307,7 +315,7 @@ export function NutritionDayView() {
                 />
               </View>
 
-              <SectionLabel>Meals</SectionLabel>
+              <SectionLabel>{t("section.meals")}</SectionLabel>
               {!journalLoaded ? (
                 <View>
                   {[0, 1, 2, 3].map((i) => (

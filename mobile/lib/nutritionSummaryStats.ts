@@ -5,11 +5,12 @@ export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
 export const MEAL_SLOT_ORDER: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 
-export const MEAL_SLOT_LABELS: Record<MealSlot, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snacks",
+/** i18n keys for each meal slot label; resolve with `t(...)` / `translate(...)`. */
+export const MEAL_SLOT_LABEL_KEYS: Record<MealSlot, string> = {
+  breakfast: "nutrition.slotBreakfast",
+  lunch: "nutrition.slotLunch",
+  dinner: "nutrition.slotDinner",
+  snack: "nutrition.slotSnacks",
 };
 
 export type SummaryStats = {

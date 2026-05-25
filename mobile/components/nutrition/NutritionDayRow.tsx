@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 import type { NutritionDay } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -30,12 +31,13 @@ function TriBar({ p, c, f }: { p: number; c: number; f: number }) {
 
 /** One 64pt history row (N-S2, Story 6.3): date · kcal · macro tri-bar. */
 function NutritionDayRowImpl({ day, onPress }: Props) {
+  const t = useT();
   const empty = day.totals.calories <= 0;
   return (
     <Pressable
       onPress={() => onPress(day.date)}
       accessibilityRole="button"
-      accessibilityLabel={`${rowLabel(day.date)}, ${formatKcal(day.totals.calories)} calories`}
+      accessibilityLabel={t("nutrition.dayRowA11y", { label: rowLabel(day.date), kcal: formatKcal(day.totals.calories) })}
       style={({ pressed }) => ({
         height: DAY_ROW_HEIGHT,
         flexDirection: "row",
