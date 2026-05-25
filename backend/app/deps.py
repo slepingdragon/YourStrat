@@ -1,5 +1,8 @@
+import time
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from postgrest.exceptions import APIError
 from supabase import Client, create_client
 
 from app.config import settings
@@ -17,11 +20,29 @@ class _EmptySingle:
     data = None
 
 
+def _is_clock_skew(e: APIError) -> bool:
+    # PGRST303 "JWT issued at future" — transient clock skew between Supabase
+    # services; it self-heals within ~a second.
+    code = getattr(e, "code", None)
+    msg = (getattr(e, "message", None) or str(e)).lower()
+    return code == "PGRST303" or "issued at future" in msg
+
+
 def safe_single(query):
     """Run `.maybe_single().execute()` and always return an object with `.data`.
-    Use instead of `.maybe_single().execute()` directly."""
-    res = query.maybe_single().execute()
-    return res if res is not None else _EmptySingle()
+    Use instead of `.maybe_single().execute()` directly. Retries once on a
+    transient PGRST303 clock-skew error."""
+    single = query.maybe_single()
+    for attempt in range(2):
+        try:
+            res = single.execute()
+            return res if res is not None else _EmptySingle()
+        except APIError as e:
+            if attempt == 0 and _is_clock_skew(e):
+                time.sleep(1.0)
+                continue
+            raise
+    return _EmptySingle()
 
 
 def get_current_user(

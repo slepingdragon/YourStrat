@@ -127,25 +127,36 @@ function describeError(e: unknown): string {
   }
 }
 
-async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit, timeoutMs = 30000): Promise<Response> {
   // Retry idempotent reads once on a transient failure (5xx / network). The
   // free-tier backend sleeps when idle, so the first request after a cold start
   // can 500/drop while the dyno wakes; a single retry lets it self-heal. Never
-  // retry non-GET (POST/PUT/DELETE) — those aren't safe to repeat.
+  // retry non-GET (POST/PUT/DELETE) — those aren't safe to repeat. A per-request
+  // timeout (AbortController) guarantees a call can't hang forever (e.g. a slow
+  // scan) — it fails with a clear message instead.
   const method = (init?.method ?? "GET").toUpperCase();
   const canRetry = method === "GET";
   for (let attempt = 0; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(input, init);
+      const res = await fetch(input, { ...init, signal: controller.signal });
+      clearTimeout(timer);
       if (canRetry && res.status >= 500 && attempt === 0) {
         await new Promise((r) => setTimeout(r, 600));
         continue;
       }
       return res;
     } catch (e) {
-      if (canRetry && attempt === 0) {
+      clearTimeout(timer);
+      const aborted = e instanceof Error && e.name === "AbortError";
+      if (canRetry && attempt === 0 && !aborted) {
         await new Promise((r) => setTimeout(r, 600));
         continue;
+      }
+      if (aborted) {
+        console.error("apiFetch timed out:", input, `${timeoutMs}ms`);
+        throw new Error("Request timed out — check your connection and try again.");
       }
       const description = describeError(e);
       console.error("apiFetch failed:", input, description, e);
@@ -500,11 +511,15 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
       type: mime,
     } as unknown as Blob);
   }
-  const res = await apiFetch(apiUrl("/meals/scan"), {
-    method: "POST",
-    headers: { ...headers },
-    body: form,
-  });
+  const res = await apiFetch(
+    apiUrl("/meals/scan"),
+    {
+      method: "POST",
+      headers: { ...headers },
+      body: form,
+    },
+    60000, // Gemini + a cold dyno can be slow; allow more headroom before timing out
+  );
   return handle<{ items: MealItem[] }>(res);
 }
 
