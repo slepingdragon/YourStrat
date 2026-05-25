@@ -139,7 +139,7 @@ export default function RootLayout() {
           <Stack.Screen name="ai-info" />
           <Stack.Screen name="meal/[id]" />
           <Stack.Screen name="nutrition/metric/[id]" />
-          <Stack.Screen name="nutrition/day/[date]" />
+          <Stack.Screen name="nutrition/day/[date]" options={{ presentation: "modal" }} />
           <Stack.Screen name="routine/new" />
           <Stack.Screen name="routine/[id]" />
           <Stack.Screen name="session/[id]/index" options={{ gestureEnabled: false }} />
