@@ -50,8 +50,8 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   epic-1: in-progress
   1-1-single-source-numeric-formatting-helpers: review
-  1-2-token-drift-pre-commit-guard-hex-spacing: backlog
-  1-3-scope-motion-review-checks-ai-whisper-animation-lists: backlog
+  1-2-token-drift-pre-commit-guard-hex-spacing: review
+  1-3-scope-motion-review-checks-ai-whisper-animation-lists: review
   1-4-frame-perfect-skeleton-audit: backlog
   1-5-button-destructive-variant: done
   1-6-pillrow-primitive: review
