@@ -1,9 +1,9 @@
 import json
 import logging
 import math
-from typing import TypedDict
 
 import google.generativeai as genai
+from google.generativeai import protos
 
 from app.config import settings
 from app.prompts.food_scan import FOOD_SCAN_PROMPT
@@ -14,24 +14,40 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
 # Structured Outputs (Cal-AI approach): a hard response schema the model is
-# constrained to, so the scan always returns clean, parseable, schema-shaped
-# JSON instead of free-form text. The normalization below still runs as
-# defense-in-depth (clamps absurd values, aligns calories↔macros).
-class _ScanItemSchema(TypedDict):
-    name: str
-    portion: str
-    calories: int
-    protein_g: float
-    carbs_g: float
-    fat_g: float
-    fiber_g: float
-    sugar_g: float
-    sodium_mg: int
-    confidence: float
-
-
-class _ScanResultSchema(TypedDict):
-    items: list[_ScanItemSchema]
+# constrained to. CRITICAL: the SDK's TypedDict/Pydantic -> schema conversion
+# silently DROPS the `required` list, so the model was free to omit fields —
+# gemini-2.5-flash intermittently returned only name/portion/protein_g/sugar_g/
+# sodium_mg, and the normalizer then fabricated calories from the lone macro
+# present (~4 x protein), producing absurd low-cal / 0-fat results. Building the
+# proto schema by hand guarantees `required` reaches the API so EVERY field must
+# be returned. The normalization below still runs as defense-in-depth.
+_T = protos.Type
+_ITEM_PROPERTIES = {
+    "name": protos.Schema(type=_T.STRING),
+    "portion": protos.Schema(type=_T.STRING),
+    "calories": protos.Schema(type=_T.INTEGER),
+    "protein_g": protos.Schema(type=_T.NUMBER),
+    "carbs_g": protos.Schema(type=_T.NUMBER),
+    "fat_g": protos.Schema(type=_T.NUMBER),
+    "fiber_g": protos.Schema(type=_T.NUMBER),
+    "sugar_g": protos.Schema(type=_T.NUMBER),
+    "sodium_mg": protos.Schema(type=_T.INTEGER),
+    "confidence": protos.Schema(type=_T.NUMBER),
+}
+_SCAN_RESULT_SCHEMA = protos.Schema(
+    type=_T.OBJECT,
+    properties={
+        "items": protos.Schema(
+            type=_T.ARRAY,
+            items=protos.Schema(
+                type=_T.OBJECT,
+                properties=_ITEM_PROPERTIES,
+                required=list(_ITEM_PROPERTIES.keys()),
+            ),
+        )
+    },
+    required=["items"],
+)
 
 LOW_CONFIDENCE_THRESHOLD = 0.7
 MAX_ITEM_CALORIES = 2500
@@ -188,7 +204,7 @@ async def scan_food(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         [FOOD_SCAN_PROMPT, {"mime_type": mime_type, "data": image_bytes}],
         generation_config=genai.GenerationConfig(
             response_mime_type="application/json",
-            response_schema=_ScanResultSchema,
+            response_schema=_SCAN_RESULT_SCHEMA,
             temperature=0,  # deterministic: same photo -> same answer; biases to most-likely (accurate) recall
         ),
     )
