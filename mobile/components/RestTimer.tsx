@@ -1,12 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Button } from "@/components/ui";
 import { colors } from "@/theme/colors";
+import { spacing, radius } from "@/theme/spacing";
 
-type Props = { seconds: number; onDone: () => void; onSkip: () => void; paused?: boolean };
+type Props = {
+  seconds: number;
+  onDone: () => void;
+  onSkip: () => void;
+  paused?: boolean;
+  /** Peripheral strip layout (5.7) — a slim bar that sits alongside the logging
+   * UI instead of taking over the screen. Default `false` = the full block. */
+  compact?: boolean;
+};
 
-export function RestTimer({ seconds, onDone, onSkip, paused = false }: Props) {
+function fmt(s: number): string {
+  if (s < 60) return `${s}`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = false }: Props) {
   const [left, setLeft] = useState(seconds);
   const firedRef = useRef(false);
 
@@ -30,6 +46,56 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false }: Props) {
   }, [left, paused, onDone]);
 
   const pct = Math.max(0, Math.min(1, seconds > 0 ? left / seconds : 0));
+
+  if (compact) {
+    return (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing.md,
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.lg,
+          marginTop: spacing.md,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.pill,
+        }}
+      >
+        <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "700", letterSpacing: 1 }}>
+          REST
+        </Text>
+        <Text
+          style={{
+            color: colors.textPrimary,
+            fontSize: 17,
+            fontWeight: "700",
+            fontVariant: ["tabular-nums"],
+            minWidth: 44,
+          }}
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={`${left} seconds rest remaining`}
+        >
+          {fmt(left)}
+        </Text>
+        <View
+          style={{
+            flex: 1,
+            height: 4,
+            backgroundColor: colors.surfaceElevated,
+            borderRadius: radius.pill,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ height: "100%", width: `${pct * 100}%`, backgroundColor: colors.star }} />
+        </View>
+        <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button" accessibilityLabel="Skip rest">
+          <Text style={{ color: colors.spark, fontSize: 14, fontWeight: "600" }}>Skip</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={{ alignItems: "center", paddingVertical: 24 }}>
