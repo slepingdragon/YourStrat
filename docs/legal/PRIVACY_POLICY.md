@@ -1,8 +1,9 @@
 <!--
 DRAFT — review before publishing. Fill the [BRACKETS] and confirm the
-"Before you publish" checklist at the bottom. Host this (e.g. as
-https://yourstrat.xaeryx.com/privacy), then add the URL in Play Console →
-App content → Privacy policy. This is not legal advice.
+"Before you publish" checklist at the bottom. Host at
+https://yourstrat.xaeryx.com/privacy (the yourstrat.xaeryx.com subdomain off
+xaeryx.com), then add that URL in Play Console → App content → Privacy policy.
+This is not legal advice.
 -->
 
 # YourStrat — Privacy Policy
@@ -76,5 +77,5 @@ We may update this policy; we'll change the "Last updated" date and, for materia
 - [ ] Replace `[DATE]`, `[LEGAL ENTITY]`, `[CONTACT EMAIL]`, `[HOSTING]`.
 - [ ] **Confirm the third-party list is complete** — especially whether the App ships any **analytics or crash-reporting SDK** (Sentry, Firebase Analytics, Expo's telemetry, etc.). If yes, add it here and in the Play Data-safety form; if no, state "no third-party analytics."
 - [ ] Confirm whether the backend logs/keeps meal images or only forwards them to Gemini, and reflect that in "Data storage… retention."
-- [ ] Host it at a stable URL (e.g. `yourstrat.xaeryx.com/privacy`) and add that URL in Play Console.
+- [ ] Deploy to `https://yourstrat.xaeryx.com/privacy` (stand up the subdomain on Cloudflare; xaeryx.com launcher link is handled separately by the xaeryx.com agent) and add that URL in Play Console.
 - [ ] (Recommended) Add an in-app "Privacy policy" link in Profile once the URL is live (left unwired to avoid a dead link).

@@ -42,7 +42,8 @@ Nutrition estimates from photos are produced by AI and are approximate — alway
 - **Category:** Health & Fitness
 - **Tags:** calorie counter, macro tracker, workout log
 - **Contact email:** [CONTACT EMAIL]
-- **Website / Privacy policy:** [https://yourstrat.xaeryx.com] / [https://yourstrat.xaeryx.com/privacy]
+- **Website:** `https://yourstrat.xaeryx.com`
+- **Privacy policy:** `https://yourstrat.xaeryx.com/privacy`
 
 ## Release notes — v1.0.0 ("What's new")
 ```

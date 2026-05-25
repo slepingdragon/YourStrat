@@ -54,8 +54,13 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
 - [ ] **Feature graphic** (1024×500) + **phone screenshots** (≥2; Today ring / Scan result / Workouts session / Nutrition trend).
 - [ ] **Title / short / full description + release notes + category** — paste from `docs/STORE_LISTING.md` (fill contact email).
 
+### Web presence (xaeryx.com subdomain)
+- Hosting model (decided): the app's web presence lives on the **`yourstrat.xaeryx.com`** subdomain (off xaeryx.com, per the standard `<app>.xaeryx.com` pattern), with the privacy policy at **`https://yourstrat.xaeryx.com/privacy`**.
+- [ ] **Brady:** stand up the `yourstrat.xaeryx.com` subdomain (Cloudflare DNS + host) and deploy the privacy page there (content = `docs/legal/PRIVACY_POLICY.md`).
+- [ ] **Cross-project (xaeryx.com agent, Brady to coordinate):** add the YourStrat link on the xaeryx.com launcher/links page → `https://yourstrat.xaeryx.com`. _(Not a YourStrat-repo change.)_
+
 ### Legal / compliance (Play will reject without these)
-- [ ] **Privacy policy** — **draft ready: [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md)**. Fill the brackets, confirm the analytics/crash-SDK line, host it (e.g. `yourstrat.xaeryx.com/privacy`), add the URL in Play Console.
+- [ ] **Privacy policy** — content **draft ready: [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md)**. Fill the brackets + confirm the analytics/crash-SDK line, deploy to **`https://yourstrat.xaeryx.com/privacy`** (see Web presence), then add that URL in Play Console.
 - [ ] **Data safety form** — answer from the cheat-sheet in `docs/STORE_LISTING.md` (key row: meal **photos are *shared* with Google/Gemini**; email + health collected-not-shared; encrypted in transit; in-app deletion available).
 - [ ] **Content rating** questionnaire (likely Everyone).
 - [ ] **Target audience & ads** — not directed at children; declare no ads.
