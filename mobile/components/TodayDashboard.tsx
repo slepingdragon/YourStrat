@@ -108,6 +108,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
             size={RING_SIZE}
             hideCenter
             hideLabel
+            trackColor={colors.disabled}
             paceMark={pace?.fraction ?? undefined}
             paceState={pace?.state ?? undefined}
             animated

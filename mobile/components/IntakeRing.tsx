@@ -32,6 +32,10 @@ type Props = {
   paceState?: PaceState;
   animated?: boolean;
   accessibilityLabel?: string;
+  /** Full-circle background track color. Default is the subtle border; the
+   * Today hero passes a more visible grey so the complete circle always reads
+   * (otherwise only the lit arcs show and the ring looks off-center). */
+  trackColor?: string;
 };
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -57,6 +61,7 @@ export function IntakeRing({
   paceState,
   animated = false,
   accessibilityLabel,
+  trackColor = colors.border,
 }: Props) {
   const stroke = Math.max(6, Math.round(size * 0.09));
   const r = (size - stroke) / 2;
@@ -141,7 +146,7 @@ export function IntakeRing({
     >
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
         <Svg width={size} height={size} style={{ position: "absolute" }}>
-          <Circle cx={cx} cy={cx} r={r} stroke={colors.border} strokeWidth={stroke} fill="none" />
+          <Circle cx={cx} cy={cx} r={r} stroke={trackColor} strokeWidth={stroke} fill="none" />
 
           {/* behind: warm gap arc (under fill, but beyond the fill end → visible) */}
           {showWarm ? (
