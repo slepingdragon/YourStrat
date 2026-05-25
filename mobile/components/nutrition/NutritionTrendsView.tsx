@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { BurnTrendRow } from "@/components/nutrition/BurnTrendRow";
 import { NutrientTrendRow } from "@/components/nutrition/NutrientTrendRow";
+import { NutritionHero } from "@/components/nutrition/NutritionHero";
 import { ScoreStrip } from "@/components/nutrition/ScoreStrip";
 import { NutritionPastDays } from "@/components/NutritionPastDays";
 import { TrialBanner } from "@/components/TrialBanner";
@@ -69,6 +70,7 @@ export function NutritionTrendsView() {
   const todaySnapshot = useStore((s) => s.today);
   const targets = targetsFromProfile(profile);
   const [days, setDays] = useState<NutritionDay[]>([]);
+  const [vsAvgKcal, setVsAvgKcal] = useState<number | null>(null);
   const [burnStats, setBurnStats] = useState<SessionStats | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [journalOffline, setJournalOffline] = useState(false);
@@ -101,6 +103,7 @@ export function NutritionTrendsView() {
     const [journalRes, statsRes] = await Promise.allSettled([getNutritionJournal(), getSessionStats()]);
     if (journalRes.status === "fulfilled") {
       setDays(journalRes.value.days);
+      setVsAvgKcal(journalRes.value.vs_avg_kcal);
       setJournalOffline(false);
     } else {
       console.error(journalRes.reason);
@@ -145,6 +148,18 @@ export function NutritionTrendsView() {
       >
         <View style={{ width: "100%", maxWidth: CONTENT_MAX_WIDTH }}>
           <TrialBanner trial={trial} />
+
+          {targets && journalLoaded ? (
+            <NutritionHero
+              todayKcal={todayDay.totals.calories}
+              target={getMetricTarget(targets, "calories")}
+              sparklineValues={valuesByMetric.calories}
+              protein={todayDay.totals.protein_g}
+              carbs={todayDay.totals.carbs_g}
+              fat={todayDay.totals.fat_g}
+              vsAvgKcal={vsAvgKcal}
+            />
+          ) : null}
 
           <View style={{ marginBottom: 4 }}>
             <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", letterSpacing: 1 }}>
