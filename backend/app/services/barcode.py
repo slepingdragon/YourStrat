@@ -7,7 +7,12 @@ as the Gemini photo scan ({"items": [item]}). None = not found / unusable.
 import httpx
 
 _OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{code}.json"
-_OFF_FIELDS = "product_name,brands,nutriments,serving_size,serving_quantity"
+_OFF_FIELDS = "product_name,generic_name,brands,nutriments,serving_size,serving_quantity"
+# Crowd-sourced entries are sometimes named with the panel header, not the food.
+_JUNK_NAMES = {
+    "nutrition facts", "nutritional information", "nutrition information",
+    "ingredients", "untitled", "unknown", "n/a", "product", "",
+}
 # Open Food Facts asks API clients to identify themselves.
 _HEADERS = {"User-Agent": "YourStrat/1.0 (https://yourstrat.xaeryx.com)"}
 
@@ -53,11 +58,18 @@ def _product_to_item(product: dict) -> dict | None:
     if kcal <= 0 and protein <= 0 and carbs <= 0 and fat <= 0:
         return None  # no usable nutrition in the DB entry
 
-    name = (product.get("product_name") or "").strip()
+    # First non-junk name candidate, then prepend the brand for clarity.
+    candidates = [
+        (product.get("product_name") or "").strip(),
+        (product.get("generic_name") or "").strip(),
+    ]
+    name = next((c for c in candidates if c.lower() not in _JUNK_NAMES), "")
     brand = (product.get("brands") or "").split(",")[0].strip()
-    if brand and brand.lower() not in name.lower():
-        name = f"{brand} {name}".strip()
-    name = name[:120] or "Packaged food"
+    if name and brand and brand.lower() not in name.lower():
+        name = f"{brand} {name}"
+    elif not name:
+        name = brand or "Packaged food"
+    name = name[:120].strip() or "Packaged food"
 
     portion = (product.get("serving_size") or "").strip()
     if not portion:
