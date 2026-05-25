@@ -1,9 +1,9 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Tabs } from "expo-router";
 import { View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { AppTabBar } from "@/components/AppTabBar";
-import { Book, Camera, Dumbbell, Profile, Star } from "@/components/icons";
+import { Book, Camera, Dumbbell, Profile, StarTab } from "@/components/icons";
 import { TabBadge } from "@/components/TabBadge";
 import { getActiveSession } from "@/lib/api";
 import { useStore } from "@/lib/store";
@@ -13,7 +13,10 @@ import { colors } from "@/theme/colors";
 // (the "pop" half of pop + gliding indicator). The gliding indicator + the
 // selection haptic live in AppTabBar. A deliberate, owner-approved playful
 // departure from LAW-3's "weighted, never bouncy" — scoped to the tab chrome.
-const POP_SPRING = { damping: 10, stiffness: 220, mass: 0.6 };
+// reduceMotion: Never → this gentle micro-interaction plays for everyone, so
+// users with the OS "reduce motion" setting on still get the feedback (they'd
+// otherwise see it snap). Safe: it's a tiny scale, not large/vestibular motion.
+const POP_SPRING = { damping: 10, stiffness: 220, mass: 0.6, reduceMotion: ReduceMotion.Never };
 
 function AnimatedTabIcon({ focused, children }: { focused: boolean; children: ReactNode }) {
   const scale = useSharedValue(focused ? 1 : 0.9);
@@ -60,11 +63,9 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Today",
-          tabBarIcon: ({ focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
-              <View style={{ opacity: focused ? 1 : 0.72 }}>
-                <Star size={20} />
-              </View>
+              <StarTab color={color} size={24} />
             </AnimatedTabIcon>
           ),
         }}
@@ -74,9 +75,9 @@ export default function TabsLayout() {
         options={{
           title: "Workouts",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: 20, height: 20, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 24, height: 24, alignItems: "center", justifyContent: "center" }}>
               <AnimatedTabIcon focused={focused}>
-                <Dumbbell color={color} size={20} />
+                <Dumbbell color={color} size={24} />
               </AnimatedTabIcon>
               <TabBadge />
             </View>
@@ -111,7 +112,7 @@ export default function TabsLayout() {
           title: "Nutrition",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
-              <Book color={color} size={20} />
+              <Book color={color} size={24} />
             </AnimatedTabIcon>
           ),
         }}
@@ -122,7 +123,7 @@ export default function TabsLayout() {
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
-              <Profile color={color} size={20} />
+              <Profile color={color} size={24} />
             </AnimatedTabIcon>
           ),
         }}

@@ -1,4 +1,5 @@
 export { Star } from "./Star";
+export { StarTab } from "./StarTab";
 export { Camera } from "./Camera";
 export { Dumbbell } from "./Dumbbell";
 export { Book } from "./Book";

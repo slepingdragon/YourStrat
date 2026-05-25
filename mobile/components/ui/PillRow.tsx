@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   interpolateColor,
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -57,7 +58,9 @@ export function PillRow<T extends string>({ options, value, onChange, accessibil
 function Pill({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const progress = useSharedValue(selected ? 1 : 0);
   useEffect(() => {
-    progress.value = withTiming(selected ? 1 : 0, { duration: 300, easing: PILL_EASING });
+    // reduceMotion: Never -> the fill/border/text flip plays for all users,
+    // even with the OS "reduce motion" setting on (small, brief; safe to keep).
+    progress.value = withTiming(selected ? 1 : 0, { duration: 300, easing: PILL_EASING, reduceMotion: ReduceMotion.Never });
   }, [selected, progress]);
 
   const containerStyle = useAnimatedStyle(() => ({

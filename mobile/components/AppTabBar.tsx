@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { colors } from "@/theme/colors";
 
 // Width of the gliding active-tab indicator pill (centered over the active tab).
 const INDICATOR_W = 28;
 // LAW-3 universal Headspace curve — the indicator glides weighted, not bouncy.
-const GLIDE = { duration: 300, easing: Easing.bezier(0.32, 0.72, 0, 1) };
+// reduceMotion: Never → the glide plays even when the OS "reduce motion" setting
+// is on, so every user sees it (a small, brief slide; not large/vestibular).
+const GLIDE = { duration: 300, easing: Easing.bezier(0.32, 0.72, 0, 1), reduceMotion: ReduceMotion.Never };
 
 /**
  * Custom bottom tab bar (W: "pop + gliding indicator"). A `star` pill sits at the
@@ -84,9 +86,9 @@ export function AppTabBar({ state, descriptors, navigation, insets }: BottomTabB
             accessibilityLabel={label || route.name}
             style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 2 }}
           >
-            {options.tabBarIcon?.({ focused, color, size: 20 })}
+            {options.tabBarIcon?.({ focused, color, size: 24 })}
             {label ? (
-              <Text style={{ fontSize: 11, fontWeight: "600", color, marginTop: -2 }}>{label}</Text>
+              <Text style={{ fontSize: 13, fontWeight: "600", color, marginTop: 6 }}>{label}</Text>
             ) : null}
           </Pressable>
         );
