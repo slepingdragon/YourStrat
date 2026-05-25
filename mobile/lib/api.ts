@@ -470,6 +470,14 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
   return handle<{ items: MealItem[] }>(res);
 }
 
+/** Exact nutrition for a packaged product by barcode (Open Food Facts). Throws
+ *  ApiError 404 when the product isn't in the database (caller falls back to photo). */
+export async function lookupBarcode(code: string): Promise<{ items: MealItem[] }> {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl(`/meals/barcode/${encodeURIComponent(code)}`), { headers });
+  return handle<{ items: MealItem[] }>(res);
+}
+
 export async function saveMeal(photoUrl: string | null, items: MealItem[]) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/meals/"), {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -6,7 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { Screen, Button, toastError } from "@/components/ui";
-import { scanMeal } from "@/lib/api";
+import { isApiError, lookupBarcode, scanMeal } from "@/lib/api";
 import { colors } from "@/theme/colors";
 
 const isWeb = Platform.OS === "web";
@@ -60,6 +60,33 @@ export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  // Guard so a barcode in frame is handled once (onBarcodeScanned fires rapidly).
+  const handledBarcode = useRef(false);
+
+  // Re-arm barcode scanning each time the Scan tab regains focus.
+  useEffect(() => {
+    if (focused) handledBarcode.current = false;
+  }, [focused]);
+
+  const handleBarcode = async ({ data }: { data: string }) => {
+    if (loading || handledBarcode.current || !data) return;
+    handledBarcode.current = true;
+    setLoading(true);
+    try {
+      const result = await lookupBarcode(data);
+      router.push({ pathname: "/scan-result", params: { items: JSON.stringify(result.items ?? []) } });
+    } catch (e) {
+      console.error(e);
+      if (isApiError(e) && e.status === 404) {
+        toastError("Not in the food database — snap a photo of the food instead.");
+      } else {
+        toastError((e as Error).message);
+      }
+      handledBarcode.current = false; // allow another attempt
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUri = async (uri: string) => {
     setLoading(true);
@@ -122,7 +149,13 @@ export default function ScanScreen() {
     <Screen padding={false} edges={["top"]}>
       <View style={{ flex: 1, backgroundColor: "#000" }}>
         {focused ? (
-          <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />
+          <CameraView
+            ref={cameraRef}
+            style={{ flex: 1 }}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"] }}
+            onBarcodeScanned={handleBarcode}
+          />
         ) : (
           <View style={{ flex: 1, backgroundColor: colors.surface }} />
         )}
@@ -137,6 +170,19 @@ export default function ScanScreen() {
             gap: 14,
           }}
         >
+          <Text
+            style={{
+              color: "white",
+              fontSize: 12,
+              fontWeight: "600",
+              opacity: loading ? 0.4 : 0.8,
+              textShadowColor: "rgba(0,0,0,0.6)",
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 2,
+            }}
+          >
+            Barcode for packaged food · photo for meals
+          </Text>
           <ShutterButton onPress={capture} loading={loading} />
           <Pressable onPress={pickLibrary} disabled={loading} hitSlop={12} accessibilityRole="button">
             <Text

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import get_current_user, get_supabase, safe_single
 from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal
+from app.services.barcode import lookup_barcode
 from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
 from app.services.trial import check_scan_allowed, increment_scan_count
@@ -103,6 +104,23 @@ async def scan_meal(
             detail=f"Food scan failed: {str(e)[:200] or type(e).__name__}",
         ) from e
     increment_scan_count(sb, user["id"])
+    return result
+
+
+@router.get("/barcode/{code}")
+async def barcode_lookup(code: str, user: dict = Depends(get_current_user)):
+    """Exact nutrition for a packaged product by barcode (Open Food Facts).
+    Free + unlimited (no AI cost) — not gated by the daily scan limit."""
+    code = code.strip()
+    if not code.isdigit() or not (8 <= len(code) <= 14):
+        raise HTTPException(status_code=400, detail="That doesn't look like a product barcode.")
+    try:
+        result = await lookup_barcode(code)
+    except Exception as e:
+        logger.exception("barcode lookup failed")
+        raise HTTPException(status_code=503, detail="Food database is unreachable right now. Try the photo scan.") from e
+    if result is None:
+        raise HTTPException(status_code=404, detail="Not found in the food database. Snap a photo of the food instead.")
     return result
 
 
