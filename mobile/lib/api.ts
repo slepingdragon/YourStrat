@@ -161,12 +161,28 @@ export class ApiError extends Error {
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status}).`;
+    let raw = "";
     try {
-      const body = await res.json();
-      if (body?.detail) detail = formatDetail(body.detail);
+      const ct = res.headers.get("content-type") ?? "";
+      if (ct.includes("json")) {
+        const body = await res.json();
+        raw = JSON.stringify(body);
+        if (body?.detail) detail = formatDetail(body.detail);
+      } else {
+        raw = (await res.text()).slice(0, 500);
+      }
     } catch {
       /* ignore */
     }
+    // Dev diagnostic: name the endpoint + the server's raw reason so a 500
+    // points at the failing call. The thrown (user-facing) message stays clean.
+    let path = res.url;
+    try {
+      path = new URL(res.url).pathname;
+    } catch {
+      /* keep full url */
+    }
+    console.error(`API ${res.status} ${path} — ${raw || detail}`);
     throw new ApiError(detail, res.status);
   }
   return (await res.json()) as T;
