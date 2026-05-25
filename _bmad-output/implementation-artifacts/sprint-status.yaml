@@ -1,0 +1,121 @@
+# generated: 2026-05-24
+# last_updated: 2026-05-24
+# project: YourStrat
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+#
+# SPRINT NOTES (YourStrat):
+# - Brownfield app: most v1 feature stories enhance existing code rather than greenfield.
+# - Suggested Sprint 1 = Epic 1 (guardrails) + the two Tier-1 picks (4.3-4.6 Pace Ring, 5.5-5.6 Active Session Takeover).
+# - All 4 ask-before-implementation gates already resolved 2026-05-24 (PillRow, P-S1, CoachInsight removed, WaterRow removed).
+# - Epic 7 (Experimental) is deferred/gated — backlog status, NOT scheduled into a sprint until prototype-validated.
+
+generated: 2026-05-24
+last_updated: 2026-05-24
+project: YourStrat
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-single-source-numeric-formatting-helpers: review
+  1-2-token-drift-pre-commit-guard-hex-spacing: backlog
+  1-3-scope-motion-review-checks-ai-whisper-animation-lists: backlog
+  1-4-frame-perfect-skeleton-audit: backlog
+  1-5-button-destructive-variant: done
+  1-6-pillrow-primitive: review
+  1-7-coachinsight-scope-audit: done
+  1-8-waterrow-scope-audit: done
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-sign-up-with-email-password: backlog
+  2-2-log-in-with-email-password: backlog
+  2-3-reset-password-via-email-deep-link: backlog
+  2-4-onboarding-flow-with-smart-defaults: backlog
+  2-5-compute-targets-start-trial-on-onboard: backlog
+  2-6-edit-profile-recompute-targets: backlog
+  2-7-profile-surface-premium-pass: backlog
+  2-8-sign-out: backlog
+  2-9-delete-account-all-data: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-camera-capture-library-pick: backlog
+  3-2-scan-photo-through-gemini-with-post-processing: backlog
+  3-3-review-edit-the-scan-result: backlog
+  3-4-confidence-whiskers-on-scan-result: backlog
+  3-5-save-meal-with-scan-today-continuity: backlog
+  3-6-daily-scan-limit-trial-end-handling: backlog
+  3-7-camera-live-context-recent-scans: backlog
+  epic-3-retrospective: optional
+
+  epic-4: in-progress
+  4-1-today-snapshot: backlog
+  4-2-view-edit-delete-meals-reverse-chronological: backlog
+  4-3-backend-pace-position: done
+  4-4-pace-computation-color-tokens-client: done
+  4-5-pace-ring-rendering-animation-t-s1: done
+  4-6-wire-pace-into-today-strip-pace-copy: done
+  4-7-today-premium-pass: backlog
+  4-8-dismissible-trial-ending-notice: backlog
+  epic-4-retrospective: optional
+
+  epic-5: in-progress
+  5-1-manage-exercises: backlog
+  5-2-build-reorder-routines: backlog
+  5-3-start-run-a-session-sets-reps-rest-timer: backlog
+  5-4-finish-session-reflect-burn-on-today: backlog
+  5-5-active-session-endpoint: done
+  5-6-active-session-takeover-tab-badge-w-c2: review
+  5-7-active-session-premium-rework-w-m1-w-a1: backlog
+  5-8-workouts-list-premium-pass-w-s1-w-s2-w-c1: backlog
+  5-9-workouts-copy-polish-w-m2-w-e1: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-nutrition-history-7-day-trend: backlog
+  6-2-vs-average-derived-field: backlog
+  6-3-nutrition-surface-rework-heatmap-scroll-spy: backlog
+  6-4-hero-composite-magnified-macros-vs-avg-pill: backlog
+  6-5-day-detail-receipt-density: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-morphing-countdown-hero-experiments: backlog
+  7-2-hands-free-focus-gestures: backlog
+  7-3-derived-equivalence-projection-displays: backlog
+  7-4-adherence-recovery-heroes-2-check-required: backlog
+  7-5-result-first-scan-workflow: backlog
+  epic-7-retrospective: optional
