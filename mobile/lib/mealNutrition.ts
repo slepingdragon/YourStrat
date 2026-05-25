@@ -22,6 +22,7 @@ export function normalizeMealItem(raw: Partial<MealItem>): MealItem {
     sugar_g: Math.max(0, Number(raw.sugar_g) || 0),
     sodium_mg: Math.max(0, Math.round(Number(raw.sodium_mg) || 0)),
     confidence: raw.confidence ?? null,
+    confidence_range: raw.confidence_range ?? null,
   };
 }
 

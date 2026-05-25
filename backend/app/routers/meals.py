@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import get_current_user, get_supabase, safe_single
-from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal
+from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal, ScanResult
 from app.services.nutrition import compute_vs_avg_kcal
 from app.services.barcode import lookup_barcode
 from app.services.gemini import scan_food
@@ -73,7 +73,7 @@ def _meal_with_items(sb, meal_row: dict) -> MealOut:
     )
 
 
-@router.post("/scan")
+@router.post("/scan", response_model=ScanResult)
 async def scan_meal(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),

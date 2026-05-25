@@ -71,11 +71,11 @@ development_status:
   2-9-delete-account-all-data: backlog
   epic-2-retrospective: optional
 
-  epic-3: backlog
+  epic-3: in-progress
   3-1-camera-capture-library-pick: backlog
   3-2-scan-photo-through-gemini-with-post-processing: backlog
   3-3-review-edit-the-scan-result: backlog
-  3-4-confidence-whiskers-on-scan-result: backlog
+  3-4-confidence-whiskers-on-scan-result: review
   3-5-save-meal-with-scan-today-continuity: backlog
   3-6-daily-scan-limit-trial-end-handling: backlog
   3-7-camera-live-context-recent-scans: backlog

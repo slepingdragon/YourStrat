@@ -58,6 +58,15 @@ def _penalize_confidence(confidence: float, amount: float) -> float:
     return max(0.05, confidence - amount)
 
 
+def _confidence_range(confidence: float) -> float:
+    """Derived ± fractional band for the scan-result whiskers (Story 3.4).
+
+    Confident (→1.0) collapses to ~0 (no whisker); lower confidence widens it,
+    capped at 0.35. Derived from `confidence` rather than asked of the model, so
+    the structured-output schema/prompt stay untouched."""
+    return round(min(0.35, max(0.0, (1.0 - confidence) * 0.6)), 2)
+
+
 def _validate_item_macros(item: dict) -> dict:
     """Clamp absurd values and align calories with macros; reduce confidence when adjusted."""
     confidence = _clamp_confidence(item.get("confidence"))
@@ -124,6 +133,7 @@ def _validate_item_macros(item: dict) -> dict:
             "calories": calories,
             "sodium_mg": sodium,
             "confidence": round(confidence, 2),
+            "confidence_range": _confidence_range(confidence),
         }
     )
     return item

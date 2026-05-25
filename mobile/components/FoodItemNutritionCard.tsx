@@ -12,22 +12,50 @@ type Props = {
   onChange?: (field: keyof MealItem, value: string) => void;
 };
 
-function StatLine({ label, value, color }: { label: string; value: string; color?: string }) {
+/** 1pt confidence whisker (Story 3.4): taller = more uncertain; hidden at 0. */
+function Whisker({ band }: { band: number }) {
+  const h = Math.min(14, Math.max(3, band * 36));
+  return (
+    <View
+      importantForAccessibility="no-hide-descendants"
+      style={{ marginLeft: 5, alignItems: "center", justifyContent: "center" }}
+    >
+      <View style={{ width: 5, height: 1, backgroundColor: colors.textMuted }} />
+      <View style={{ width: 1, height: h, backgroundColor: colors.textMuted }} />
+      <View style={{ width: 5, height: 1, backgroundColor: colors.textMuted }} />
+    </View>
+  );
+}
+
+function StatLine({
+  label,
+  value,
+  color,
+  range,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+  range?: number | null;
+}) {
   const muted = value === "—";
+  const showWhisker = !muted && range != null && range > 0;
   return (
     <View style={{ flex: 1 }}>
       <Text style={{ color: colors.textMuted, fontSize: 11 }}>{label}</Text>
-      <Text
-        style={{
-          color: muted ? colors.textMuted : color ?? colors.textPrimary,
-          fontSize: 16,
-          fontWeight: "600",
-          marginTop: 2,
-          fontVariant: ["tabular-nums"],
-        }}
-      >
-        {value}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
+        <Text
+          style={{
+            color: muted ? colors.textMuted : color ?? colors.textPrimary,
+            fontSize: 16,
+            fontWeight: "600",
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {value}
+        </Text>
+        {showWhisker ? <Whisker band={range} /> : null}
+      </View>
     </View>
   );
 }
@@ -51,6 +79,15 @@ function NumField({
 
 export function FoodItemNutritionCard({ item, index, editable, onChange }: Props) {
   const cal = formatKcal(item.calories || 0);
+
+  // Confidence whiskers (Story 3.4): per-macro range + a spoken summary.
+  const cr = item.confidence_range;
+  const macroLabel = `Protein ${formatGram(item.protein_g)}, carbs ${formatGram(item.carbs_g)}, fat ${formatGram(item.fat_g)}`;
+  const rangeText = (v: number) => `${Math.round(v * (1 - (cr ?? 0)))} to ${Math.round(v * (1 + (cr ?? 0)))} grams`;
+  const macroHint =
+    cr != null && cr > 0
+      ? `Estimated ranges: protein ${rangeText(item.protein_g)}, carbs ${rangeText(item.carbs_g)}, fat ${rangeText(item.fat_g)}.`
+      : undefined;
 
   return (
     <Card style={{ marginBottom: 14 }}>
@@ -86,10 +123,15 @@ export function FoodItemNutritionCard({ item, index, editable, onChange }: Props
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>cal</Text>
           </View>
         )}
-        <View style={{ flex: 2, flexDirection: "row", justifyContent: "space-between" }}>
-          <StatLine label="Protein" value={formatGram(item.protein_g)} color={colors.protein} />
-          <StatLine label="Carbs" value={formatGram(item.carbs_g)} color={colors.carbs} />
-          <StatLine label="Fat" value={formatGram(item.fat_g)} color={colors.fat} />
+        <View
+          accessible
+          accessibilityLabel={macroLabel}
+          accessibilityHint={macroHint}
+          style={{ flex: 2, flexDirection: "row", justifyContent: "space-between" }}
+        >
+          <StatLine label="Protein" value={formatGram(item.protein_g)} color={colors.protein} range={cr} />
+          <StatLine label="Carbs" value={formatGram(item.carbs_g)} color={colors.carbs} range={cr} />
+          <StatLine label="Fat" value={formatGram(item.fat_g)} color={colors.fat} range={cr} />
         </View>
       </View>
 
