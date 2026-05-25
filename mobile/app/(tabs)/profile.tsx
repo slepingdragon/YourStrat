@@ -2,22 +2,18 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
-import { ChevronDown } from "@/components/icons";
+import { Check, ChevronDown } from "@/components/icons";
 import { Screen, Button, Input, OptionCard, PillRow, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
 import { getAiStats, getProfile, getSessionStats, normalizeTrial, updateProfile, type AiStats, type SessionStats } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { LANGUAGES, useI18n, useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { cmToIn, computeTargets, inToCm, kgToLbs, lbsToKg } from "@/lib/targets";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
-const ACTIVITY_OPTIONS: { key: string; label: string }[] = [
-  { key: "sedentary", label: "Sedentary" },
-  { key: "light", label: "Light" },
-  { key: "moderate", label: "Moderate" },
-  { key: "active", label: "Active" },
-  { key: "very_active", label: "Very active" },
-];
+const ACTIVITY_KEYS = ["sedentary", "light", "moderate", "active", "very_active"] as const;
 
 const CARD_PAD = { padding: 24 };
 
@@ -30,6 +26,9 @@ function displayHeight(cm: number, units: "metric" | "imperial") {
 }
 
 export default function ProfileScreen() {
+  const t = useT();
+  const lang = useI18n((s) => s.lang);
+  const setLang = useI18n((s) => s.setLang);
   const router = useRouter();
   const session = useStore((s) => s.session);
   const profile = useStore((s) => s.profile);
@@ -141,7 +140,7 @@ export default function ProfileScreen() {
       });
       setProfile(p);
       hydrate(p);
-      toastSuccess("Profile updated. Targets recalculated.");
+      toastSuccess(t("profile.updated"));
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);
@@ -163,30 +162,30 @@ export default function ProfileScreen() {
       if (error) throw error;
     } catch (e) {
       console.error(e);
-      toastError("Couldn't delete your account. Check your connection and try again.");
+      toastError(t("profile.deleteError"));
       return;
     }
     await signOut();
   };
 
   const deleteAccount = () => {
-    const message = "This permanently deletes your profile, meals, and workout history. This cannot be undone.";
+    const message = t("profile.deleteMessage");
     if (Platform.OS === "web") {
-      if (typeof window !== "undefined" && window.confirm(`Delete account?\n\n${message}`)) {
+      if (typeof window !== "undefined" && window.confirm(`${t("profile.deleteTitle")}\n\n${message}`)) {
         void performDelete();
       }
       return;
     }
-    Alert.alert("Delete account?", message, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete account", style: "destructive", onPress: () => void performDelete() },
+    Alert.alert(t("profile.deleteTitle"), message, [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("profile.deleteAccount"), style: "destructive", onPress: () => void performDelete() },
     ]);
   };
 
   if (!profile) {
     return (
       <Screen scroll>
-        <Text style={styles.pageTitle}>Profile</Text>
+        <Text style={styles.pageTitle}>{t("profile.title")}</Text>
         <View style={{ height: 24 }} />
         <View style={{ alignItems: "center" }}>
           <Skeleton width={120} height={120} radius={60} />
@@ -203,14 +202,18 @@ export default function ProfileScreen() {
 
   const trial = normalizeTrial(profile.trial);
   const trialLine = trial.is_admin
-    ? "Admin · unlimited food scans"
+    ? t("profile.trialAdmin")
     : trial.trial_active
-      ? `${trial.days_remaining} day${trial.days_remaining === 1 ? "" : "s"} left · ${trial.scans_today}/${trial.scans_limit} scans today`
-      : `Trial ended · ${trial.scans_today}/${trial.scans_limit} scans today`;
+      ? t(trial.days_remaining === 1 ? "profile.trialActiveOne" : "profile.trialActiveOther", {
+          days: trial.days_remaining,
+          today: trial.scans_today,
+          limit: trial.scans_limit,
+        })
+      : t("profile.trialEnded", { today: trial.scans_today, limit: trial.scans_limit });
 
   return (
     <Screen scroll>
-      <Text style={styles.pageTitle}>Profile</Text>
+      <Text style={styles.pageTitle}>{t("profile.title")}</Text>
 
       <ProfileIdentity profile={profile} />
 
@@ -219,14 +222,16 @@ export default function ProfileScreen() {
         <Text allowFontScaling={false} style={styles.heroNumber}>
           {formatKcal(stats?.lifetime_calories_burned ?? 0)}
         </Text>
-        <Text style={styles.heroLabel}>calories burned · all-time</Text>
+        <Text style={styles.heroLabel}>{t("profile.burnedAllTime")}</Text>
         {stats && stats.lifetime_sessions > 0 ? (
           <Text style={styles.heroSub}>
-            {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"}
-            {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
+            {t(stats.lifetime_sessions === 1 ? "profile.workoutsOne" : "profile.workoutsOther", {
+              n: stats.lifetime_sessions,
+            })}
+            {stats.avg_actual_rpe != null ? t("profile.avgEffort", { r: stats.avg_actual_rpe }) : ""}
           </Text>
         ) : (
-          <Text style={styles.heroSub}>Your all-time burn tallies here.</Text>
+          <Text style={styles.heroSub}>{t("profile.burnTallies")}</Text>
         )}
       </View>
 
@@ -236,11 +241,11 @@ export default function ProfileScreen() {
       <Pressable
         onPress={() => setEditOpen((o) => !o)}
         accessibilityRole="button"
-        accessibilityLabel={editOpen ? "Collapse edit details" : "Expand edit details"}
+        accessibilityLabel={editOpen ? t("profile.editCollapse") : t("profile.editExpand")}
         accessibilityState={{ expanded: editOpen }}
         style={styles.editHeader}
       >
-        <Text style={styles.editHeaderTitle}>Edit your details</Text>
+        <Text style={styles.editHeaderTitle}>{t("profile.editDetails")}</Text>
         <View style={{ transform: [{ rotate: editOpen ? "180deg" : "0deg" }] }}>
           <ChevronDown color={colors.textMuted} size={20} />
         </View>
@@ -250,23 +255,25 @@ export default function ProfileScreen() {
         <Card style={[CARD_PAD, { marginTop: 0 }]}>
           {targetsChanged && preview ? (
             <Text style={{ color: colors.spark, marginBottom: 16, fontSize: 13 }}>
-              After save: ~{formatKcal(preview.daily_calorie_target)} cal/day · P{" "}
-              {preview.daily_protein_target_g}g
+              {t("profile.afterSave", {
+                cal: formatKcal(preview.daily_calorie_target),
+                p: preview.daily_protein_target_g,
+              })}
             </Text>
           ) : null}
 
-          <Text style={styles.fieldSection}>Units</Text>
+          <Text style={styles.fieldSection}>{t("profile.units")}</Text>
           <View style={{ gap: 12 }}>
-            <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => onUnitsChange("metric")} />
+            <OptionCard label={t("profile.metric")} selected={units === "metric"} onPress={() => onUnitsChange("metric")} />
             <OptionCard
-              label="Imperial (lb, in)"
+              label={t("profile.imperial")}
               selected={units === "imperial"}
               onPress={() => onUnitsChange("imperial")}
             />
           </View>
 
-          <Text style={styles.fieldSection}>Body</Text>
-          <Text style={styles.label}>Weight ({units === "metric" ? "kg" : "lb"})</Text>
+          <Text style={styles.fieldSection}>{t("profile.body")}</Text>
+          <Text style={styles.label}>{t("profile.weight", { u: units === "metric" ? "kg" : "lb" })}</Text>
           <Input
             value={weight}
             onChangeText={(v) => {
@@ -278,7 +285,7 @@ export default function ProfileScreen() {
             centered={false}
             error={weightError}
           />
-          <Text style={styles.label}>Height ({units === "metric" ? "cm" : "in"})</Text>
+          <Text style={styles.label}>{t("profile.height", { u: units === "metric" ? "cm" : "in" })}</Text>
           <Input
             value={height}
             onChangeText={(v) => {
@@ -290,7 +297,7 @@ export default function ProfileScreen() {
             centered={false}
             error={heightError}
           />
-          <Text style={styles.label}>Age</Text>
+          <Text style={styles.label}>{t("profile.age")}</Text>
           <Input
             value={age}
             onChangeText={(v) => {
@@ -303,63 +310,76 @@ export default function ProfileScreen() {
             error={ageError}
           />
 
-          <Text style={styles.label}>Sex</Text>
+          <Text style={styles.label}>{t("profile.sex")}</Text>
           <PillRow
             options={[
-              { value: "male", label: "Male" },
-              { value: "female", label: "Female" },
+              { value: "male", label: t("profile.male") },
+              { value: "female", label: t("profile.female") },
             ]}
             value={sex}
             onChange={setSex}
-            accessibilityLabel="Sex"
+            accessibilityLabel={t("profile.sex")}
           />
 
-          <Text style={styles.fieldSection}>Activity</Text>
+          <Text style={styles.fieldSection}>{t("profile.activity")}</Text>
           <View style={{ gap: 12 }}>
-            {ACTIVITY_OPTIONS.map(({ key, label }) => (
-              <OptionCard key={key} label={label} selected={activity === key} onPress={() => setActivity(key)} />
+            {ACTIVITY_KEYS.map((key) => (
+              <OptionCard key={key} label={t("activity." + key)} selected={activity === key} onPress={() => setActivity(key)} />
             ))}
           </View>
 
-          <Text style={styles.fieldSection}>Goal</Text>
+          <Text style={styles.fieldSection}>{t("profile.goal")}</Text>
           <PillRow
             options={[
-              { value: "lose", label: "Lose" },
-              { value: "maintain", label: "Maintain" },
-              { value: "gain", label: "Gain" },
+              { value: "lose", label: t("goal.lose") },
+              { value: "maintain", label: t("goal.maintain") },
+              { value: "gain", label: t("goal.gain") },
             ]}
             value={goal}
             onChange={setGoal}
-            accessibilityLabel="Goal"
+            accessibilityLabel={t("profile.goal")}
           />
 
           <View style={{ marginTop: 24 }}>
-            <Button label="Save changes" onPress={save} loading={loading} />
+            <Button label={t("common.saveChanges")} onPress={save} loading={loading} />
           </View>
         </Card>
       ) : null}
 
-      <Text style={styles.sectionTitle}>AI & food scans</Text>
+      <Text style={styles.sectionTitle}>{t("profile.aiSection")}</Text>
       <SettingsGroup>
         {aiStats ? (
           <>
-            <SettingsRow label="Total scans" value={String(aiStats.total_scans)} />
-            <SettingsRow label="This week" value={String(aiStats.scans_this_week)} />
+            <SettingsRow label={t("profile.totalScans")} value={String(aiStats.total_scans)} />
+            <SettingsRow label={t("profile.thisWeek")} value={String(aiStats.scans_this_week)} />
             <SettingsRow
-              label="Avg confidence"
+              label={t("profile.avgConfidence")}
               value={aiStats.avg_confidence != null ? `${Math.round(aiStats.avg_confidence * 100)}%` : "—"}
             />
-            <SettingsRow label="Low-confidence scans" value={String(aiStats.low_confidence_count)} />
+            <SettingsRow label={t("profile.lowConfidence")} value={String(aiStats.low_confidence_count)} />
           </>
         ) : null}
-        <SettingsRow label="How scanning works" onPress={() => router.push("/ai-info")} chevron last />
+        <SettingsRow label={t("profile.howScanning")} onPress={() => router.push("/ai-info")} chevron last />
       </SettingsGroup>
       {aiStats?.accuracy_note ? <Text style={styles.caption}>{aiStats.accuracy_note}</Text> : null}
 
-      <Text style={{ ...styles.sectionTitle, marginTop: 32 }}>Account</Text>
+      <Text style={{ ...styles.sectionTitle, marginTop: spacing.xxl }}>{t("profile.language")}</Text>
       <SettingsGroup>
-        <SettingsRow label="Sign out" onPress={signOut} chevron />
-        <SettingsRow label="Delete account" onPress={deleteAccount} destructive last />
+        {LANGUAGES.map((l, i) => (
+          <SettingsRow
+            key={l.code}
+            label={l.native}
+            onPress={() => setLang(l.code)}
+            selected={lang === l.code}
+            last={i === LANGUAGES.length - 1}
+          />
+        ))}
+      </SettingsGroup>
+
+      <Text style={{ ...styles.sectionTitle, marginTop: spacing.xxl }}>{t("profile.account")}</Text>
+      <SettingsGroup>
+        <SettingsRow label={t("profile.signOut")} onPress={signOut} chevron />
+        <SettingsRow label={t("profile.deleteAccount")} onPress={deleteAccount} destructive last />
       </SettingsGroup>
     </Screen>
   );
@@ -387,6 +407,7 @@ function SettingsRow({
   onPress,
   destructive,
   chevron,
+  selected,
   last,
 }: {
   label: string;
@@ -394,6 +415,7 @@ function SettingsRow({
   onPress?: () => void;
   destructive?: boolean;
   chevron?: boolean;
+  selected?: boolean;
   last?: boolean;
 }) {
   const labelColor = destructive ? colors.error : colors.textPrimary;
@@ -414,6 +436,7 @@ function SettingsRow({
         <Text style={{ color: colors.textSecondary, fontSize: 15, fontVariant: ["tabular-nums"] }}>{value}</Text>
       ) : null}
       {chevron ? <Text style={{ color: colors.textMuted, fontSize: 18, marginLeft: 8 }}>›</Text> : null}
+      {selected ? <Check color={colors.star} size={20} /> : null}
     </View>
   );
   if (!onPress) return inner;

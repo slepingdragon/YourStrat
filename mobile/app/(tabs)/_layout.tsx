@@ -7,6 +7,7 @@ import { Book, Camera, Dumbbell, Profile, StarTab } from "@/components/icons";
 import { ScanQueueBar } from "@/components/scan/ScanQueueBar";
 import { TabBadge } from "@/components/TabBadge";
 import { getActiveSession } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
@@ -29,6 +30,7 @@ function AnimatedTabIcon({ focused, children }: { focused: boolean; children: Re
 }
 
 export default function TabsLayout() {
+  const t = useT();
   const session = useStore((s) => s.session);
   const activeSession = useStore((s) => s.activeSession);
   const setActiveSession = useStore((s) => s.setActiveSession);
@@ -64,7 +66,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Today",
+          title: t("tabs.today"),
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
               <StarTab color={color} size={24} />
@@ -75,7 +77,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="workouts"
         options={{
-          title: "Workouts",
+          title: t("tabs.workouts"),
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: 24, height: 24, alignItems: "center", justifyContent: "center" }}>
               <AnimatedTabIcon focused={focused}>
@@ -111,7 +113,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="nutrition"
         options={{
-          title: "Nutrition",
+          title: t("tabs.nutrition"),
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
               <Book color={color} size={24} />
@@ -122,7 +124,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("tabs.profile"),
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon focused={focused}>
               <Profile color={color} size={24} />
