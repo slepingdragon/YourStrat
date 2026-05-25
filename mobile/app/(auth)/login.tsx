@@ -3,20 +3,18 @@ import { Text, View } from "react-native";
 import { Screen, Button, Input, LinkButton, toastError } from "@/components/ui";
 import { Star } from "@/components/icons";
 import { signInWithGoogle, supabase } from "@/lib/supabase";
+import { translate, useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
 function signInErrorMessage(message: string): string {
-  if (/email not confirmed/i.test(message)) {
-    return "Confirm your email from the signup link, then sign in again.";
-  }
-  if (/invalid login credentials/i.test(message)) {
-    return "Email or password is incorrect.";
-  }
+  if (/email not confirmed/i.test(message)) return translate("auth.emailNotConfirmed");
+  if (/invalid login credentials/i.test(message)) return translate("auth.invalidCredentials");
   return message;
 }
 
 export default function LoginScreen() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +26,7 @@ export default function LoginScreen() {
       await signInWithGoogle();
     } catch (e) {
       console.error(e);
-      toastError((e as Error).message ?? "Google sign in failed. Try again.");
+      toastError((e as Error).message ?? t("auth.googleFailed"));
     } finally {
       setGoogleLoading(false);
     }
@@ -37,11 +35,11 @@ export default function LoginScreen() {
   const signIn = async () => {
     const trimmed = email.trim();
     if (!trimmed) {
-      toastError("Enter your email.");
+      toastError(t("auth.enterEmail"));
       return;
     }
     if (!password) {
-      toastError("Enter your password.");
+      toastError(t("auth.enterPassword"));
       return;
     }
     setLoading(true);
@@ -57,7 +55,7 @@ export default function LoginScreen() {
       }
     } catch (e) {
       console.error(e);
-      toastError((e as Error).message ?? "Sign in failed. Try again.");
+      toastError((e as Error).message ?? t("auth.signInFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,19 +66,19 @@ export default function LoginScreen() {
       <View style={{ alignItems: "center", marginTop: 48, marginBottom: 32 }}>
         <Star size={48} />
         <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginTop: 16 }}>
-          Find your North.
+          {t("auth.tagline")}
         </Text>
       </View>
-      <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+      <Input placeholder={t("auth.email")} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
       <View style={{ height: 12 }} />
-      <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+      <Input placeholder={t("auth.password")} secureTextEntry value={password} onChangeText={setPassword} />
       <View style={{ height: 24 }} />
-      <Button label="Sign in" onPress={signIn} loading={loading} />
+      <Button label={t("auth.signIn")} onPress={signIn} loading={loading} />
       <View style={{ height: 12 }} />
-      <Button label="Continue with Google" onPress={onGoogle} loading={googleLoading} variant="secondary" />
+      <Button label={t("auth.continueGoogle")} onPress={onGoogle} loading={googleLoading} variant="secondary" />
       <View style={{ height: 8 }} />
-      <LinkButton href="/(auth)/signup" label="Create account" />
-      <LinkButton href="/(auth)/reset" label="Reset password" tone="muted" />
+      <LinkButton href="/(auth)/signup" label={t("auth.createAccount")} />
+      <LinkButton href="/(auth)/reset" label={t("auth.resetPassword")} tone="muted" />
     </Screen>
   );
 }

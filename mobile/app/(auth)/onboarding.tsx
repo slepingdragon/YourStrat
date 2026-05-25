@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Screen, Button, Input, OptionCard, PillRow, ProgressBar, toastError } from "@/components/ui";
 import { isNetworkError, onboard } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { computeTargets, inToCm, lbsToKg } from "@/lib/targets";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -12,6 +13,7 @@ import { colors } from "@/theme/colors";
 const STEPS = 7;
 
 export default function OnboardingScreen() {
+  const t = useT();
   const router = useRouter();
   const setProfile = useStore((s) => s.setProfile);
   const [step, setStep] = useState(0);
@@ -37,29 +39,29 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     if (!sex || !activity || !goal) {
-      toastError("Complete all steps before finishing.");
+      toastError(t("onboarding.completeAll"));
       return;
     }
     const w = parseFloat(weight);
     const h = parseFloat(height);
     const a = parseInt(age, 10);
     if (!w || w <= 0) {
-      toastError("Enter a valid weight.");
+      toastError(t("onboarding.validWeight"));
       return;
     }
     if (!h || h <= 0) {
-      toastError("Enter a valid height.");
+      toastError(t("onboarding.validHeight"));
       return;
     }
     if (!a || a < 13 || a > 120) {
-      toastError("Enter an age between 13 and 120.");
+      toastError(t("onboarding.validAge"));
       return;
     }
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
-      toastError("Sign in first. If you just signed up, confirm your email, then log in.");
+      toastError(t("onboarding.signInFirst"));
       router.replace("/(auth)/login");
       return;
     }
@@ -91,34 +93,34 @@ export default function OnboardingScreen() {
     if (step === 1) {
       const w = parseFloat(weight);
       if (!w || w <= 0) {
-        toastError("Enter a valid weight.");
+        toastError(t("onboarding.validWeight"));
         return;
       }
     }
     if (step === 2) {
       const h = parseFloat(height);
       if (!h || h <= 0) {
-        toastError("Enter a valid height.");
+        toastError(t("onboarding.validHeight"));
         return;
       }
     }
     if (step === 3) {
       const a = parseInt(age, 10);
       if (!a || a < 13 || a > 120) {
-        toastError("Enter an age between 13 and 120.");
+        toastError(t("onboarding.validAge"));
         return;
       }
     }
     if (step === 4 && !sex) {
-      toastError("Select sex.");
+      toastError(t("onboarding.selectSex"));
       return;
     }
     if (step === 5 && !activity) {
-      toastError("Select activity level.");
+      toastError(t("onboarding.selectActivity"));
       return;
     }
     if (step === 6 && !goal) {
-      toastError("Select a goal.");
+      toastError(t("onboarding.selectGoal"));
       return;
     }
     if (step < STEPS - 1) setStep(step + 1);
@@ -134,90 +136,88 @@ export default function OnboardingScreen() {
       <ProgressBar progress={(step + 1) / STEPS} />
       {step === 0 && (
         <>
-          <Text style={styles.heading}>Units</Text>
-          <Text style={styles.sub}>Choose how you measure.</Text>
+          <Text style={styles.heading}>{t("profile.units")}</Text>
+          <Text style={styles.sub}>{t("onboarding.unitsSub")}</Text>
           <View style={{ gap: 12 }}>
-            <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => setUnits("metric")} />
-            <OptionCard label="Imperial (lb, in)" selected={units === "imperial"} onPress={() => setUnits("imperial")} />
+            <OptionCard label={t("profile.metric")} selected={units === "metric"} onPress={() => setUnits("metric")} />
+            <OptionCard label={t("profile.imperial")} selected={units === "imperial"} onPress={() => setUnits("imperial")} />
           </View>
         </>
       )}
       {step === 1 && (
         <>
-          <Text style={styles.heading}>Weight</Text>
-          <Text style={styles.sub}>{units === "metric" ? "Kilograms" : "Pounds"}</Text>
+          <Text style={styles.heading}>{t("onboarding.weight")}</Text>
+          <Text style={styles.sub}>{units === "metric" ? t("onboarding.weightKg") : t("onboarding.weightLb")}</Text>
           <Input value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder={units === "metric" ? "70" : "155"} />
         </>
       )}
       {step === 2 && (
         <>
-          <Text style={styles.heading}>Height</Text>
-          <Text style={styles.sub}>{units === "metric" ? "Centimeters" : "Inches"}</Text>
+          <Text style={styles.heading}>{t("onboarding.height")}</Text>
+          <Text style={styles.sub}>{units === "metric" ? t("onboarding.heightCm") : t("onboarding.heightIn")}</Text>
           <Input value={height} onChangeText={setHeight} keyboardType="decimal-pad" placeholder={units === "metric" ? "175" : "69"} />
         </>
       )}
       {step === 3 && (
         <>
-          <Text style={styles.heading}>Age</Text>
+          <Text style={styles.heading}>{t("profile.age")}</Text>
           <Input value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="30" />
         </>
       )}
       {step === 4 && (
         <>
-          <Text style={styles.heading}>Sex</Text>
+          <Text style={styles.heading}>{t("profile.sex")}</Text>
           <PillRow
             options={[
-              { value: "male", label: "Male" },
-              { value: "female", label: "Female" },
+              { value: "male", label: t("profile.male") },
+              { value: "female", label: t("profile.female") },
             ]}
             value={sex}
             onChange={setSex}
-            accessibilityLabel="Sex"
+            accessibilityLabel={t("profile.sex")}
           />
         </>
       )}
       {step === 5 && (
         <>
-          <Text style={styles.heading}>Activity</Text>
+          <Text style={styles.heading}>{t("profile.activity")}</Text>
           <View style={{ gap: 12 }}>
-            {[
-              ["sedentary", "Sedentary"],
-              ["light", "Light"],
-              ["moderate", "Moderate"],
-              ["active", "Active"],
-              ["very_active", "Very active"],
-            ].map(([k, label]) => (
-              <OptionCard key={k} label={label} selected={activity === k} onPress={() => setActivity(k)} />
+            {["sedentary", "light", "moderate", "active", "very_active"].map((k) => (
+              <OptionCard key={k} label={t("activity." + k)} selected={activity === k} onPress={() => setActivity(k)} />
             ))}
           </View>
         </>
       )}
       {step === 6 && (
         <>
-          <Text style={styles.heading}>Goal</Text>
+          <Text style={styles.heading}>{t("profile.goal")}</Text>
           <PillRow
             options={[
-              { value: "lose", label: "Lose" },
-              { value: "maintain", label: "Maintain" },
-              { value: "gain", label: "Gain" },
+              { value: "lose", label: t("goal.lose") },
+              { value: "maintain", label: t("goal.maintain") },
+              { value: "gain", label: t("goal.gain") },
             ]}
             value={goal}
             onChange={setGoal}
-            accessibilityLabel="Goal"
+            accessibilityLabel={t("profile.goal")}
           />
           {preview ? (
             <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
-              {formatKcal(preview.daily_calorie_target)} cal/day · P {preview.daily_protein_target_g}g · C{" "}
-              {preview.daily_carbs_target_g}g · F {preview.daily_fat_target_g}g
+              {t("onboarding.macroPreview", {
+                cal: formatKcal(preview.daily_calorie_target),
+                p: preview.daily_protein_target_g,
+                c: preview.daily_carbs_target_g,
+                f: preview.daily_fat_target_g,
+              })}
             </Text>
           ) : null}
         </>
       )}
       <View style={{ flex: 1 }} />
-      <Button label={step === STEPS - 1 ? "Finish" : "Continue"} onPress={next} loading={loading} />
+      <Button label={step === STEPS - 1 ? t("onboarding.finish") : t("onboarding.continue")} onPress={next} loading={loading} />
       {step > 0 ? (
         <View style={{ marginTop: 12 }}>
-          <Button label="Back" variant="ghost" onPress={back} />
+          <Button label={t("common.back")} variant="ghost" onPress={back} />
         </View>
       ) : null}
     </Screen>
