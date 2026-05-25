@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import type { NutritionDay } from "@/lib/api";
@@ -12,9 +12,9 @@ type Props = {
 };
 
 const WIDTH = 340;
-const HEIGHT = 64;
-const PAD_X = 8;
-const PAD_Y = 8;
+const HEIGHT = 28; // T-M2: an inline whisper, not a chart
+const PAD_X = 6;
+const PAD_Y = 5;
 
 type Point = { x: number; y: number; calories: number; date: string };
 
@@ -77,20 +77,8 @@ export function CalorieSparkline({ days, target }: Props) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`Last 7 days, average ${formatKcal(avg)} calories`}
+      accessibilityLabel={`Last 7 days, average ${formatKcal(avg)} calories. Opens nutrition history.`}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600" }}>Last 7 days</Text>
-        <Text
-          style={{
-            color: colors.textMuted,
-            fontSize: 11,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          avg {formatKcal(avg)} cal
-        </Text>
-      </View>
       <Svg width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
         {targetY !== null ? (
           <Line
@@ -100,7 +88,7 @@ export function CalorieSparkline({ days, target }: Props) {
             y2={targetY}
             stroke={colors.border}
             strokeWidth={1}
-            strokeDasharray="3,4"
+            strokeDasharray="2,4"
           />
         ) : null}
         {segments.map((seg, i) => (
@@ -108,14 +96,14 @@ export function CalorieSparkline({ days, target }: Props) {
             key={i}
             points={seg}
             fill="none"
-            stroke={colors.star}
-            strokeWidth={2}
+            stroke={colors.starDim}
+            strokeWidth={1.5}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         ))}
         {lastPoint ? (
-          <Circle cx={lastPoint.x} cy={lastPoint.y} r={4} fill={colors.star} />
+          <Circle cx={lastPoint.x} cy={lastPoint.y} r={3} fill={colors.spark} />
         ) : null}
       </Svg>
     </Pressable>

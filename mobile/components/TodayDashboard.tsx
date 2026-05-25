@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { IntakeRing } from "@/components/IntakeRing";
-import { MealCard } from "@/components/MealCard";
+import { MealRow } from "@/components/today/MealRow";
 import { CalorieSparkline } from "@/components/today/CalorieSparkline";
 import { NextActionButton } from "@/components/today/NextActionButton";
 import { TodayHeader } from "@/components/today/TodayHeader";
@@ -13,7 +13,7 @@ import { resolvePace, type PaceState } from "@/lib/pace";
 import { colors } from "@/theme/colors";
 
 const CONTENT_MAX_WIDTH = 400;
-const HERO_SIZE = 200;
+const RING_SIZE = 132; // T-M1: ring is a compact pace "crown"; the number is the hero below it
 
 type Props = {
   today: TodaySnapshot | null;
@@ -99,45 +99,34 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
           accessibilityRole="button"
           accessibilityLabel={`${hero.value} ${hero.label}.${pace?.state ? ` ${pacePhrase(pace.state)}.` : ""} Open nutrition details.`}
         >
-          <View
+          <IntakeRing
+            label=""
+            value={hero.consumed}
+            target={hero.effectiveTarget}
+            color={colors.star}
+            unit="cal"
+            size={RING_SIZE}
+            hideCenter
+            hideLabel
+            paceMark={pace?.fraction ?? undefined}
+            paceState={pace?.state ?? undefined}
+            animated
+          />
+          <Text
+            allowFontScaling={false}
             style={{
-              width: HERO_SIZE,
-              height: HERO_SIZE,
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
+              color: hero.over ? colors.error : colors.textPrimary,
+              fontSize: 96,
+              lineHeight: 100,
+              fontWeight: "800",
+              fontVariant: ["tabular-nums"],
+              letterSpacing: -2,
+              marginTop: 12,
             }}
           >
-            <View style={{ position: "absolute" }}>
-              <IntakeRing
-                label=""
-                value={hero.consumed}
-                target={hero.effectiveTarget}
-                color={colors.star}
-                unit="cal"
-                size={HERO_SIZE}
-                hideCenter
-                hideLabel
-                paceMark={pace?.fraction ?? undefined}
-                paceState={pace?.state ?? undefined}
-                animated
-              />
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <Text
-                style={{
-                  color: hero.over ? colors.error : colors.textPrimary,
-                  fontSize: 52,
-                  fontWeight: "800",
-                  fontVariant: ["tabular-nums"],
-                  letterSpacing: -1,
-                }}
-              >
-                {hero.value}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 2 }}>{hero.label}</Text>
-            </View>
-          </View>
+            {hero.value}
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 15, marginTop: 2 }}>{hero.label}</Text>
           <View
             style={{
               flexDirection: "row",
@@ -210,7 +199,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         </Text>
       ) : (
         today?.meals.map((m: Meal) => (
-          <MealCard key={m.id} meal={m} onPress={() => router.push(`/meal/${m.id}`)} />
+          <MealRow key={m.id} meal={m} onOpen={() => router.push(`/meal/${m.id}`)} />
         ))
       )}
     </View>

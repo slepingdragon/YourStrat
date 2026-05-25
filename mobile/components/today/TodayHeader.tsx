@@ -23,8 +23,8 @@ type Props = {
 export function TodayHeader({ now }: Props) {
   const d = now ?? new Date();
   const date = formatHeaderDate(d);
-  const tag = timeOfDayTag(d.getHours());
 
+  // T-E1: the date stays (information); the `· {timeOfDay}` flourish is dropped.
   return (
     <View style={{ alignItems: "center", marginBottom: 20 }}>
       <Text
@@ -36,7 +36,7 @@ export function TodayHeader({ now }: Props) {
           textTransform: "uppercase",
         }}
       >
-        {date}  ·  {tag}
+        {date}
       </Text>
     </View>
   );
