@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Card } from "@/components/ui";
+import { X } from "@/components/icons";
 import { normalizeTrial, type TrialStatus } from "@/lib/api";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const DISMISS_KEY = "yourstrat_trial_banner_dismissed_on";
 const LEGACY_DISMISS_PREFIX = "yourstrat_trial_banner_dismissed_";
+
+// In-memory, app-session scope (resets on relaunch). Once dismissed this session
+// the notice never re-nags — including the urgent ≤3-day case (4.8 AC2). The
+// daily key below additionally throttles the non-urgent case across app opens.
+let dismissedThisSession = false;
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -29,19 +37,17 @@ type Props = {
 };
 
 export function TrialBanner({ trial: trialProp }: Props) {
+  const router = useRouter();
   const trial = normalizeTrial(trialProp);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (trial.is_admin) {
-      setVisible(false);
-      return;
-    }
-    if (!trial.trial_active) {
+    if (trial.is_admin || !trial.trial_active || dismissedThisSession) {
       setVisible(false);
       return;
     }
     if (trial.days_remaining <= 3) {
+      // Urgent: shows unless dismissed this session (handled above) — AC2.
       setVisible(true);
       return;
     }
@@ -52,9 +58,12 @@ export function TrialBanner({ trial: trialProp }: Props) {
   }, [trial]);
 
   const dismiss = async () => {
+    dismissedThisSession = true;
     await AsyncStorage.setItem(DISMISS_KEY, todayKey());
     setVisible(false);
   };
+
+  const openTrialStatus = () => router.push("/profile");
 
   if (!trialProp || !visible) {
     return null;
@@ -63,13 +72,20 @@ export function TrialBanner({ trial: trialProp }: Props) {
   const urgent = trial.trial_active && trial.days_remaining <= 3;
   const ended = !trial.trial_active;
 
+  const scansLine = `${trial.scans_today}/${trial.scans_limit} food scans used today`;
   let title = "Free trial";
   let body: string;
   if (ended) {
     title = "Trial ended";
     body = "Food scans are paused for now. You can still log meals manually and track workouts.";
   } else if (urgent) {
-    body = `${trial.days_remaining} day${trial.days_remaining === 1 ? "" : "s"} left in your trial · ${trial.scans_today}/${trial.scans_limit} food scans used today`;
+    title =
+      trial.days_remaining <= 0
+        ? "Trial ends today"
+        : trial.days_remaining === 1
+          ? "Trial ends tomorrow"
+          : `${trial.days_remaining} days left in your trial`;
+    body = `${scansLine} · tap to manage`;
   } else {
     body = `${trial.days_remaining} days left · up to ${trial.scans_limit} food scans per day during your trial (${trial.scans_today} used today)`;
   }
@@ -84,20 +100,26 @@ export function TrialBanner({ trial: trialProp }: Props) {
         borderColor: urgent ? colors.urgent : colors.border,
       }}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-        <View style={{ flex: 1 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.md }}>
+        <Pressable
+          onPress={openTrialStatus}
+          accessibilityRole="button"
+          accessibilityLabel={`${title}. ${body}. Opens your trial status in Profile.`}
+          style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
+        >
           <Text style={{ color: urgent ? colors.urgent : colors.textPrimary, fontWeight: "600", fontSize: 15 }}>
-            {urgent ? "⚠ " : ""}{title}
+            {title}
           </Text>
           <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 6 }}>{body}</Text>
-        </View>
+        </Pressable>
         <Pressable
           onPress={dismiss}
           accessibilityRole="button"
           accessibilityLabel="Dismiss trial reminder"
           hitSlop={12}
+          style={{ padding: spacing.xs }}
         >
-          <Text style={{ color: colors.textMuted, fontSize: 18, lineHeight: 20 }}>×</Text>
+          <X color={colors.textMuted} size={18} />
         </Pressable>
       </View>
     </Card>
