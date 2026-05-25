@@ -161,8 +161,9 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase.rpc("delete_user");
       if (error) throw error;
-    } catch {
-      toastError("Account deletion requires a Supabase edge function. Contact support.");
+    } catch (e) {
+      console.error(e);
+      toastError("Couldn't delete your account. Check your connection and try again.");
       return;
     }
     await signOut();
