@@ -110,9 +110,19 @@ def _validate_item_macros(item: dict) -> dict:
         ratio = calories / derived
         low = 1.0 - MACRO_CAL_TOLERANCE
         high = 1.0 + MACRO_CAL_TOLERANCE
-        if ratio < low or ratio > high:
-            # Conservative: prefer the lower credible energy estimate.
-            calories = int(min(calories, derived))
+        if ratio < low:
+            # Calories can't be below what the macros already imply (physical
+            # floor) — raise to the macro-derived energy rather than trusting a
+            # too-low calorie number.
+            calories = int(round(derived))
+            confidence = _penalize_confidence(confidence, CONFIDENCE_PENALTY_MACRO)
+            adjusted = True
+        elif ratio > high:
+            # Model reports more energy than the macros account for — typical of
+            # fried/oily foods that under-report fat. Keep the calorie estimate
+            # (under-counting is the dangerous direction for a tracker) and fill
+            # the gap with fat so the macros reconcile, instead of discarding it.
+            fat = _round_macro(min(MAX_MACRO_G, fat + (calories - derived) / 9.0))
             confidence = _penalize_confidence(confidence, CONFIDENCE_PENALTY_MACRO)
             adjusted = True
     elif derived > 0 and calories == 0:
