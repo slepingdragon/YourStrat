@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { IntakeRing } from "@/components/IntakeRing";
@@ -6,11 +6,24 @@ import { MealRow } from "@/components/today/MealRow";
 import { CalorieSparkline } from "@/components/today/CalorieSparkline";
 import { NextActionButton } from "@/components/today/NextActionButton";
 import { TodayHeader } from "@/components/today/TodayHeader";
-import { TodayTrioCards } from "@/components/today/TodayTrioCards";
+import { WorkoutCard } from "@/components/today/WorkoutCard";
+import { NutrientGrid } from "@/components/today/NutrientGrid";
+import { CustomizeTodaySheet } from "@/components/today/CustomizeTodaySheet";
+import { Settings } from "@/components/icons";
 import type { Meal, NutritionDay, Profile, Routine, TodaySnapshot } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
 import { resolvePace, type PaceState } from "@/lib/pace";
+import { targetsFromProfile } from "@/lib/nutritionTargets";
+import {
+  DEFAULT_TODAY_LAYOUT,
+  loadTodayLayout,
+  saveTodayLayout,
+  visibleSections,
+  type TodayLayout,
+  type TodaySectionId,
+} from "@/lib/todayLayout";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const CONTENT_MAX_WIDTH = 400;
 const RING_SIZE = 132; // T-M1: ring is a compact pace "crown"; the number is the hero below it
@@ -78,8 +91,87 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
     return today.meals.reduce((s, m) => s + (m.total_calories ?? 0), 0);
   }, [today?.meals]);
 
+  const [layout, setLayout] = useState<TodayLayout>(DEFAULT_TODAY_LAYOUT);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  useEffect(() => {
+    loadTodayLayout()
+      .then(setLayout)
+      .catch(() => {});
+  }, []);
+
+  const gridTargets = targetsFromProfile(t);
+
+  const mealsBlock = (
+    <>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "baseline",
+          marginBottom: spacing.md,
+          justifyContent: empty ? "center" : "space-between",
+        }}
+      >
+        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Meals</Text>
+        {!empty ? (
+          <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+            {today!.meals.length} logged · {formatKcal(mealsTotalCal)} cal
+          </Text>
+        ) : null}
+      </View>
+      {empty ? (
+        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>No meals yet today.</Text>
+      ) : (
+        today?.meals.map((m: Meal) => <MealRow key={m.id} meal={m} onOpen={() => router.push(`/meal/${m.id}`)} />)
+      )}
+    </>
+  );
+
+  const renderSection = (id: TodaySectionId) => {
+    switch (id) {
+      case "nutrients":
+        return today && gridTargets ? (
+          <View style={{ marginBottom: spacing.lg }}>
+            <NutrientGrid
+              today={today}
+              targets={gridTargets}
+              metrics={layout.metrics}
+              onCustomize={() => setCustomizeOpen(true)}
+            />
+          </View>
+        ) : null;
+      case "workout":
+        return today ? (
+          <View style={{ marginBottom: spacing.lg }}>
+            <WorkoutCard today={today} />
+          </View>
+        ) : null;
+      case "trend":
+        return journalDays && journalDays.length >= 2 ? (
+          <View style={{ marginBottom: spacing.lg }}>
+            <CalorieSparkline days={journalDays} target={t?.daily_calorie_target ?? 0} />
+          </View>
+        ) : null;
+      case "effort":
+        return <EffortRecap today={today} />;
+      case "meals":
+        return mealsBlock;
+      default:
+        return null;
+    }
+  };
+
   return (
     <View style={{ width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center" }}>
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: spacing.xs }}>
+        <Pressable
+          onPress={() => setCustomizeOpen(true)}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Customize Today"
+        >
+          <Settings color={colors.textMuted} size={20} />
+        </Pressable>
+      </View>
       <TodayHeader />
 
       {!t ? (
@@ -164,45 +256,19 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         </View>
       ) : null}
 
-      <EffortRecap today={today} />
+      {visibleSections(layout).map((id) => (
+        <View key={id}>{renderSection(id)}</View>
+      ))}
 
-      {today ? (
-        <View style={{ marginBottom: 16 }}>
-          <TodayTrioCards today={today} profile={profile} />
-        </View>
-      ) : null}
-
-      {journalDays && journalDays.length >= 2 ? (
-        <View style={{ marginBottom: 20 }}>
-          <CalorieSparkline days={journalDays} target={t?.daily_calorie_target ?? 0} />
-        </View>
-      ) : null}
-
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "baseline",
-          marginBottom: 12,
-          justifyContent: empty ? "center" : "space-between",
+      <CustomizeTodaySheet
+        visible={customizeOpen}
+        layout={layout}
+        onSave={(next) => {
+          setLayout(next);
+          void saveTodayLayout(next);
         }}
-      >
-        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Meals</Text>
-        {!empty ? (
-          <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
-            {today!.meals.length} logged · {formatKcal(mealsTotalCal)} cal
-          </Text>
-        ) : null}
-      </View>
-
-      {empty ? (
-        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>
-          No meals yet today.
-        </Text>
-      ) : (
-        today?.meals.map((m: Meal) => (
-          <MealRow key={m.id} meal={m} onOpen={() => router.push(`/meal/${m.id}`)} />
-        ))
-      )}
+        onClose={() => setCustomizeOpen(false)}
+      />
     </View>
   );
 }
