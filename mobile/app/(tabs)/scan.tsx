@@ -10,7 +10,9 @@ import { Screen, Button, toastError } from "@/components/ui";
 import { isApiError, lookupBarcode, scanMeal, type MealItem } from "@/lib/api";
 import { normalizeMealItem } from "@/lib/mealNutrition";
 import { useScanQueue } from "@/lib/scanQueueStore";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const isWeb = Platform.OS === "web";
 
@@ -58,6 +60,7 @@ function ShutterButton({ onPress, loading }: { onPress: () => void; loading: boo
 }
 
 export default function ScanScreen() {
+  const t = useT();
   const focused = useIsFocused();
   const router = useRouter();
   const enqueue = useScanQueue((s) => s.enqueue);
@@ -101,13 +104,11 @@ export default function ScanScreen() {
     try {
       const result = await lookupBarcode(data);
       const items = result.items ?? [];
-      setMatch({ items, name: items[0]?.name || "Product" }); // confirmation popup
+      setMatch({ items, name: items[0]?.name || t("scan.product") }); // confirmation popup
     } catch (e) {
       console.error(e);
       toastError(
-        isApiError(e) && e.status === 404
-          ? "Not in the food database — snap a photo of the food instead."
-          : (e as Error).message,
+        isApiError(e) && e.status === 404 ? t("scan.barcodeNotFound") : (e as Error).message,
       );
       handledBarcode.current = false; // allow another scan / a photo
     } finally {
@@ -142,11 +143,11 @@ export default function ScanScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // "captured" — the scan runs in the background
         runScan(photo.uri);
       } else {
-        toastError("Could not capture photo. Try again or use the photo library.");
+        toastError(t("scan.captureFailedLibrary"));
       }
     } catch (e) {
       console.error(e);
-      toastError("Could not capture photo. Try again.");
+      toastError(t("scan.captureFailed"));
     } finally {
       busyRef.current = false;
       setLoading(false);
@@ -172,11 +173,11 @@ export default function ScanScreen() {
   if (isWeb) {
     return (
       <Screen>
-        <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: 8 }}>Scan meal</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700", marginBottom: spacing.sm }}>{t("scan.webTitle")}</Text>
         <Text style={{ color: colors.textSecondary, marginBottom: 24 }}>
-          On web, choose a photo from your computer.
+          {t("scan.webSub")}
         </Text>
-        <Button label="Choose photo" onPress={pickLibrary} loading={loading} />
+        <Button label={t("scan.choosePhoto")} onPress={pickLibrary} loading={loading} />
       </Screen>
     );
   }
@@ -184,11 +185,11 @@ export default function ScanScreen() {
   if (!permission?.granted) {
     return (
       <Screen>
-        <Text style={{ color: colors.textPrimary, textAlign: "center", marginTop: 48 }}>Camera access needed to scan meals.</Text>
+        <Text style={{ color: colors.textPrimary, textAlign: "center", marginTop: spacing.xxxl }}>{t("scan.cameraNeeded")}</Text>
         <View style={{ marginTop: 24 }}>
-          <Button label="Allow camera" onPress={requestPermission} />
+          <Button label={t("scan.allowCamera")} onPress={requestPermission} />
           <View style={{ marginTop: 12 }}>
-            <Button label="Photo library" variant="secondary" onPress={pickLibrary} />
+            <Button label={t("scan.photoLibrary")} variant="secondary" onPress={pickLibrary} />
           </View>
         </View>
       </Screen>
@@ -231,7 +232,7 @@ export default function ScanScreen() {
               textShadowRadius: 2,
             }}
           >
-            Point at a barcode to auto-scan (free) · or photo a meal
+            {t("scan.hint")}
           </Text>
           <ShutterButton onPress={capture} loading={loading} />
           <Pressable onPress={pickLibrary} disabled={loading} hitSlop={12} accessibilityRole="button">
@@ -247,7 +248,7 @@ export default function ScanScreen() {
                 textShadowRadius: 2,
               }}
             >
-              Photo library
+              {t("scan.photoLibrary")}
             </Text>
           </Pressable>
         </View>
@@ -264,15 +265,15 @@ export default function ScanScreen() {
           >
             <View>
               <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>
-                Found · free
+                {t("scan.foundFree")}
               </Text>
               <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", marginTop: 6 }} numberOfLines={3}>
                 {match?.name}
               </Text>
             </View>
             <View style={{ gap: 8 }}>
-              <Button label="Select" onPress={selectMatch} />
-              <Button label="Scan again" variant="ghost" onPress={dismissMatch} />
+              <Button label={t("scan.select")} onPress={selectMatch} />
+              <Button label={t("scan.scanAgain")} variant="ghost" onPress={dismissMatch} />
             </View>
           </Pressable>
         </Pressable>

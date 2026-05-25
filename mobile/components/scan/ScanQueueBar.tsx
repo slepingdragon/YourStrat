@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { ChevronDown, X } from "@/components/icons";
 import { useScanQueue, type QueuedScan, type ScanStatus } from "@/lib/scanQueueStore";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { radius, spacing } from "@/theme/spacing";
 import { DiscardMealDialog } from "./DiscardMealDialog";
@@ -16,11 +17,13 @@ const MAX_STACK = 3; // how many layers we render before it's just the count
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function subtitle(scan: QueuedScan): string {
-  if (scan.status === "pending") return "Analyzing…";
-  if (scan.status === "error") return "Tap to review or discard";
-  if (!scan.items.length) return "Nothing found";
-  return `${formatKcal(scan.calories)} kcal`;
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+function subtitle(scan: QueuedScan, t: Translate): string {
+  if (scan.status === "pending") return t("queue.analyzing");
+  if (scan.status === "error") return t("queue.tapReview");
+  if (!scan.items.length) return t("queue.nothingFound");
+  return t("queue.kcal", { kcal: formatKcal(scan.calories) });
 }
 
 function StatusIndicator({ status }: { status: ScanStatus }) {
@@ -41,6 +44,7 @@ function StatusIndicator({ status }: { status: ScanStatus }) {
  *  taken so the user can keep shooting; tap to expand the stack, tap a scan to
  *  review/save it, or discard one (always behind a confirmation). */
 export function ScanQueueBar() {
+  const t = useT();
   const queue = useScanQueue((s) => s.queue);
   const expanded = useScanQueue((s) => s.expanded);
   const setExpanded = useScanQueue((s) => s.setExpanded);
@@ -78,7 +82,7 @@ export function ScanQueueBar() {
           onPress={() => setExpanded(false)}
           style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.55)" }]}
           accessibilityRole="button"
-          accessibilityLabel="Close scan list"
+          accessibilityLabel={t("queue.closeList")}
         />
       ) : null}
 
@@ -110,9 +114,9 @@ export function ScanQueueBar() {
               }}
             >
               <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>
-                Scans · {queue.length}
+                {t("queue.scansCount", { n: queue.length })}
               </Text>
-              <Pressable onPress={() => setExpanded(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Collapse scan list">
+              <Pressable onPress={() => setExpanded(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("queue.collapseList")}>
                 <ChevronDown size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
@@ -133,7 +137,7 @@ export function ScanQueueBar() {
                     onPress={() => open(scan)}
                     style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.md }}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open ${scan.label}`}
+                    accessibilityLabel={t("queue.open", { label: scan.label })}
                   >
                     <StatusIndicator status={scan.status} />
                     <View style={{ flex: 1, gap: 2 }}>
@@ -141,7 +145,7 @@ export function ScanQueueBar() {
                         {scan.label}
                       </Text>
                       <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-                        {subtitle(scan)}
+                        {subtitle(scan, t)}
                       </Text>
                     </View>
                   </Pressable>
@@ -149,7 +153,7 @@ export function ScanQueueBar() {
                     onPress={() => setConfirmId(scan.id)}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel={`Discard ${scan.label}`}
+                    accessibilityLabel={t("queue.discard", { label: scan.label })}
                     style={{ paddingLeft: spacing.md }}
                   >
                     <X size={18} color={colors.textMuted} />
@@ -205,7 +209,9 @@ export function ScanQueueBar() {
                   style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.md }}
                   accessibilityRole="button"
                   accessibilityLabel={
-                    queue.length === 1 ? `${front.label}, ${subtitle(front)}. Open` : `${queue.length} scans waiting. Expand`
+                    queue.length === 1
+                      ? t("queue.openOne", { label: front.label, sub: subtitle(front, t) })
+                      : t("queue.expandMany", { n: queue.length })
                   }
                 >
                   <StatusIndicator status={front.status} />
@@ -214,7 +220,7 @@ export function ScanQueueBar() {
                       {front.label}
                     </Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-                      {subtitle(front)}
+                      {subtitle(front, t)}
                     </Text>
                   </View>
                 </Pressable>
@@ -233,7 +239,7 @@ export function ScanQueueBar() {
                     <Text style={{ color: colors.bg, fontSize: 13, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{queue.length}</Text>
                   </View>
                 ) : (
-                  <Pressable onPress={() => setConfirmId(front.id)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Discard ${front.label}`}>
+                  <Pressable onPress={() => setConfirmId(front.id)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("queue.discard", { label: front.label })}>
                     <X size={18} color={colors.textMuted} />
                   </Pressable>
                 )}
