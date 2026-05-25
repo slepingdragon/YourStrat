@@ -166,7 +166,7 @@ async def scan_food(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
         generation_config=genai.GenerationConfig(
             response_mime_type="application/json",
             response_schema=_ScanResultSchema,
-            temperature=0.2,
+            temperature=0,  # deterministic: same photo -> same answer; biases to most-likely (accurate) recall
         ),
     )
     try:

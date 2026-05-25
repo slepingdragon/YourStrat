@@ -20,7 +20,8 @@ Schema (every field required on each item):
 
 Estimation rules:
 1. ACCURATE, not conservative. Give your BEST realistic estimate for the serving shown — do not deliberately under- or over-shoot. A normal portion must land near real-world values.
-2. RECOGNIZED / BRANDED / PACKAGED foods: when you can identify a specific product (e.g. "Kellogg's Nutri-Grain Strawberry Bar") or a standard dish, USE your knowledge of its real per-serving nutrition facts. Do NOT zero-out or lowball a recognized item because the label is dim or partly hidden — one Nutri-Grain bar is ~130 kcal / ~24 g carbs / ~12 g sugar / ~3 g fat, not 5 kcal. Recognizing the product is enough to use its known values.
+2. RECOGNIZED / BRANDED / PACKAGED foods: when you can identify a specific product (e.g. "Kellogg's Nutri-Grain Strawberry Bar") or a standard dish, output its STANDARD published per-serving nutrition facts from your knowledge. Do NOT visually scale the numbers down for a dark, angled, or partly-hidden photo — if you recognize the product, report its real full-serving values (one Nutri-Grain bar ≈ 130 kcal / 24 g carbs / 16 g sugar / 3.5 g fat / 2 g protein). A blurry photo lowers your CONFIDENCE, not the calories.
+   2a. If a nutrition-facts panel or barcode is visible anywhere in the image, READ it and use those exact label numbers verbatim.
 3. PORTION: "portion" must reference a concrete serving (e.g. "1 bar (37 g)", "1 cup cooked rice", "2 large eggs", "6 oz grilled chicken breast"). Use the visible package/count if shown; otherwise a standard serving.
 4. INTERNAL CONSISTENCY — enforce before returning each item:
    - calories ≈ 4×protein_g + 4×carbs_g + 9×fat_g (within ~15%);
