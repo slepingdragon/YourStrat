@@ -41,9 +41,9 @@ We do **not** use your data for advertising, and we do not sell it.
 - **Google (Gemini API):** when you scan a meal **photo**, the image is sent to Google's Gemini API to estimate the foods and nutrition. See Google's privacy terms. We send the photo for that request; we don't send your account identity for this purpose.
 - **Open Food Facts:** when you scan a **barcode**, we look up that product code in the Open Food Facts database. Only the barcode is sent — no personal data.
 - **Supabase:** our database, file storage (meal photos), and authentication provider. Your data is stored here.
-- **Railway / [HOSTING]:** hosts our backend API.
+- **Railway:** hosts our backend API.
 
-These providers process data on our behalf to run the App. [Confirm/add any analytics or crash-reporting provider here, or state "We do not use third-party analytics or crash-reporting." — see checklist.]
+These providers process data on our behalf to run the App. **We do not use third-party analytics or crash-reporting SDKs** (confirmed: no Sentry/Firebase/PostHog/etc. in the app).
 
 ## Data storage, security, and retention
 
@@ -74,8 +74,8 @@ We may update this policy; we'll change the "Last updated" date and, for materia
 
 ### Before you publish (fill / confirm)
 
-- [ ] Replace `[DATE]`, `[LEGAL ENTITY]`, `[CONTACT EMAIL]`, `[HOSTING]`.
-- [ ] **Confirm the third-party list is complete** — especially whether the App ships any **analytics or crash-reporting SDK** (Sentry, Firebase Analytics, Expo's telemetry, etc.). If yes, add it here and in the Play Data-safety form; if no, state "no third-party analytics."
+- [ ] Replace `[DATE]`, `[LEGAL ENTITY]` (suggest "YourStrat"), `[CONTACT EMAIL]`.
+- [x] Analytics/crash SDK: **none** (confirmed — no Sentry/Firebase/PostHog/etc. in `mobile/package.json`).
 - [ ] Confirm whether the backend logs/keeps meal images or only forwards them to Gemini, and reflect that in "Data storage… retention."
 - [ ] Deploy to `https://yourstrat.xaeryx.com/privacy` (stand up the subdomain on Cloudflare; xaeryx.com launcher link is handled separately by the xaeryx.com agent) and add that URL in Play Console.
 - [ ] (Recommended) Add an in-app "Privacy policy" link in Profile once the URL is live (left unwired to avoid a dead link).

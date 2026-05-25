@@ -54,10 +54,12 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
 - [ ] **Feature graphic** (1024×500) + **phone screenshots** (≥2; Today ring / Scan result / Workouts session / Nutrition trend).
 - [ ] **Title / short / full description + release notes + category** — paste from `docs/STORE_LISTING.md` (fill contact email).
 
-### Web presence (xaeryx.com subdomain)
-- Hosting model (decided): the app's web presence lives on the **`yourstrat.xaeryx.com`** subdomain (off xaeryx.com, per the standard `<app>.xaeryx.com` pattern), with the privacy policy at **`https://yourstrat.xaeryx.com/privacy`**.
-- [ ] **Brady:** stand up the `yourstrat.xaeryx.com` subdomain (Cloudflare DNS + host) and deploy the privacy page there (content = `docs/legal/PRIVACY_POLICY.md`).
-- [ ] **Cross-project (xaeryx.com agent, Brady to coordinate):** add the YourStrat link on the xaeryx.com launcher/links page → `https://yourstrat.xaeryx.com`. _(Not a YourStrat-repo change.)_
+### Web presence (xaeryx.com subdomain) — **site built: [`site/`](site/)**
+- Hosting model (decided): the app's web presence lives on the **`yourstrat.xaeryx.com`** subdomain (off xaeryx.com, `<app>.xaeryx.com` pattern), privacy at **`https://yourstrat.xaeryx.com/privacy`**.
+- **Built & Xaeryx-themed** (self-contained static, no build step — monochrome dark, Inter, dot-grid + vignette, glass cards, shimmer, star): `site/index.html` (landing: star hero, features, Google Play CTA, family nav to xaeryx.com) + `site/privacy.html` (policy) + `site/styles.css`. See [`site/README.md`](site/README.md).
+- [ ] **Brady:** fill the **2 highlighted placeholders in `site/privacy.html`** — effective date + contact email (everything else is final; analytics line confirmed "none").
+- [ ] **Brady:** deploy `site/` to **`yourstrat.xaeryx.com`** (Cloudflare Pages → point the project at the `site/` dir; add the subdomain DNS). `/privacy` resolves from `privacy.html`.
+- [ ] **Cross-project (xaeryx.com agent, Brady to coordinate):** add the YourStrat link on the xaeryx.com launcher → `https://yourstrat.xaeryx.com`. _(Not a YourStrat-repo change.)_
 
 ### Legal / compliance (Play will reject without these)
 - [ ] **Privacy policy** — content **draft ready: [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md)**. Fill the brackets + confirm the analytics/crash-SDK line, deploy to **`https://yourstrat.xaeryx.com/privacy`** (see Web presence), then add that URL in Play Console.
