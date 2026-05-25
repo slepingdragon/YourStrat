@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import json
 
@@ -8,6 +9,14 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.config import settings
 from app.routers import exercises, meals, profile, routines, sessions, today
+
+# Uvicorn only configures its own loggers (uvicorn / uvicorn.access). Without
+# this, our app.* loggers propagate to root (default level WARNING), so every
+# logger.info(...) — including the food-scan diagnostics (image byte size + raw
+# Gemini output) — is silently dropped and never reaches the Railway log stream.
+# Configure the app namespace to INFO on stdout so those lines actually show.
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(levelname)s:%(name)s:%(message)s")
+logging.getLogger("app").setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="YourStrat API", version="1.0.0")
