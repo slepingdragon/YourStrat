@@ -128,12 +128,29 @@ function describeError(e: unknown): string {
 }
 
 async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await fetch(input, init);
-  } catch (e) {
-    const description = describeError(e);
-    console.error("apiFetch failed:", input, description, e);
-    throw new Error(`Failed to fetch: ${description}`);
+  // Retry idempotent reads once on a transient failure (5xx / network). The
+  // free-tier backend sleeps when idle, so the first request after a cold start
+  // can 500/drop while the dyno wakes; a single retry lets it self-heal. Never
+  // retry non-GET (POST/PUT/DELETE) — those aren't safe to repeat.
+  const method = (init?.method ?? "GET").toUpperCase();
+  const canRetry = method === "GET";
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(input, init);
+      if (canRetry && res.status >= 500 && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 600));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      if (canRetry && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 600));
+        continue;
+      }
+      const description = describeError(e);
+      console.error("apiFetch failed:", input, description, e);
+      throw new Error(`Failed to fetch: ${description}`);
+    }
   }
 }
 
