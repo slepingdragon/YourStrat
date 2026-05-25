@@ -4,6 +4,7 @@ import { View } from "react-native";
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { AppTabBar } from "@/components/AppTabBar";
 import { Book, Camera, Dumbbell, Profile, StarTab } from "@/components/icons";
+import { ScanQueueBar } from "@/components/scan/ScanQueueBar";
 import { TabBadge } from "@/components/TabBadge";
 import { getActiveSession } from "@/lib/api";
 import { useStore } from "@/lib/store";
@@ -54,11 +55,12 @@ export default function TabsLayout() {
   }, [session, activeSession, setActiveSession]);
 
   return (
-    <Tabs
-      initialRouteName="index"
-      tabBar={(props) => <AppTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
+    <View style={{ flex: 1 }}>
+      <Tabs
+        initialRouteName="index"
+        tabBar={(props) => <AppTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -128,6 +130,11 @@ export default function TabsLayout() {
           ),
         }}
       />
-    </Tabs>
+      </Tabs>
+      {/* App-wide stack of unsaved scans — floats above every tab so multi-photo
+          scans pile up here instead of blocking the camera (owner-approved
+          cross-tab UI, scoped to this transient queue). */}
+      <ScanQueueBar />
+    </View>
   );
 }
