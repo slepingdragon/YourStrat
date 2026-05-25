@@ -3,6 +3,8 @@ import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { startSession, type TodaySnapshot } from "@/lib/api";
 import { toastError } from "@/components/ui";
+import { formatKcal } from "@/lib/format";
+import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -46,6 +48,7 @@ function pickState(today: TodaySnapshot): CardState {
 
 export function WorkoutCard({ today }: Props) {
   const router = useRouter();
+  const setActiveSession = useStore((s) => s.setActiveSession);
   const [busy, setBusy] = useState(false);
   const state = pickState(today);
 
@@ -66,7 +69,7 @@ export function WorkoutCard({ today }: Props) {
     borderColor = colors.success;
     topLabel = "Workout";
     headline = state.name;
-    sub = `${state.minutes} min · ${state.calories} cal`;
+    sub = `${state.minutes} min · ${formatKcal(state.calories)} cal`;
   } else if (state.kind === "scheduled") {
     borderColor = colors.spark;
     topLabel = "Workout";
@@ -83,7 +86,9 @@ export function WorkoutCard({ today }: Props) {
   const onPress = async () => {
     if (busy) return;
     if (state.kind === "in_progress") {
-      router.push({ pathname: "/session/[id]", params: { id: state.sessionId, routineId: state.routineId ?? "" } });
+      // Resume via the Workouts-tab takeover (W-C2).
+      setActiveSession({ id: state.sessionId, routineId: state.routineId });
+      router.push("/workouts");
       return;
     }
     if (state.kind === "completed") {
@@ -94,7 +99,8 @@ export function WorkoutCard({ today }: Props) {
       setBusy(true);
       try {
         const s = await startSession(state.routineId);
-        router.push({ pathname: "/session/[id]", params: { id: s.id, routineId: state.routineId } });
+        setActiveSession({ id: s.id, routineId: state.routineId });
+        router.push("/workouts");
       } catch (e) {
         console.error(e);
         toastError((e as Error).message);

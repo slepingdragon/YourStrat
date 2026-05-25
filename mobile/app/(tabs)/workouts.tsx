@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { RoutineCard } from "@/components/RoutineCard";
 import { RpePicker } from "@/components/RpePicker";
+import { ActiveSessionRunner } from "@/components/session/ActiveSessionRunner";
 import { Dumbbell } from "@/components/icons";
 import { Screen, Button, Card, toastError, toastSuccess } from "@/components/ui";
 import { deleteRoutine, getRoutine, listRoutines, startSession, type Routine } from "@/lib/api";
@@ -26,6 +27,9 @@ function dayOrderFromToday(): number[] {
 export default function WorkoutsScreen() {
   const router = useRouter();
   const session = useStore((s) => s.session);
+  const activeSession = useStore((s) => s.activeSession);
+  const setActiveSession = useStore((s) => s.setActiveSession);
+  const clearActiveSession = useStore((s) => s.clearActiveSession);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [pendingRoutineId, setPendingRoutineId] = useState<string | null>(null);
   const [plannedRpe, setPlannedRpe] = useState<number | null>(null);
@@ -69,7 +73,8 @@ export default function WorkoutsScreen() {
       const session = await startSession(pendingRoutineId, skipRpe ? undefined : plannedRpe ?? undefined);
       const target = pendingRoutineId;
       dismissPrompt();
-      router.push({ pathname: "/session/[id]", params: { id: session.id, routineId: target } });
+      // Take over this tab with the live session (W-C2) — no full-screen push.
+      setActiveSession({ id: session.id, routineId: target });
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);
@@ -108,6 +113,25 @@ export default function WorkoutsScreen() {
     }
     return { byDay, anytime, todayIndex, dayOrder };
   }, [routines]);
+
+  // W-C2 takeover: when a session is in flight, the Workouts tab *is* the live
+  // runner (tab bar + badge stay visible) instead of the routine list.
+  if (activeSession) {
+    return (
+      <ActiveSessionRunner
+        key={activeSession.id}
+        sessionId={activeSession.id}
+        routineId={activeSession.routineId}
+        onFinished={(burned, duration) => {
+          clearActiveSession();
+          router.push({
+            pathname: "/session/[id]/summary",
+            params: { id: activeSession.id, burned: String(burned), duration: String(duration) },
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <Screen scroll scrollGrow={false}>

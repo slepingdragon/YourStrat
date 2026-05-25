@@ -17,4 +17,10 @@ export const colors = {
   protein: "#60A5FA",
   carbs: "#FBBF24",
   fat: "#F472B6",
+  // Pace Ring gap-arc tints. `paceWarmGap` = behind pace ("room to eat") — a
+  // bright green (the brand `success` #34D399 at high α) that reads as a calm
+  // "you're good / go" signal. `paceCoolGap` = ahead of pace ("ease off") — a
+  // neutral cool-grey. (Token name is legacy "warm"; the behind-arc is green.)
+  paceWarmGap: "rgba(52, 211, 153, 0.8)",
+  paceCoolGap: "rgba(201, 204, 214, 0.45)",
 };

@@ -33,6 +33,7 @@ export default function RootLayout() {
   const profile = useStore((s) => s.profile);
   const setSession = useStore((s) => s.setSession);
   const setProfile = useStore((s) => s.setProfile);
+  const clearActiveSession = useStore((s) => s.clearActiveSession);
   const segments = useSegments();
   const pathname = usePathname();
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function RootLayout() {
     if (!session) {
       setProfile(null);
       setProfileResolved(false);
+      clearActiveSession(); // don't leak one user's in-flight session into the next (W-C2)
       return;
     }
     let cancelled = false;
@@ -96,7 +98,7 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [session, setProfile, segments, pathname]);
+  }, [session, setProfile, clearActiveSession, segments, pathname]);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !ready) return;

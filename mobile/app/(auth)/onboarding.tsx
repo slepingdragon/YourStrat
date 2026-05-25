@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Screen, Button, Input, OptionCard, ProgressBar, toastError } from "@/components/ui";
+import { Screen, Button, Input, OptionCard, PillRow, ProgressBar, toastError } from "@/components/ui";
 import { isNetworkError, onboard } from "@/lib/api";
+import { formatKcal } from "@/lib/format";
 import { computeTargets, inToCm, lbsToKg } from "@/lib/targets";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -20,7 +21,7 @@ export default function OnboardingScreen() {
   const [age, setAge] = useState("");
   const [sex, setSex] = useState<"male" | "female" | null>(null);
   const [activity, setActivity] = useState<string | null>(null);
-  const [goal, setGoal] = useState<string | null>(null);
+  const [goal, setGoal] = useState<"lose" | "maintain" | "gain" | null>(null);
   const [loading, setLoading] = useState(false);
 
   const preview = useMemo(() => {
@@ -164,10 +165,15 @@ export default function OnboardingScreen() {
       {step === 4 && (
         <>
           <Text style={styles.heading}>Sex</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
-            <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
-          </View>
+          <PillRow
+            options={[
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+            ]}
+            value={sex}
+            onChange={setSex}
+            accessibilityLabel="Sex"
+          />
         </>
       )}
       {step === 5 && (
@@ -189,14 +195,19 @@ export default function OnboardingScreen() {
       {step === 6 && (
         <>
           <Text style={styles.heading}>Goal</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
-            <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
-            <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
-          </View>
+          <PillRow
+            options={[
+              { value: "lose", label: "Lose" },
+              { value: "maintain", label: "Maintain" },
+              { value: "gain", label: "Gain" },
+            ]}
+            value={goal}
+            onChange={setGoal}
+            accessibilityLabel="Goal"
+          />
           {preview ? (
             <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 16 }}>
-              {preview.daily_calorie_target} cal/day · P {preview.daily_protein_target_g}g · C{" "}
+              {formatKcal(preview.daily_calorie_target)} cal/day · P {preview.daily_protein_target_g}g · C{" "}
               {preview.daily_carbs_target_g}g · F {preview.daily_fat_target_g}g
             </Text>
           ) : null}

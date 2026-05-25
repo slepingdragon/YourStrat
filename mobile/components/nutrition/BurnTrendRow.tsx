@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Text, View } from "react-native";
 import { Sparkline } from "@/components/nutrition/Sparkline";
 import type { BurnDay } from "@/lib/api";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -36,10 +37,10 @@ function BurnTrendRowImpl({ days }: Props) {
         </Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 4, gap: 8, flexWrap: "wrap" }}>
           <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ["tabular-nums"] }}>
-            {today.toLocaleString()} cal today
+            {formatKcal(today)} cal today
           </Text>
           <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
-            avg {avg.toLocaleString()}/day
+            avg {formatKcal(avg)}/day
           </Text>
         </View>
       </View>

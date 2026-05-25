@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { Card } from "@/components/ui";
 import type { MealTotals } from "@/lib/mealNutrition";
+import { formatKcal } from "@/lib/format";
 import { formatGram, formatSodium } from "@/lib/mealNutrition";
 import { colors } from "@/theme/colors";
 
@@ -57,7 +58,7 @@ export function MealNutritionSummary({ totals, title }: Props) {
           fontVariant: ["tabular-nums"],
         }}
       >
-        {Math.round(totals.calories)}
+        {formatKcal(totals.calories)}
       </Text>
       <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginTop: 2 }}>calories</Text>
       <View style={{ flexDirection: "row", marginTop: 20, justifyContent: "space-between" }}>

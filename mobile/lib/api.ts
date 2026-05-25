@@ -315,6 +315,7 @@ export type TodaySnapshot = {
   active_session?: ActiveSessionInfo | null;
   last_completed_session_today?: CompletedSessionInfo | null;
   scheduled_routine_today?: ScheduledRoutineInfo | null;
+  pace_position?: number | null;
 };
 
 export type Exercise = {
@@ -441,7 +442,9 @@ export async function getNutritionJournal(days = 14) {
 
 export async function getToday() {
   const headers = await authHeader();
-  const res = await apiFetch(apiUrl("/today/"), { headers });
+  // Minutes east of UTC (e.g. UTC-5 → -300); drives the server-side pace curve.
+  const tzOffsetMinutes = -new Date().getTimezoneOffset();
+  const res = await apiFetch(apiUrl(`/today/?tz_offset_minutes=${tzOffsetMinutes}`), { headers });
   const data = await handle<TodaySnapshot>(res);
   return { ...data, targets: normalizeProfile(data.targets) };
 }
@@ -573,4 +576,11 @@ export async function getSessionStats() {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/sessions/stats"), { headers });
   return handle<SessionStats>(res);
+}
+
+/** The caller's unfinished session (any date), or null. Used by W-C2 cold-start restore. */
+export async function getActiveSession(): Promise<ActiveSessionInfo | null> {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl("/sessions/active"), { headers });
+  return handle<ActiveSessionInfo | null>(res);
 }

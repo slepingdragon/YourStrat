@@ -9,6 +9,7 @@ import {
   MEAL_SLOT_ORDER,
   type MealSlot,
 } from "@/lib/nutritionSummaryStats";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -78,7 +79,7 @@ function MealSlotsListImpl({ meals, onMealPress, onLogPress }: Props) {
                     fontVariant: ["tabular-nums"],
                   }}
                 >
-                  {Math.round(cal)} cal
+                  {formatKcal(cal)} cal
                 </Text>
               ) : null}
             </View>

@@ -3,7 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import type { NutritionDay } from "@/lib/api";
-import { roundCal } from "@/lib/targets";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -77,7 +77,7 @@ export function CalorieSparkline({ days, target }: Props) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`Last 7 days, average ${roundCal(avg)} calories`}
+      accessibilityLabel={`Last 7 days, average ${formatKcal(avg)} calories`}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600" }}>Last 7 days</Text>
@@ -88,7 +88,7 @@ export function CalorieSparkline({ days, target }: Props) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          avg {roundCal(avg).toLocaleString()} cal
+          avg {formatKcal(avg)} cal
         </Text>
       </View>
       <Svg width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">

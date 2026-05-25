@@ -20,6 +20,7 @@ import {
   MUSCLE_LABELS,
 } from "@/lib/exerciseCatalog";
 import { estimateExerciseCalories, formatDefaultVolume } from "@/lib/exerciseCalories";
+import { formatKcal } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
@@ -179,7 +180,7 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
               </Text>
               <View style={{ marginTop: 20, flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
                 <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "600" }}>
-                  ~{calories} cal
+                  ~{formatKcal(calories)} cal
                 </Text>
                 <Text style={{ color: colors.textMuted, fontSize: 14 }}>
                   {formatDefaultVolume(current)} · est. for your weight

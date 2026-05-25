@@ -5,11 +5,13 @@ import { Screen, Button, BackHeader, Skeleton, toastError } from "@/components/u
 import { ExerciseRow } from "@/components/ExerciseRow";
 import { getRoutine, startSession, type Routine } from "@/lib/api";
 import { displayRoutineName } from "@/lib/routineName";
+import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
 export default function RoutineDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const setActiveSession = useStore((s) => s.setActiveSession);
   const [routine, setRoutine] = useState<Routine | null>(null);
 
   useEffect(() => {
@@ -28,7 +30,9 @@ export default function RoutineDetailScreen() {
     }
     try {
       const session = await startSession(id);
-      router.push({ pathname: "/session/[id]", params: { id: session.id, routineId: id } });
+      // Hand off to the Workouts-tab takeover (W-C2); leave this detail screen.
+      setActiveSession({ id: session.id, routineId: id });
+      router.replace("/workouts");
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);

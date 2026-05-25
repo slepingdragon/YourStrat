@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { Card, Input } from "@/components/ui";
 import type { MealItem } from "@/lib/api";
+import { formatKcal } from "@/lib/format";
 import { formatGram, formatSodium } from "@/lib/mealNutrition";
 import { colors } from "@/theme/colors";
 
@@ -49,7 +50,7 @@ function NumField({
 }
 
 export function FoodItemNutritionCard({ item, index, editable, onChange }: Props) {
-  const cal = Math.round(item.calories || 0);
+  const cal = formatKcal(item.calories || 0);
 
   return (
     <Card style={{ marginBottom: 14 }}>

@@ -8,6 +8,7 @@ import {
   TODAY_METRIC_SPECS,
   type TodayMetricId,
 } from "@/lib/todayMetrics";
+import { formatKcal, formatMacroGrams } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -68,5 +69,5 @@ export function NutritionRingsPanel({ totals, targets, primaryOnly, onMetricPres
 }
 
 export function formatDayTotalsLine(totals: NutritionDayTotals) {
-  return `${Math.round(totals.calories)} cal · P ${Math.round(totals.protein_g)}g · C ${Math.round(totals.carbs_g)}g · F ${Math.round(totals.fat_g)}g`;
+  return `${formatKcal(totals.calories)} cal · P ${formatMacroGrams(totals.protein_g)}g · C ${formatMacroGrams(totals.carbs_g)}g · F ${formatMacroGrams(totals.fat_g)}g`;
 }

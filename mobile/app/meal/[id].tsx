@@ -148,7 +148,7 @@ export default function MealDetailScreen() {
 
         <View style={{ marginTop: 28 }}>
 
-          <Button label="Delete meal" variant="secondary" onPress={remove} loading={deleting} />
+          <Button label="Delete meal" variant="destructive" onPress={remove} loading={deleting} />
 
         </View>
 

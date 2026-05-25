@@ -3,8 +3,9 @@ import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
 import { ChevronDown } from "@/components/icons";
-import { Screen, Button, Input, OptionCard, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
+import { Screen, Button, Input, OptionCard, PillRow, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
 import { getProfile, getSessionStats, normalizeTrial, updateProfile, type SessionStats } from "@/lib/api";
+import { formatKcal } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { cmToIn, computeTargets, inToCm, kgToLbs, lbsToKg } from "@/lib/targets";
@@ -239,7 +240,7 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Lifetime stats</Text>
           <Card style={CARD_PAD}>
             <Text style={styles.targetCalories}>
-              {stats.lifetime_calories_burned.toLocaleString()} cal burned
+              {formatKcal(stats.lifetime_calories_burned)} cal burned
             </Text>
             <Text style={styles.targetMacros}>
               {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"} logged
@@ -251,7 +252,7 @@ export default function ProfileScreen() {
 
       <Text style={styles.sectionTitle}>Daily targets</Text>
       <Card style={CARD_PAD}>
-        <Text style={styles.targetCalories}>{profile.daily_calorie_target.toLocaleString()} cal / day</Text>
+        <Text style={styles.targetCalories}>{formatKcal(profile.daily_calorie_target)} cal / day</Text>
         <Text style={styles.targetMacros}>
           Protein {profile.daily_protein_target_g}g · Carbs {profile.daily_carbs_target_g}g · Fat{" "}
           {profile.daily_fat_target_g}g
@@ -275,7 +276,7 @@ export default function ProfileScreen() {
         <Card style={[CARD_PAD, { marginTop: 0 }]}>
           {targetsChanged && preview ? (
             <Text style={{ color: colors.spark, marginBottom: 16, fontSize: 13 }}>
-              After save: ~{preview.daily_calorie_target.toLocaleString()} cal/day · P{" "}
+              After save: ~{formatKcal(preview.daily_calorie_target)} cal/day · P{" "}
               {preview.daily_protein_target_g}g
             </Text>
           ) : null}
@@ -329,10 +330,15 @@ export default function ProfileScreen() {
           />
 
           <Text style={styles.label}>Sex</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
-            <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
-          </View>
+          <PillRow
+            options={[
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+            ]}
+            value={sex}
+            onChange={setSex}
+            accessibilityLabel="Sex"
+          />
 
           <Text style={styles.fieldSection}>Activity</Text>
           <View style={{ gap: 12 }}>
@@ -342,11 +348,16 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={styles.fieldSection}>Goal</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
-            <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
-            <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
-          </View>
+          <PillRow
+            options={[
+              { value: "lose", label: "Lose" },
+              { value: "maintain", label: "Maintain" },
+              { value: "gain", label: "Gain" },
+            ]}
+            value={goal}
+            onChange={setGoal}
+            accessibilityLabel="Goal"
+          />
 
           <View style={{ marginTop: 24 }}>
             <Button label="Save changes" onPress={save} loading={loading} />
@@ -372,7 +383,7 @@ export default function ProfileScreen() {
       <Text style={{ ...styles.sectionTitle, marginTop: 32 }}>Account</Text>
       <Button label="Sign out" variant="secondary" onPress={signOut} />
       <View style={{ marginTop: 12 }}>
-        <Button label="Delete account" variant="ghost" onPress={deleteAccount} />
+        <Button label="Delete account" variant="destructive" onPress={deleteAccount} />
       </View>
     </Screen>
   );

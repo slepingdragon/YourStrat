@@ -1,37 +1,71 @@
+import { useEffect, useRef, type ReactNode } from "react";
 import { Tabs } from "expo-router";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { AppTabBar } from "@/components/AppTabBar";
 import { Book, Camera, Dumbbell, Profile, Star } from "@/components/icons";
+import { TabBadge } from "@/components/TabBadge";
+import { getActiveSession } from "@/lib/api";
+import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
+// Springy "pop": the active icon springs to full size with a slight overshoot
+// (the "pop" half of pop + gliding indicator). The gliding indicator + the
+// selection haptic live in AppTabBar. A deliberate, owner-approved playful
+// departure from LAW-3's "weighted, never bouncy" — scoped to the tab chrome.
+const POP_SPRING = { damping: 10, stiffness: 220, mass: 0.6 };
+
+function AnimatedTabIcon({ focused, children }: { focused: boolean; children: ReactNode }) {
+  const scale = useSharedValue(focused ? 1 : 0.9);
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1 : 0.9, POP_SPRING);
+  }, [focused, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
 export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
+  const session = useStore((s) => s.session);
+  const activeSession = useStore((s) => s.activeSession);
+  const setActiveSession = useStore((s) => s.setActiveSession);
+  const restored = useRef(false);
+
+  // Cold-start restore (W-C2): once authed, if nothing is in memory, ask the
+  // server for an unfinished session and re-point the takeover at it.
+  useEffect(() => {
+    if (restored.current || !session) return;
+    if (activeSession) {
+      restored.current = true;
+      return;
+    }
+    restored.current = true;
+    getActiveSession()
+      .then((s) => {
+        if (s) setActiveSession({ id: s.id, routineId: s.routine_id });
+      })
+      .catch((e) => {
+        // Best-effort restore. A 404 (backend predates GET /sessions/active) or
+        // offline must not red-screen the app — log quietly, don't throw.
+        console.log("[active-session] cold-start restore skipped:", (e as Error)?.message ?? e);
+      });
+  }, [session, activeSession, setActiveSession]);
+
   return (
     <Tabs
       initialRouteName="index"
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: 72 + insets.bottom,
-          paddingTop: 4,
-          paddingBottom: insets.bottom + 10,
-        },
-        tabBarItemStyle: { paddingVertical: 2 },
-        tabBarActiveTintColor: colors.star,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginTop: -2 },
-      }}
+      tabBar={(props) => <AppTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Today",
           tabBarIcon: ({ focused }) => (
-            <View style={{ opacity: focused ? 1 : 0.72 }}>
-              <Star size={20} />
-            </View>
+            <AnimatedTabIcon focused={focused}>
+              <View style={{ opacity: focused ? 1 : 0.72 }}>
+                <Star size={20} />
+              </View>
+            </AnimatedTabIcon>
           ),
         }}
       />
@@ -39,7 +73,14 @@ export default function TabsLayout() {
         name="workouts"
         options={{
           title: "Workouts",
-          tabBarIcon: ({ color }) => <Dumbbell color={color} size={20} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: 20, height: 20, alignItems: "center", justifyContent: "center" }}>
+              <AnimatedTabIcon focused={focused}>
+                <Dumbbell color={color} size={20} />
+              </AnimatedTabIcon>
+              <TabBadge />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -68,14 +109,22 @@ export default function TabsLayout() {
         name="nutrition"
         options={{
           title: "Nutrition",
-          tabBarIcon: ({ color }) => <Book color={color} size={20} />,
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused}>
+              <Book color={color} size={20} />
+            </AnimatedTabIcon>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => <Profile color={color} size={20} />,
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon focused={focused}>
+              <Profile color={color} size={20} />
+            </AnimatedTabIcon>
+          ),
         }}
       />
     </Tabs>

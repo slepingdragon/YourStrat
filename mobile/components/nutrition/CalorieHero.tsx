@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -48,7 +49,7 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
 
   const ringColor = over ? colors.error : colors.star;
   const numberColor = over ? colors.error : colors.textPrimary;
-  const headline = over ? Math.round(overAmount).toLocaleString() : Math.round(remaining).toLocaleString();
+  const headline = over ? formatKcal(overAmount) : formatKcal(remaining);
   const headlineLabel = over ? "calories over" : "calories left";
 
   const inner = (
@@ -119,9 +120,9 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
           textAlign: "center",
         }}
       >
-        {Math.round(consumed).toLocaleString()} eaten
-        {burned > 0 ? ` · ${Math.round(burned).toLocaleString()} burned` : ""}
-        {` · ${Math.round(target).toLocaleString()} target`}
+        {formatKcal(consumed)} eaten
+        {burned > 0 ? ` · ${formatKcal(burned)} burned` : ""}
+        {` · ${formatKcal(target)} target`}
       </Text>
     </View>
   );

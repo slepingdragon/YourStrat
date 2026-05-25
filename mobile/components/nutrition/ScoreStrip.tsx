@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Text, View } from "react-native";
 import type { SummaryStats } from "@/lib/nutritionSummaryStats";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -74,7 +75,7 @@ function ScoreStripImpl({ stats }: Props) {
     stats.onTargetDays.total > 0
       ? `${stats.onTargetDays.hit}/${stats.onTargetDays.total}`
       : "—";
-  const avgCal = stats.avgCalories7d != null ? stats.avgCalories7d.toLocaleString() : "—";
+  const avgCal = stats.avgCalories7d != null ? formatKcal(stats.avgCalories7d) : "—";
 
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>

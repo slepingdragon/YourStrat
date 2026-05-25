@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { RpePicker, rpeLabel } from "@/components/RpePicker";
 import { Screen, Button, BackHeader, toastError, toastSuccess } from "@/components/ui";
 import { rateSession } from "@/lib/api";
+import { formatKcal } from "@/lib/format";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -42,7 +43,7 @@ export default function SessionSummaryScreen() {
       <BackHeader />
       <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700" }}>Workout logged.</Text>
       <Text style={{ color: colors.textSecondary, marginTop: spacing.md, fontSize: 18 }}>
-        {cal} cal burned · {mins} min
+        {formatKcal(cal)} cal burned · {mins} min
       </Text>
 
       <View style={{ marginTop: spacing.xxl }}>

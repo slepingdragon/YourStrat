@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import type { Meal } from "@/lib/api";
 import { Card } from "@/components/ui";
+import { formatKcal, formatMacroGrams } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 type Props = { meal: Meal; onPress: () => void };
@@ -21,7 +22,7 @@ function MealCardImpl({ meal, onPress }: Props) {
             {top}
           </Text>
           <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
-            {meal.total_calories} cal · P {Math.round(meal.total_protein_g)}g
+            {formatKcal(meal.total_calories)} cal · P {formatMacroGrams(meal.total_protein_g)}g
           </Text>
         </View>
       </Card>

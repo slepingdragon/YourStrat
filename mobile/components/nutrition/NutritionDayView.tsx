@@ -6,7 +6,6 @@ import { MacroTriBar } from "@/components/nutrition/MacroTriBar";
 import { MealSlotsList } from "@/components/nutrition/MealSlotsList";
 import { MicroPinBar } from "@/components/nutrition/MicroPinBar";
 import { ScoreStrip } from "@/components/nutrition/ScoreStrip";
-import { WaterRow } from "@/components/nutrition/WaterRow";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Button, Screen, Skeleton, toastError } from "@/components/ui";
 import { getNutritionJournal, type NutritionDay, type NutritionDayTotals } from "@/lib/api";
@@ -285,9 +284,6 @@ export function NutritionDayView() {
                   <ScoreStrip stats={stats} />
                 </>
               ) : null}
-
-              <SectionLabel>Hydration</SectionLabel>
-              <WaterRow dateKey={todayKey} />
 
               <SectionLabel>Watch &amp; reach</SectionLabel>
               <View style={{ gap: 4 }}>
