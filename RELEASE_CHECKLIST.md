@@ -24,8 +24,9 @@ This tracks getting YourStrat onto the Google Play Store. It's split into two ga
 ## 🔧 Gate A — Brady action items to produce + upload an Internal-testing AAB
 
 ### Backend / data
-- [x] **Run migration 008** in the Supabase SQL editor — **done (Brady, 2026-05-25)**. `public.delete_user()` now exists.
-- [ ] **Verify deletion end-to-end** on a throwaway account (Profile → Delete account → confirm the row is gone in `auth.users` + data + the `meal-photos/{uid}/…` objects).
+- [x] **Run migration 008** in the Supabase SQL editor — **done (Brady, 2026-05-25)**. `public.delete_user()` created.
+- [x] **Run migration 009** (`009_delete_user_no_storage.sql`) — **done (Brady, 2026-05-25)**. 008's `delete_user()` did a `DELETE FROM storage.objects` that Supabase now blocks (err 42501) → deletion fully failed; 009 drops that line (auth.users cascade only — meal photos aren't stored).
+- [x] **Verify deletion end-to-end** — **done (Brady, 2026-05-25)**: Profile → Delete account → account + data deleted, signed out. (No `meal-photos/{uid}/…` objects exist; photo upload is unwired.)
 - [ ] **Confirm the production backend is live + keyed:** `curl https://yourstrat-production.up.railway.app/health` → `{"ok":true,...}`; Railway has `GEMINI_API_KEY` (Tier-1 billing), `GEMINI_MODEL=gemini-2.5-flash`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`.
 - [ ] **Confirm the Supabase project + anon key in `eas.json`** (`nfwjmiauopafosltkbbq` / `sb_publishable_…`) is the intended production project and the `meal-photos` bucket exists (private).
 
