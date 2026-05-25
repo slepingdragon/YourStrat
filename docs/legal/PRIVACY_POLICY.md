@@ -1,17 +1,16 @@
 <!--
-DRAFT — review before publishing. Fill the [BRACKETS] and confirm the
-"Before you publish" checklist at the bottom. Host at
+Filled in (date / entity / contact). Review once, then host at
 https://yourstrat.xaeryx.com/privacy (the yourstrat.xaeryx.com subdomain off
-xaeryx.com), then add that URL in Play Console → App content → Privacy policy.
-This is not legal advice.
+xaeryx.com) and add that URL in Play Console → App content → Privacy policy.
+The deployable version is site/privacy.html. This is not legal advice.
 -->
 
 # YourStrat — Privacy Policy
 
-**Effective date:** [DATE]
-**Last updated:** [DATE]
+**Effective date:** May 25, 2026
+**Last updated:** May 25, 2026
 
-This Privacy Policy explains how **[LEGAL ENTITY / "YourStrat" — your name or business]** ("we", "us") collects, uses, and shares information when you use the **YourStrat** mobile app (the "App").
+This Privacy Policy explains how **YourStrat** ("we", "us") collects, uses, and shares information when you use the **YourStrat** mobile app (the "App").
 
 ## Summary
 
@@ -52,7 +51,7 @@ These providers process data on our behalf to run the App. **We do not use third
 
 ## Deleting your account and data
 
-You can delete your account at any time in the App: **Profile → Delete account**. This permanently removes your profile, meals and meal photos, workouts, and associated records, and cannot be undone. If you can't access the App, email **[CONTACT EMAIL]** to request deletion.
+You can delete your account at any time in the App: **Profile → Delete account**. This permanently removes your profile, meals and meal photos, workouts, and associated records, and cannot be undone. If you can't access the App, email **baniabradyy@gmail.com** to request deletion.
 
 ## Children
 
@@ -60,7 +59,7 @@ YourStrat is **not directed to children under 13** (or the minimum age in your j
 
 ## Your rights
 
-Depending on where you live, you may have rights to access, correct, or delete your data (e.g., GDPR/CCPA). Contact **[CONTACT EMAIL]**. In-app deletion is available to everyone as described above.
+Depending on where you live, you may have rights to access, correct, or delete your data (e.g., GDPR/CCPA). Contact **baniabradyy@gmail.com**. In-app deletion is available to everyone as described above.
 
 ## Changes
 
@@ -68,14 +67,14 @@ We may update this policy; we'll change the "Last updated" date and, for materia
 
 ## Contact
 
-**[CONTACT EMAIL]** — [LEGAL ENTITY / name].
+**baniabradyy@gmail.com** — YourStrat.
 
 ---
 
 ### Before you publish (fill / confirm)
 
-- [ ] Replace `[DATE]`, `[LEGAL ENTITY]` (suggest "YourStrat"), `[CONTACT EMAIL]`.
+- [x] Date / entity / contact: **filled** (effective May 25, 2026; entity "YourStrat"; contact `baniabradyy@gmail.com` — swap to a domain alias like `privacy@xaeryx.com` if you set one up).
 - [x] Analytics/crash SDK: **none** (confirmed — no Sentry/Firebase/PostHog/etc. in `mobile/package.json`).
 - [ ] Confirm whether the backend logs/keeps meal images or only forwards them to Gemini, and reflect that in "Data storage… retention."
-- [ ] Deploy to `https://yourstrat.xaeryx.com/privacy` (stand up the subdomain on Cloudflare; xaeryx.com launcher link is handled separately by the xaeryx.com agent) and add that URL in Play Console.
+- [ ] Deploy `site/` to **Vercel** (Root Directory = `site`) + add the `yourstrat.xaeryx.com` domain (CNAME → `cname.vercel-dns.com`, DNS-only, in Cloudflare); then add `https://yourstrat.xaeryx.com/privacy` in Play Console. (xaeryx.com launcher link → handled by the xaeryx.com agent.)
 - [ ] (Recommended) Add an in-app "Privacy policy" link in Profile once the URL is live (left unwired to avoid a dead link).
