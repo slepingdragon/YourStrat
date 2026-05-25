@@ -3,9 +3,10 @@ import { Platform, Pressable, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
-import { Screen, Button, toastError } from "@/components/ui";
+import { Screen, Button, toastError, toastSuccess } from "@/components/ui";
 import { isApiError, lookupBarcode, scanMeal } from "@/lib/api";
 import { colors } from "@/theme/colors";
 
@@ -72,6 +73,10 @@ export default function ScanScreen() {
     if (loading || handledBarcode.current || !data) return;
     handledBarcode.current = true;
     setLoading(true);
+    // Confirm to the user that a barcode registered (it's otherwise invisible),
+    // and that this lookup is free.
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    toastSuccess("Barcode scanned — free lookup");
     try {
       const result = await lookupBarcode(data);
       router.push({ pathname: "/scan-result", params: { items: JSON.stringify(result.items ?? []) } });
@@ -181,7 +186,7 @@ export default function ScanScreen() {
               textShadowRadius: 2,
             }}
           >
-            Barcode for packaged food · photo for meals
+            Point at a barcode to auto-scan (free) · or photo a meal
           </Text>
           <ShutterButton onPress={capture} loading={loading} />
           <Pressable onPress={pickLibrary} disabled={loading} hitSlop={12} accessibilityRole="button">
