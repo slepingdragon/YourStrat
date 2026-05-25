@@ -2,16 +2,19 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { Screen, Button, Input, LinkButton, toastError, toastSuccess } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 export default function ResetScreen() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const send = async () => {
     const trimmed = email.trim();
     if (!trimmed) {
-      toastError("Enter your email.");
+      toastError(t("reset.enterEmail"));
       return;
     }
     setLoading(true);
@@ -24,22 +27,22 @@ export default function ResetScreen() {
       toastError(error.message);
       return;
     }
-    toastSuccess("Check your email for a reset link.");
+    toastSuccess(t("reset.checkEmail"));
   };
 
   return (
     <Screen scroll>
-      <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: "700", textAlign: "center", marginTop: 48 }}>
-        Reset password
+      <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: "700", textAlign: "center", marginTop: spacing.xxxl }}>
+        {t("reset.title")}
       </Text>
-      <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 8, marginBottom: 32 }}>
-        We will email you a link.
+      <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.xxl }}>
+        {t("reset.sub")}
       </Text>
-      <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+      <Input placeholder={t("reset.emailPlaceholder")} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
       <View style={{ height: 24 }} />
-      <Button label="Send link" onPress={send} loading={loading} compact />
+      <Button label={t("reset.sendLink")} onPress={send} loading={loading} compact />
       <View style={{ height: 8 }} />
-      <LinkButton href="/(auth)/login" label="Back to sign in" />
+      <LinkButton href="/(auth)/login" label={t("reset.backToSignIn")} />
     </Screen>
   );
 }

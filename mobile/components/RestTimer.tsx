@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Button } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -23,6 +24,7 @@ function fmt(s: number): string {
 }
 
 export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = false }: Props) {
+  const t = useT();
   const [left, setLeft] = useState(seconds);
   const firedRef = useRef(false);
 
@@ -64,7 +66,7 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = f
         }}
       >
         <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: "700", letterSpacing: 1 }}>
-          REST
+          {t("session.restLabel")}
         </Text>
         <Text
           style={{
@@ -75,7 +77,7 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = f
             minWidth: 44,
           }}
           accessibilityLiveRegion="polite"
-          accessibilityLabel={`${left} seconds rest remaining`}
+          accessibilityLabel={t("session.restRemainingA11y", { n: left })}
         >
           {fmt(left)}
         </Text>
@@ -90,16 +92,16 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = f
         >
           <View style={{ height: "100%", width: `${pct * 100}%`, backgroundColor: colors.star }} />
         </View>
-        <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button" accessibilityLabel="Skip rest">
-          <Text style={{ color: colors.spark, fontSize: 14, fontWeight: "600" }}>Skip</Text>
+        <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("session.skipRest")}>
+          <Text style={{ color: colors.spark, fontSize: 14, fontWeight: "600" }}>{t("session.skip")}</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View style={{ alignItems: "center", paddingVertical: 24 }}>
-      <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>Rest</Text>
+    <View style={{ alignItems: "center", paddingVertical: spacing.xl }}>
+      <Text style={{ color: colors.textSecondary, marginBottom: spacing.sm }}>{t("session.restWord")}</Text>
       <Text
         style={{
           color: colors.textPrimary,
@@ -108,9 +110,9 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = f
           fontVariant: ["tabular-nums"],
         }}
         accessibilityLiveRegion="polite"
-        accessibilityLabel={`${left} seconds remaining`}
+        accessibilityLabel={t("session.secondsRemainingA11y", { n: left })}
       >
-        {left}s
+        {t("session.restSeconds", { n: left })}
       </Text>
       <View
         style={{
@@ -131,7 +133,7 @@ export function RestTimer({ seconds, onDone, onSkip, paused = false, compact = f
         />
       </View>
       <View style={{ marginTop: 24, width: "100%" }}>
-        <Button label="Skip rest" variant="secondary" onPress={onSkip} />
+        <Button label={t("session.skipRest")} variant="secondary" onPress={onSkip} />
       </View>
     </View>
   );

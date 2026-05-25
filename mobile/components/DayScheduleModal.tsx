@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import { Button } from "@/components/ui";
 import { DAY_LABELS, DAY_PRESETS } from "@/lib/scheduleDays";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -40,6 +41,7 @@ function Chip({
 }
 
 export function DayScheduleModal({ visible, onClose, onConfirm, loading }: Props) {
+  const t = useT();
   const [days, setDays] = useState<number[]>([...DAY_PRESETS.weekdays]);
 
   const toggle = (d: number) => {
@@ -70,15 +72,15 @@ export function DayScheduleModal({ visible, onClose, onConfirm, loading }: Props
             borderColor: colors.border,
           }}
         >
-          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700" }}>Which days?</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700" }}>{t("routine.whichDays")}</Text>
           <Text style={{ color: colors.textSecondary, marginTop: 8, marginBottom: 16 }}>
-            Pick when this routine runs.
+            {t("routine.whichDaysSub")}
           </Text>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 12 }}>
-            <Chip label="Mon–Fri" active={days.join() === DAY_PRESETS.weekdays.join()} onPress={() => setPreset(DAY_PRESETS.weekdays)} />
-            <Chip label="Sat–Sun" active={days.join() === DAY_PRESETS.weekend.join()} onPress={() => setPreset(DAY_PRESETS.weekend)} />
-            <Chip label="Every day" active={days.length === 7} onPress={() => setPreset(DAY_PRESETS.every)} />
+            <Chip label={t("routine.presetWeekdays")} active={days.join() === DAY_PRESETS.weekdays.join()} onPress={() => setPreset(DAY_PRESETS.weekdays)} />
+            <Chip label={t("routine.presetWeekend")} active={days.join() === DAY_PRESETS.weekend.join()} onPress={() => setPreset(DAY_PRESETS.weekend)} />
+            <Chip label={t("routine.presetEvery")} active={days.length === 7} onPress={() => setPreset(DAY_PRESETS.every)} />
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
@@ -87,9 +89,9 @@ export function DayScheduleModal({ visible, onClose, onConfirm, loading }: Props
             ))}
           </View>
 
-          <Button label="Save routine" onPress={confirm} loading={loading} disabled={!days.length || loading} />
+          <Button label={t("routine.save")} onPress={confirm} loading={loading} disabled={!days.length || loading} />
           <View style={{ marginTop: 12 }}>
-            <Button label="Cancel" variant="ghost" onPress={onClose} />
+            <Button label={t("common.cancel")} variant="ghost" onPress={onClose} />
           </View>
         </Pressable>
       </Pressable>

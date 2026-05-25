@@ -14,6 +14,7 @@ import { ChevronRight, Trash, Play } from "@/components/icons";
 import { RpePicker, rpeLabel } from "@/components/RpePicker";
 import type { Routine } from "@/lib/api";
 import { displayRoutineName, routineExerciseCount } from "@/lib/routineName";
+import { useT, translate } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -30,24 +31,25 @@ type Props = {
 };
 
 function exerciseCountLabel(count: number): string {
-  if (count === 0) return "No exercises yet";
-  return count === 1 ? "1 exercise" : `${count} exercises`;
+  if (count === 0) return translate("routine.noExercisesShort");
+  return count === 1 ? translate("routine.oneExercise") : translate("routine.exercisesShort", { n: count });
 }
 
 function confirmDelete(name: string, onConfirm: () => void) {
-  const title = `Delete "${name}"?`;
-  const message = "This permanently removes the routine and all its exercises. This cannot be undone.";
+  const title = translate("routine.deleteTitle", { name });
+  const message = translate("routine.deleteMessage");
   if (Platform.OS === "web") {
     if (typeof window !== "undefined" && window.confirm(`${title}\n\n${message}`)) onConfirm();
     return;
   }
   Alert.alert(title, message, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Delete", style: "destructive", onPress: onConfirm },
+    { text: translate("common.cancel"), style: "cancel" },
+    { text: translate("routine.delete"), style: "destructive", onPress: onConfirm },
   ]);
 }
 
 function RoutineCardImpl({ routine, onOpen, onStart, onDelete, starting }: Props) {
+  const t = useT();
   const count = routineExerciseCount(routine);
   const title = displayRoutineName(routine.name);
   const canStart = count > 0;
@@ -123,10 +125,10 @@ function RoutineCardImpl({ routine, onOpen, onStart, onDelete, starting }: Props
             <Pressable
               onPress={onOpen}
               accessibilityRole="button"
-              accessibilityLabel={`Open routine ${title}, ${exerciseCountLabel(count)}`}
+              accessibilityLabel={t("routine.openA11y", { name: title, count: exerciseCountLabel(count) })}
               accessibilityActions={[
-                ...(canStart ? [{ name: "start" as const, label: "Start workout" }] : []),
-                ...(onDelete ? [{ name: "delete" as const, label: "Delete routine" }] : []),
+                ...(canStart ? [{ name: "start" as const, label: t("routine.startAction") }] : []),
+                ...(onDelete ? [{ name: "delete" as const, label: t("routine.deleteRoutineAction") }] : []),
               ]}
               onAccessibilityAction={(e) => {
                 if (e.nativeEvent.actionName === "start") openRpe();
@@ -168,12 +170,12 @@ function RoutineCardImpl({ routine, onOpen, onStart, onDelete, starting }: Props
             gap: spacing.md,
           }}
         >
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>How hard will you push?</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{t("routine.pushPrompt")}</Text>
           <RpePicker value={rpe} onChange={setRpe} size="compact" />
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             <View style={{ flex: 1 }}>
               <Button
-                label="Skip"
+                label={t("routine.skip")}
                 variant="ghost"
                 compact
                 onPress={() => onStart(null)}
@@ -182,7 +184,7 @@ function RoutineCardImpl({ routine, onOpen, onStart, onDelete, starting }: Props
             </View>
             <View style={{ flex: 1.4 }}>
               <Button
-                label={rpe ? `Start at ${rpe} · ${rpeLabel(rpe)}` : "Start"}
+                label={rpe ? t("routine.startAtRpe", { rpe, label: rpeLabel(rpe) ?? "" }) : t("routine.start")}
                 compact
                 onPress={() => onStart(rpe)}
                 loading={starting}

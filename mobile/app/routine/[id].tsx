@@ -6,9 +6,12 @@ import { ExerciseRow } from "@/components/ExerciseRow";
 import { getRoutine, startSession, type Routine } from "@/lib/api";
 import { displayRoutineName } from "@/lib/routineName";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 export default function RoutineDetailScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const setActiveSession = useStore((s) => s.setActiveSession);
@@ -25,7 +28,7 @@ export default function RoutineDetailScreen() {
   const start = async () => {
     if (!id) return;
     if (!routine?.exercises?.length) {
-      toastError("Add exercises to this routine before starting.");
+      toastError(t("workout.addExercisesFirst"));
       return;
     }
     try {
@@ -66,12 +69,12 @@ export default function RoutineDetailScreen() {
         {displayRoutineName(routine.name)}
       </Text>
       <Text style={{ color: colors.textSecondary, marginTop: 8, marginBottom: 16 }}>
-        {canStart ? `${exercises.length} exercises` : "No exercises in this routine yet."}
+        {canStart ? t("routine.exercisesCount", { n: exercises.length }) : t("routine.noExercisesYet")}
       </Text>
       {exercises.map((re) => (
         <ExerciseRow
           key={re.position}
-          name={re.exercise?.name ?? "Exercise"}
+          name={re.exercise?.name ?? t("routine.exerciseFallback")}
           sets={re.sets}
           reps={re.reps}
           durationSec={re.duration_sec}
@@ -79,13 +82,13 @@ export default function RoutineDetailScreen() {
       ))}
       <View style={{ marginTop: 24 }}>
         <Button
-          label="Start workout"
+          label={t("routine.startWorkout")}
           onPress={start}
           disabled={!canStart}
         />
         {!canStart ? (
-          <Text style={{ color: colors.textMuted, fontSize: 13, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
-            Build this routine with at least one exercise before you start.
+          <Text style={{ color: colors.textMuted, fontSize: 13, textAlign: "center", marginTop: spacing.sm, lineHeight: 20 }}>
+            {t("routine.buildBeforeStart")}
           </Text>
         ) : null}
       </View>

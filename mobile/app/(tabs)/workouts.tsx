@@ -8,20 +8,30 @@ import { Dumbbell } from "@/components/icons";
 import { Screen, Button, Card, toastError, toastSuccess } from "@/components/ui";
 import { deleteRoutine, getRoutine, listRoutines, startSession, type Routine } from "@/lib/api";
 import { useStore } from "@/lib/store";
+import { useT, translate } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
-const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const DAY_SHORT_KEYS = [
+  "workout.dayShort.sun",
+  "workout.dayShort.mon",
+  "workout.dayShort.tue",
+  "workout.dayShort.wed",
+  "workout.dayShort.thu",
+  "workout.dayShort.fri",
+  "workout.dayShort.sat",
+] as const;
 const ANYTIME_KEY = -1;
 
 function dayCaption(dayIndex: number, todayIndex: number): string {
-  if (dayIndex === ANYTIME_KEY) return "Anytime";
-  if (dayIndex === todayIndex) return "Today";
-  if (dayIndex === (todayIndex + 1) % 7) return "Tomorrow";
-  return DAY_SHORT[dayIndex];
+  if (dayIndex === ANYTIME_KEY) return translate("workout.anytime");
+  if (dayIndex === todayIndex) return translate("workout.today");
+  if (dayIndex === (todayIndex + 1) % 7) return translate("workout.tomorrow");
+  return translate(DAY_SHORT_KEYS[dayIndex]);
 }
 
 export default function WorkoutsScreen() {
+  const t = useT();
   const router = useRouter();
   const session = useStore((s) => s.session);
   const activeSession = useStore((s) => s.activeSession);
@@ -57,7 +67,7 @@ export default function WorkoutsScreen() {
     try {
       const routine = await getRoutine(routineId);
       if (!routine.exercises?.length) {
-        toastError("Add exercises to this routine before starting.");
+        toastError(t("workout.addExercisesFirst"));
         return;
       }
       const started = await startSession(routineId, rpe ?? undefined);
@@ -75,7 +85,7 @@ export default function WorkoutsScreen() {
     setRoutines((prev) => prev.filter((r) => r.id !== id));
     try {
       await deleteRoutine(id);
-      toastSuccess("Routine deleted.");
+      toastSuccess(t("workout.routineDeleted"));
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);
@@ -150,9 +160,9 @@ export default function WorkoutsScreen() {
         }}
       >
         <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", lineHeight: 34 }}>
-          Workouts
+          {t("workout.screenTitle")}
         </Text>
-        <Button label="New" variant="secondary" compact fullWidth={false} onPress={() => router.push("/routine/new")} />
+        <Button label={t("workout.new")} variant="secondary" compact fullWidth={false} onPress={() => router.push("/routine/new")} />
       </View>
 
       {routines.length === 0 ? (
@@ -181,13 +191,13 @@ export default function WorkoutsScreen() {
             <Dumbbell color={colors.textMuted} size={24} />
           </View>
           <Text style={{ color: colors.textPrimary, fontWeight: "700", fontSize: 17, textAlign: "center" }}>
-            No routines yet
+            {t("workout.noRoutinesTitle")}
           </Text>
           <Text style={{ color: colors.textSecondary, marginTop: spacing.sm, fontSize: 15, lineHeight: 22, textAlign: "center" }}>
-            Build your first plan, schedule it on the days you train, and start a session when you're ready.
+            {t("workout.noRoutinesBody")}
           </Text>
           <View style={{ marginTop: spacing.xl, alignSelf: "stretch" }}>
-            <Button label="New routine" onPress={() => router.push("/routine/new")} />
+            <Button label={t("workout.newRoutine")} onPress={() => router.push("/routine/new")} />
           </View>
         </Card>
       ) : (
@@ -232,7 +242,7 @@ export default function WorkoutsScreen() {
                     {dayCaption(g.key, todayIndex)}
                   </Text>
                   {g.routines.length === 0 ? (
-                    <Text style={{ color: colors.textMuted, fontSize: 11 }}>Rest day</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 11 }}>{t("workout.restDay")}</Text>
                   ) : null}
                 </View>
                 {g.routines.map((r) => (

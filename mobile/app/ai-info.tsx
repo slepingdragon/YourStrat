@@ -4,7 +4,9 @@ import { useFocusEffect } from "expo-router";
 import { Screen, BackHeader, Card, toastError } from "@/components/ui";
 import { ChevronDown } from "@/components/icons";
 import { getAiStats, type AiStats } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const CARD_PAD = { padding: 20 };
 
@@ -32,6 +34,7 @@ function formatConfidence(value: number | null) {
 }
 
 export default function AiInfoScreen() {
+  const t = useT();
   const [stats, setStats] = useState<AiStats | null>(null);
   const [eduOpen, setEduOpen] = useState(false);
 
@@ -48,62 +51,57 @@ export default function AiInfoScreen() {
 
   return (
     <Screen scroll>
-      <BackHeader title="AI & food scans" />
+      <BackHeader title={t("aiInfo.title")} />
 
-      <Section title="How it works">
+      <Section title={t("aiInfo.howItWorks")}>
         <Text style={styles.body}>
-          You take a photo of your meal. Our app sends the image to Google Gemini, which estimates each food’s
-          calories and macros from what it sees — nothing is read from a barcode unless you check the package
-          yourself.
+          {t("aiInfo.howItWorksBody")}
         </Text>
       </Section>
 
-      <Section title="What to expect">
+      <Section title={t("aiInfo.whatToExpect")}>
         <Text style={styles.body}>
-          This is not a lab test. It works best on clear photos of a single plate with good lighting. For packaged
-          foods, use the Nutrition Facts label when you need exact numbers.
+          {t("aiInfo.whatToExpectBody")}
         </Text>
       </Section>
 
-      <Section title="Your stats">
+      <Section title={t("aiInfo.yourStats")}>
         {stats ? (
           <View style={{ gap: 10 }}>
-            <StatRow label="Meals logged from scans" value={String(stats.total_scans)} />
-            <StatRow label="Logged this week" value={String(stats.scans_this_week)} />
-            <StatRow label="Average confidence" value={formatConfidence(stats.avg_confidence)} />
-            <StatRow label="Items flagged low confidence" value={String(stats.low_confidence_count)} />
-            <Text style={{ ...styles.muted, marginTop: 8, lineHeight: 20 }}>{stats.accuracy_note}</Text>
+            <StatRow label={t("aiInfo.statMealsLogged")} value={String(stats.total_scans)} />
+            <StatRow label={t("aiInfo.statLoggedWeek")} value={String(stats.scans_this_week)} />
+            <StatRow label={t("aiInfo.statAvgConfidence")} value={formatConfidence(stats.avg_confidence)} />
+            <StatRow label={t("aiInfo.statFlaggedLow")} value={String(stats.low_confidence_count)} />
+            <Text style={{ ...styles.muted, marginTop: spacing.sm, lineHeight: 20 }}>{stats.accuracy_note}</Text>
           </View>
         ) : (
-          <Text style={styles.muted}>Loading your scan stats…</Text>
+          <Text style={styles.muted}>{t("aiInfo.loadingStats")}</Text>
         )}
       </Section>
 
-      <Section title="The truth">
-        <Text style={{ ...styles.body, fontWeight: "600", marginBottom: 8 }}>Strengths</Text>
-        <Bullet>Fast estimates for home-cooked plates and recognizable portions.</Bullet>
-        <Bullet>Editable before you save — fix anything that looks off.</Bullet>
-        <Text style={{ ...styles.body, fontWeight: "600", marginTop: 14, marginBottom: 8 }}>Limits</Text>
-        <Bullet>Hidden oils, sauces, and mixed dishes are easy to misjudge.</Bullet>
-        <Bullet>Packaged foods: often 10–25% off vs the label; verify when it matters.</Bullet>
-        <Bullet>Confidence below 70% means the model was unsure — double-check portions.</Bullet>
-        <Text style={{ ...styles.muted, marginTop: 12, lineHeight: 20 }}>
-          We do not show fake precision. Estimates help you steer your day; labels and scales win when you need
-          proof.
+      <Section title={t("aiInfo.theTruth")}>
+        <Text style={{ ...styles.body, fontWeight: "600", marginBottom: spacing.sm }}>{t("aiInfo.strengths")}</Text>
+        <Bullet>{t("aiInfo.strength1")}</Bullet>
+        <Bullet>{t("aiInfo.strength2")}</Bullet>
+        <Text style={{ ...styles.body, fontWeight: "600", marginTop: spacing.md, marginBottom: spacing.sm }}>{t("aiInfo.limits")}</Text>
+        <Bullet>{t("aiInfo.limit1")}</Bullet>
+        <Bullet>{t("aiInfo.limit2")}</Bullet>
+        <Bullet>{t("aiInfo.limit3")}</Bullet>
+        <Text style={{ ...styles.muted, marginTop: spacing.md, lineHeight: 20 }}>
+          {t("aiInfo.truthNote")}
         </Text>
       </Section>
 
-      <Section title="Tips for better scans">
-        <Bullet>Use bright, even light — avoid heavy shadows.</Bullet>
-        <Bullet>Show the full plate; avoid cropping half the meal.</Bullet>
-        <Bullet>One meal at a time — fewer mixed bowls per photo.</Bullet>
-        <Bullet>Tap numbers on the review screen to correct mistakes before saving.</Bullet>
+      <Section title={t("aiInfo.tips")}>
+        <Bullet>{t("aiInfo.tip1")}</Bullet>
+        <Bullet>{t("aiInfo.tip2")}</Bullet>
+        <Bullet>{t("aiInfo.tip3")}</Bullet>
+        <Bullet>{t("aiInfo.tip4")}</Bullet>
       </Section>
 
-      <Section title="Testing accuracy yourself">
+      <Section title={t("aiInfo.testingTitle")}>
         <Text style={styles.body}>
-          Pick a meal with a Nutrition Facts label or a known recipe. Scan it, then compare calories and protein to
-          the label or your recipe math. Small differences are normal; large gaps usually mean portion size was off.
+          {t("aiInfo.testingBody")}
         </Text>
       </Section>
 
@@ -112,7 +110,7 @@ export default function AiInfoScreen() {
         accessibilityRole="button"
         style={styles.eduHeader}
       >
-        <Text style={styles.sectionTitle}>Nutrition basics</Text>
+        <Text style={styles.sectionTitle}>{t("aiInfo.basics")}</Text>
         <View style={{ transform: [{ rotate: eduOpen ? "180deg" : "0deg" }] }}>
           <ChevronDown color={colors.textMuted} size={20} />
         </View>
@@ -120,16 +118,13 @@ export default function AiInfoScreen() {
 
       {eduOpen ? (
         <Card style={[CARD_PAD, { marginTop: 0 }]}>
-          <Text style={{ ...styles.body, fontWeight: "600", marginBottom: 6 }}>Calories</Text>
+          <Text style={{ ...styles.body, fontWeight: "600", marginBottom: spacing.xs }}>{t("aiInfo.basicsCalories")}</Text>
           <Text style={styles.body}>
-            A calorie measures energy in food. USDA guidelines use about 2,000 kcal per day as a general reference
-            for adults; your target in YourStrat is personalized from your body and goal.
+            {t("aiInfo.basicsCaloriesBody")}
           </Text>
-          <Text style={{ ...styles.body, fontWeight: "600", marginTop: 16, marginBottom: 6 }}>Protein</Text>
+          <Text style={{ ...styles.body, fontWeight: "600", marginTop: spacing.lg, marginBottom: spacing.xs }}>{t("aiInfo.basicsProtein")}</Text>
           <Text style={styles.body}>
-            Protein provides about 4 kcal per gram and supports muscle repair. Many active adults aim for roughly
-            0.7–1.0 g per pound of body weight per day; your daily protein target in the app is a starting point, not
-            medical advice.
+            {t("aiInfo.basicsProteinBody")}
           </Text>
         </Card>
       ) : null}

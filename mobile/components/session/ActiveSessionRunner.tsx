@@ -9,6 +9,7 @@ import { SetSpreadsheet, type LoggedSet } from "@/components/session/SetSpreadsh
 import { appendSet, finishSession, getRoutine, type Routine } from "@/lib/api";
 import { kgToLbs, lbsToKg } from "@/lib/targets";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -28,6 +29,7 @@ type Props = {
  * is local (ephemeral); only the rest deadline is mirrored to Zustand.
  */
 export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props) {
+  const t = useT();
   const setRestEndsAt = useStore((s) => s.setRestEndsAt);
   const units = useStore((s) => s.profile?.units) ?? "metric";
   const unit = units === "imperial" ? "lb" : "kg";
@@ -101,8 +103,8 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
   // Spreadsheet rows depend only on the routine — memoized off `routine` (not
   // the per-render `exercises` array) so keystrokes don't re-render the grid.
   const rows = useMemo(
-    () => (routine?.exercises ?? []).map((e) => ({ name: e.exercise?.name ?? "Exercise", sets: e.sets ?? 3 })),
-    [routine]
+    () => (routine?.exercises ?? []).map((e) => ({ name: e.exercise?.name ?? t("routine.exerciseFallback"), sets: e.sets ?? 3 })),
+    [routine, t]
   );
 
   const confirm = (title: string, message: string, onYes: () => void) => {
@@ -111,8 +113,8 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
       return;
     }
     Alert.alert(title, message, [
-      { text: "Cancel", style: "cancel" },
-      { text: "End workout", style: "destructive", onPress: onYes },
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("session.endWorkout"), style: "destructive", onPress: onYes },
     ]);
   };
 
@@ -132,7 +134,7 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
 
   const logSet = () => {
     if (!sessionId || !current?.exercise_id) {
-      toastError("Workout data is still loading. Try again in a moment.");
+      toastError(t("session.dataLoading"));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -199,30 +201,30 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
   };
 
   const onFinishPress = () => {
-    confirm("End workout?", "Your logged sets will be saved.", endSession);
+    confirm(t("session.endTitle"), t("session.endMessage"), endSession);
   };
 
   if (routineId && routine && totalExercises === 0) {
     return (
       <Screen>
         <Text style={{ color: colors.textSecondary, lineHeight: 22, marginTop: spacing.xl }}>
-          This routine has no exercises. Add some in Workouts, then start again.
+          {t("session.noExercisesBody")}
         </Text>
         <View style={{ marginTop: spacing.lg }}>
-          <Button label="End session" variant="secondary" onPress={endSession} loading={finishing} />
+          <Button label={t("session.endSession")} variant="secondary" onPress={endSession} loading={finishing} />
         </View>
       </Screen>
     );
   }
 
-  const exerciseName = current?.exercise?.name ?? "Workout";
+  const exerciseName = current?.exercise?.name ?? t("session.workoutFallback");
   const heroWeight = weightInput.trim() !== "" ? weightInput.trim() : "—";
   const repsText = repsInput.trim() !== "" ? repsInput.trim() : current?.reps != null ? String(current.reps) : "";
-  const subline = repsText ? `× ${repsText} reps` : "reps —";
+  const subline = repsText ? t("session.repsSuffix", { reps: repsText }) : t("session.repsEmpty");
   const heroA11y =
     heroWeight === "—"
-      ? `${exerciseName}, set ${setIndex + 1} of ${totalSets}, ${repsText || "—"} reps`
-      : `${exerciseName}, ${heroWeight} ${unit}, ${repsText || "—"} reps, set ${setIndex + 1} of ${totalSets}`;
+      ? t("session.setOfA11y", { name: exerciseName, set: setIndex + 1, total: totalSets, reps: repsText || "—" })
+      : t("session.setOfWeightA11y", { name: exerciseName, weight: heroWeight, unit, reps: repsText || "—", set: setIndex + 1, total: totalSets });
 
   return (
     <Screen scroll>
@@ -231,9 +233,9 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
           <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>
             {exerciseName}
           </Text>
-          <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600", marginTop: 2 }}>
-            Set {setIndex + 1} of {totalSets}
-            {totalExercises > 0 ? ` · Exercise ${exerciseIndex + 1} of ${totalExercises}` : ""}
+          <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600", marginTop: spacing.xs }}>
+            {t("session.setOf", { set: setIndex + 1, total: totalSets })}
+            {totalExercises > 0 ? t("session.exerciseOf", { ex: exerciseIndex + 1, total: totalExercises }) : ""}
           </Text>
         </View>
         <PauseButton paused={paused} onToggle={() => setPaused((p) => !p)} />
@@ -256,7 +258,7 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
 
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: spacing.xs }}>Weight ({unit})</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: spacing.xs }}>{t("session.weightUnit", { unit })}</Text>
           <Input
             value={weightInput}
             onChangeText={setWeightInput}
@@ -266,7 +268,7 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: spacing.xs }}>Reps</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: spacing.xs }}>{t("session.reps")}</Text>
           <Input
             value={repsInput}
             onChangeText={setRepsInput}
@@ -279,7 +281,7 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
 
       <View style={{ marginTop: spacing.lg }}>
         <Button
-          label={exerciseIndex + 1 >= totalExercises && setIndex + 1 >= totalSets ? "Log set & finish" : "Log set"}
+          label={exerciseIndex + 1 >= totalExercises && setIndex + 1 >= totalSets ? t("session.logSetFinish") : t("session.logSet")}
           onPress={logSet}
           loading={finishing}
         />
@@ -288,7 +290,7 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
       <SetSpreadsheet rows={rows} log={log} activeExercise={exerciseIndex} activeSet={setIndex} unit={unit} />
 
       <View style={{ marginTop: spacing.lg, marginBottom: spacing.xl }}>
-        <Button label="Finish workout" variant="secondary" onPress={onFinishPress} />
+        <Button label={t("session.finishWorkout")} variant="secondary" onPress={onFinishPress} />
       </View>
 
       <Modal visible={paused} transparent animationType="fade" onRequestClose={() => setPaused(false)}>
@@ -301,15 +303,15 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
             paddingHorizontal: spacing.xl,
           }}
         >
-          <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600", letterSpacing: 2 }}>PAUSED</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: "600", letterSpacing: 2 }}>{t("session.paused")}</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: "700", marginTop: spacing.md, textAlign: "center" }}>
-            Take a breath
+            {t("session.takeBreath")}
           </Text>
           <Text style={{ color: colors.textSecondary, marginTop: spacing.sm, textAlign: "center" }}>
-            Your workout is paused. Resume when you're ready.
+            {t("session.pausedBody")}
           </Text>
           <View style={{ marginTop: spacing.xxl, width: "100%", maxWidth: 320 }}>
-            <Button label="Resume" onPress={() => setPaused(false)} />
+            <Button label={t("session.resume")} onPress={() => setPaused(false)} />
           </View>
         </View>
       </Modal>
@@ -318,13 +320,14 @@ export function ActiveSessionRunner({ sessionId, routineId, onFinished }: Props)
 }
 
 function PauseButton({ paused, onToggle }: { paused: boolean; onToggle: () => void }) {
+  const t = useT();
   return (
     <Pressable
       onPress={() => {
         Haptics.selectionAsync();
         onToggle();
       }}
-      accessibilityLabel={paused ? "Resume workout" : "Pause workout"}
+      accessibilityLabel={paused ? t("session.resumeWorkout") : t("session.pauseWorkout")}
       accessibilityRole="button"
       hitSlop={12}
       style={{

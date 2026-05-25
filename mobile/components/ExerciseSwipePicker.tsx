@@ -22,7 +22,9 @@ import {
 import { estimateExerciseCalories, formatDefaultVolume } from "@/lib/exerciseCalories";
 import { formatKcal } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const SWIPE_THRESHOLD = 80;
 const DEFAULT_WEIGHT_KG = 70;
@@ -38,6 +40,7 @@ type Props = {
 };
 
 export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSkip, onRemove }: Props) {
+  const t = useT();
   const profile = useStore((s) => s.profile);
   const weightKg = profile?.weight_kg ?? DEFAULT_WEIGHT_KG;
 
@@ -135,7 +138,7 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
           }}
         >
           <Text style={{ color: colors.star, fontWeight: "600", fontSize: 11 }}>
-            {selectedCount} picked
+            {t("routine.picked", { n: selectedCount })}
           </Text>
         </View>
       </View>
@@ -183,19 +186,19 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
                   ~{formatKcal(calories)} cal
                 </Text>
                 <Text style={{ color: colors.textMuted, fontSize: 14 }}>
-                  {formatDefaultVolume(current)} · est. for your weight
+                  {t("routine.estForWeight", { volume: formatDefaultVolume(current) })}
                 </Text>
               </View>
               {alreadyAdded ? (
-                <Text style={{ color: colors.star, marginTop: 16, fontWeight: "600" }}>Already in your routine</Text>
+                <Text style={{ color: colors.star, marginTop: spacing.lg, fontWeight: "600" }}>{t("routine.alreadyInRoutine")}</Text>
               ) : null}
             </Animated.View>
           </GestureDetector>
         ) : (
-          <Text style={{ color: colors.textMuted, textAlign: "center", paddingHorizontal: 24, lineHeight: 22 }}>
+          <Text style={{ color: colors.textMuted, textAlign: "center", paddingHorizontal: spacing.xl, lineHeight: 22 }}>
             {deck.length === 0
-              ? "No exercises match this filter. Try another muscle group or clear search."
-              : "No more exercises in this filter. Try another filter or save your routine."}
+              ? t("routine.noMatchFilter")
+              : t("routine.noMoreFilter")}
           </Text>
         )}
       </View>
@@ -203,11 +206,11 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
       {current ? (
         <View style={{ flexDirection: "row", gap: 12, marginTop: 12, paddingBottom: 4 }}>
           <View style={{ flex: 1 }}>
-            <Button label="Skip" variant="secondary" onPress={() => advance("skip", current)} />
+            <Button label={t("routine.skip")} variant="secondary" onPress={() => advance("skip", current)} />
           </View>
           <View style={{ flex: 1 }}>
             <Button
-              label={alreadyAdded ? "Added" : "Add"}
+              label={alreadyAdded ? t("routine.added") : t("routine.add")}
               onPress={() => advance("add", current)}
               disabled={alreadyAdded}
             />
@@ -225,16 +228,16 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
         }}
       >
         <Text style={{ color: colors.textMuted, fontSize: 11 }}>
-          Swipe right to add · left to skip
+          {t("routine.swipeHint")}
         </Text>
         {lastAction ? (
           <Pressable
             onPress={undo}
             accessibilityRole="button"
-            accessibilityLabel={`Undo ${lastAction.type}`}
+            accessibilityLabel={t("routine.undoAction", { action: lastAction.type })}
             hitSlop={8}
           >
-            <Text style={{ color: colors.spark, fontSize: 12, fontWeight: "700" }}>Undo</Text>
+            <Text style={{ color: colors.spark, fontSize: 12, fontWeight: "700" }}>{t("routine.undo")}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -254,7 +257,7 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
               onPress={() => selectFilter(opt.id)}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              accessibilityLabel={`${opt.label} filter`}
+              accessibilityLabel={t("routine.filterA11y", { label: opt.label })}
               style={{
                 paddingHorizontal: 12,
                 paddingVertical: 6,
@@ -285,7 +288,7 @@ export function ExerciseSwipePicker({ selectedSlugs, selectedCount, onAdd, onSki
             setSearch(t);
             setIndex(0);
           }}
-          placeholder="Search exercises"
+          placeholder={t("routine.searchExercises")}
           centered={false}
           style={{ fontSize: 15, paddingVertical: Platform.OS === "web" ? 10 : 8 }}
         />

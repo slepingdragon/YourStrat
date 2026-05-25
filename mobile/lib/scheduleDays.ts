@@ -1,11 +1,13 @@
+import { translate } from "@/lib/i18n";
+
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export function formatScheduledDays(days: number[]): string {
-  if (!days.length) return "No days set";
+  if (!days.length) return translate("routine.noDaysSet");
   const sorted = [...days].sort((a, b) => a - b);
-  if (sorted.length === 7) return "Every day";
-  if (sorted.join(",") === "1,2,3,4,5") return "Mon–Fri";
-  if (sorted.join(",") === "0,6") return "Sat–Sun";
+  if (sorted.length === 7) return translate("routine.presetEvery");
+  if (sorted.join(",") === "1,2,3,4,5") return translate("routine.presetWeekdays");
+  if (sorted.join(",") === "0,6") return translate("routine.presetWeekend");
   return sorted.map((d) => DAY_LABELS[d] ?? "?").join(" · ");
 }
 

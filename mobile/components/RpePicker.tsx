@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { useT, translate } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -8,26 +9,27 @@ type Props = {
   size?: "default" | "compact";
 };
 
-const RPE_LABELS: Record<number, string> = {
-  1: "Easy",
-  3: "Light",
-  5: "Moderate",
-  7: "Hard",
-  9: "Near max",
-  10: "All out",
+const RPE_LABEL_KEYS: Record<number, string> = {
+  1: "rpe.easy",
+  3: "rpe.light",
+  5: "rpe.moderate",
+  7: "rpe.hard",
+  9: "rpe.nearMax",
+  10: "rpe.allOut",
 };
 
 export function rpeLabel(rpe: number | null | undefined): string | null {
   if (rpe == null) return null;
-  if (RPE_LABELS[rpe]) return RPE_LABELS[rpe];
-  if (rpe <= 2) return "Easy";
-  if (rpe <= 4) return "Light";
-  if (rpe <= 6) return "Moderate";
-  if (rpe <= 8) return "Hard";
-  return "All out";
+  if (RPE_LABEL_KEYS[rpe]) return translate(RPE_LABEL_KEYS[rpe]);
+  if (rpe <= 2) return translate("rpe.easy");
+  if (rpe <= 4) return translate("rpe.light");
+  if (rpe <= 6) return translate("rpe.moderate");
+  if (rpe <= 8) return translate("rpe.hard");
+  return translate("rpe.allOut");
 }
 
 export function RpePicker({ value, onChange, size = "default" }: Props) {
+  const t = useT();
   const buttons = size === "compact" ? 36 : 44;
   return (
     <View>
@@ -46,7 +48,7 @@ export function RpePicker({ value, onChange, size = "default" }: Props) {
               key={n}
               onPress={() => onChange(n)}
               accessibilityRole="button"
-              accessibilityLabel={`Effort ${n} of 10`}
+              accessibilityLabel={t("rpe.effortA11y", { n })}
               accessibilityState={{ selected }}
               style={({ pressed }) => ({
                 width: buttons,
@@ -80,13 +82,13 @@ export function RpePicker({ value, onChange, size = "default" }: Props) {
           marginTop: spacing.sm,
         }}
       >
-        <Text style={{ color: colors.textMuted, fontSize: 12 }}>1 · Easy</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t("rpe.lowAnchor")}</Text>
         {value != null ? (
           <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "600" }}>
-            {value} · {rpeLabel(value)}
+            {t("rpe.valueLabel", { n: value, label: rpeLabel(value) ?? "" })}
           </Text>
         ) : null}
-        <Text style={{ color: colors.textMuted, fontSize: 12 }}>10 · All out</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t("rpe.highAnchor")}</Text>
       </View>
     </View>
   );

@@ -14,7 +14,9 @@ import {
 } from "@/lib/exerciseCatalog";
 import { resolveCatalogToExercises } from "@/lib/resolveExercises";
 import { suggestRoutineName } from "@/lib/routineName";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 const REST_PRESETS_SEC = [30, 60, 90, 120];
 const DEFAULT_REST_SEC = 60;
@@ -30,9 +32,10 @@ function formatRest(sec: number): string {
 
 type RestRowProps = { value: number; onChange: (sec: number) => void };
 function RestRow({ value, onChange }: RestRowProps) {
+  const t = useT();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
-      <Text style={{ color: colors.textMuted, fontSize: 12, marginRight: 2 }}>Rest</Text>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.xs }}>
+      <Text style={{ color: colors.textMuted, fontSize: 12, marginRight: spacing.xs }}>{t("routine.rest")}</Text>
       {REST_PRESETS_SEC.map((sec) => {
         const active = sec === value;
         return (
@@ -40,7 +43,7 @@ function RestRow({ value, onChange }: RestRowProps) {
             key={sec}
             onPress={() => onChange(sec)}
             accessibilityRole="button"
-            accessibilityLabel={`Rest ${formatRest(sec)}`}
+            accessibilityLabel={t("routine.restLabelA11y", { time: formatRest(sec) })}
             accessibilityState={{ selected: active }}
             style={{
               paddingHorizontal: 10,
@@ -62,6 +65,7 @@ function RestRow({ value, onChange }: RestRowProps) {
 }
 
 export default function NewRoutineScreen() {
+  const t = useT();
   const router = useRouter();
   const [name, setName] = useState("");
   const [nameExpanded, setNameExpanded] = useState(false);
@@ -141,7 +145,7 @@ export default function NewRoutineScreen() {
         }),
         scheduledDays
       );
-      toastSuccess("Routine saved.");
+      toastSuccess(t("routine.saved"));
       setDayModal(false);
       router.back();
     } catch (e) {
@@ -152,17 +156,17 @@ export default function NewRoutineScreen() {
     }
   };
 
-  const nameLabel = name.trim() ? "Rename" : "Add a name";
+  const nameLabel = name.trim() ? t("routine.rename") : t("routine.addName");
 
   return (
     <Screen padding={false} contentStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-      <BackHeader title="New routine" />
+      <BackHeader title={t("routine.newTitle")} />
       <View style={{ paddingTop: 0 }}>
         {nameExpanded ? (
           <Input
             value={name}
             onChangeText={setName}
-            placeholder="Name (optional)"
+            placeholder={t("routine.namePlaceholder")}
             centered={false}
             autoFocus
           />
@@ -176,9 +180,9 @@ export default function NewRoutineScreen() {
       </View>
 
       <View style={{ marginTop: 8 }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: "700", fontSize: 15 }}>Quick start</Text>
-        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>
-          Pick a template or swipe below
+        <Text style={{ color: colors.textPrimary, fontWeight: "700", fontSize: 15 }}>{t("routine.quickStart")}</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: spacing.xs }}>
+          {t("routine.quickStartHint")}
         </Text>
         <ScrollView
           horizontal
@@ -229,12 +233,12 @@ export default function NewRoutineScreen() {
           <Pressable
             onPress={() => setPicksOpen((o) => !o)}
             accessibilityRole="button"
-            accessibilityLabel={picksOpen ? "Collapse your picks" : "Expand your picks"}
+            accessibilityLabel={picksOpen ? t("routine.collapsePicks") : t("routine.expandPicks")}
             accessibilityState={{ expanded: picksOpen }}
             style={{ paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
           >
             <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-              Your picks ({selected.length})
+              {t("routine.yourPicks", { n: selected.length })}
             </Text>
             <View style={{ transform: [{ rotate: picksOpen ? "180deg" : "0deg" }] }}>
               <ChevronDown color={colors.textPrimary} size={18} />
@@ -256,10 +260,10 @@ export default function NewRoutineScreen() {
                     </Text>
                     <Pressable
                       onPress={() => removeExercise(ex.slug)}
-                      accessibilityLabel={`Remove ${ex.name}`}
+                      accessibilityLabel={t("routine.removeNamed", { name: ex.name })}
                       hitSlop={8}
                     >
-                      <Text style={{ color: colors.textMuted, marginLeft: 8 }}>Remove</Text>
+                      <Text style={{ color: colors.textMuted, marginLeft: spacing.sm }}>{t("routine.remove")}</Text>
                     </Pressable>
                   </View>
                   <RestRow
@@ -279,13 +283,13 @@ export default function NewRoutineScreen() {
               color: colors.textMuted,
               fontSize: 12,
               textAlign: "center",
-              marginBottom: 8,
+              marginBottom: spacing.sm,
             }}
           >
-            You can save now — we'll name it for you
+            {t("routine.saveNowHint")}
           </Text>
         ) : null}
-        <Button label="Save routine" onPress={openSave} loading={loading && !dayModal} />
+        <Button label={t("routine.save")} onPress={openSave} loading={loading && !dayModal} />
       </View>
 
       <DayScheduleModal

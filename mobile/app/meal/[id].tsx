@@ -14,11 +14,17 @@ import { deleteMeal, getMeal, type Meal } from "@/lib/api";
 
 import { totalsFromMeal } from "@/lib/mealNutrition";
 
+import { useT } from "@/lib/i18n";
+
 import { colors } from "@/theme/colors";
+
+import { spacing } from "@/theme/spacing";
 
 
 
 export default function MealDetailScreen() {
+
+  const t = useT();
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -60,7 +66,7 @@ export default function MealDetailScreen() {
 
       await deleteMeal(id);
 
-      toastSuccess("Meal removed.");
+      toastSuccess(t("mealDetail.removed"));
 
       router.back();
 
@@ -86,9 +92,9 @@ export default function MealDetailScreen() {
 
       <Screen>
 
-        <BackHeader title="Meal" />
+        <BackHeader title={t("mealDetail.title")} />
 
-        <Text style={{ color: colors.textMuted }}>Loading...</Text>
+        <Text style={{ color: colors.textMuted }}>{t("mealDetail.loading")}</Text>
 
       </Screen>
 
@@ -106,7 +112,7 @@ export default function MealDetailScreen() {
 
       ? meal.items!.map((i) => i.name).slice(0, 2).join(", ") + (itemCount > 2 ? "…" : "")
 
-      : "Saved meal";
+      : t("mealDetail.savedMeal");
 
 
 
@@ -114,9 +120,9 @@ export default function MealDetailScreen() {
 
     <Screen scroll>
 
-      <BackHeader title="Meal" />
+      <BackHeader title={t("mealDetail.title")} />
 
-      <View style={{ paddingBottom: 24 }}>
+      <View style={{ paddingBottom: spacing.xl }}>
 
         <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "600", marginBottom: 16 }} numberOfLines={2}>
 
@@ -132,7 +138,7 @@ export default function MealDetailScreen() {
 
             <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>
 
-              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {itemCount === 1 ? t("mealDetail.itemOne", { n: itemCount }) : t("mealDetail.itemOther", { n: itemCount })}
 
             </Text>
 
@@ -148,7 +154,7 @@ export default function MealDetailScreen() {
 
         <View style={{ marginTop: 28 }}>
 
-          <Button label="Delete meal" variant="destructive" onPress={remove} loading={deleting} />
+          <Button label={t("mealDetail.delete")} variant="destructive" onPress={remove} loading={deleting} />
 
         </View>
 

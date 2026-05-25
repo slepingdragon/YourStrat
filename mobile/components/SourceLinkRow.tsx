@@ -1,5 +1,6 @@
 import { Image, Linking, Pressable, Text, View } from "react-native";
 import { faviconUrl, type NutritionSourceLink } from "@/lib/nutritionSources";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -7,11 +8,12 @@ type Props = {
 };
 
 export function SourceLinkRow({ source }: Props) {
+  const t = useT();
   return (
     <Pressable
       onPress={() => void Linking.openURL(source.url)}
       accessibilityRole="link"
-      accessibilityLabel={`${source.title}, opens in browser`}
+      accessibilityLabel={t("source.opensBrowserA11y", { title: source.title })}
       style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
