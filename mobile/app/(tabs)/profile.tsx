@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
 import { ChevronDown } from "@/components/icons";
 import { Screen, Button, Input, OptionCard, PillRow, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
-import { getProfile, getSessionStats, normalizeTrial, updateProfile, type SessionStats } from "@/lib/api";
+import { getAiStats, getProfile, getSessionStats, normalizeTrial, updateProfile, type AiStats, type SessionStats } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -37,6 +37,7 @@ export default function ProfileScreen() {
   const setSession = useStore((s) => s.setSession);
 
   const [stats, setStats] = useState<SessionStats | null>(null);
+  const [aiStats, setAiStats] = useState<AiStats | null>(null);
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
@@ -78,6 +79,11 @@ export default function ProfileScreen() {
         });
       getSessionStats()
         .then(setStats)
+        .catch((e) => {
+          console.error(e);
+        });
+      getAiStats()
+        .then(setAiStats)
         .catch((e) => {
           console.error(e);
         });
@@ -195,69 +201,36 @@ export default function ProfileScreen() {
   }
 
   const trial = normalizeTrial(profile.trial);
+  const trialLine = trial.is_admin
+    ? "Admin · unlimited food scans"
+    : trial.trial_active
+      ? `${trial.days_remaining} day${trial.days_remaining === 1 ? "" : "s"} left · ${trial.scans_today}/${trial.scans_limit} scans today`
+      : `Trial ended · ${trial.scans_today}/${trial.scans_limit} scans today`;
 
   return (
     <Screen scroll>
       <Text style={styles.pageTitle}>Profile</Text>
-      <Text style={styles.tagline}>This is your space.</Text>
 
       <ProfileIdentity profile={profile} />
 
-      <Text style={styles.sectionTitle}>{trial.is_admin ? "Access" : "Free trial"}</Text>
-      <Card style={CARD_PAD}>
-        {trial.is_admin ? (
-          <>
-            <Text style={styles.targetCalories}>Admin access</Text>
-            <Text style={styles.targetMacros}>Unlimited food scans · no trial limit.</Text>
-          </>
-        ) : trial.trial_active ? (
-          <>
-            <Text style={styles.targetCalories}>
-              {trial.days_remaining} day{trial.days_remaining === 1 ? "" : "s"} left
-            </Text>
-            <Text style={styles.targetMacros}>
-              Food scans today: {trial.scans_today} / {trial.scans_limit}
-            </Text>
-            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 10, lineHeight: 20 }}>
-              Your trial includes nutrient scans from photos. Limits reset each day.
-            </Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.targetCalories}>Trial ended</Text>
-            <Text style={styles.targetMacros}>
-              Scans used today: {trial.scans_today} / {trial.scans_limit}
-            </Text>
-            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 10, lineHeight: 20 }}>
-              Full access is coming soon. You can still log meals and workouts. Contact support if you need help.
-            </Text>
-          </>
-        )}
-      </Card>
-
-      {stats && stats.lifetime_sessions > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Lifetime stats</Text>
-          <Card style={CARD_PAD}>
-            <Text style={styles.targetCalories}>
-              {formatKcal(stats.lifetime_calories_burned)} cal burned
-            </Text>
-            <Text style={styles.targetMacros}>
-              {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"} logged
-              {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
-            </Text>
-          </Card>
-        </>
-      ) : null}
-
-      <Text style={styles.sectionTitle}>Daily targets</Text>
-      <Card style={CARD_PAD}>
-        <Text style={styles.targetCalories}>{formatKcal(profile.daily_calorie_target)} cal / day</Text>
-        <Text style={styles.targetMacros}>
-          Protein {profile.daily_protein_target_g}g · Carbs {profile.daily_carbs_target_g}g · Fat{" "}
-          {profile.daily_fat_target_g}g
+      {/* P-S1 — lifetime kcal-burned trophy hero */}
+      <View style={styles.hero}>
+        <Text allowFontScaling={false} style={styles.heroNumber}>
+          {formatKcal(stats?.lifetime_calories_burned ?? 0)}
         </Text>
-      </Card>
+        <Text style={styles.heroLabel}>calories burned · all-time</Text>
+        {stats && stats.lifetime_sessions > 0 ? (
+          <Text style={styles.heroSub}>
+            {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"}
+            {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
+          </Text>
+        ) : (
+          <Text style={styles.heroSub}>Your all-time burn tallies here.</Text>
+        )}
+      </View>
+
+      {/* P-C1 — trial status, single line, no card */}
+      <Text style={styles.trialLine}>{trialLine}</Text>
 
       <Pressable
         onPress={() => setEditOpen((o) => !o)}
@@ -366,26 +339,92 @@ export default function ProfileScreen() {
       ) : null}
 
       <Text style={styles.sectionTitle}>AI & food scans</Text>
-      <Pressable
-        onPress={() => router.push("/ai-info")}
-        accessibilityRole="button"
-        style={styles.aiLinkRow}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "600" }}>How scanning works</Text>
-          <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-            Accuracy, your stats, and what to expect from AI estimates
-          </Text>
-        </View>
-        <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
-      </Pressable>
+      <SettingsGroup>
+        {aiStats ? (
+          <>
+            <SettingsRow label="Total scans" value={String(aiStats.total_scans)} />
+            <SettingsRow label="This week" value={String(aiStats.scans_this_week)} />
+            <SettingsRow
+              label="Avg confidence"
+              value={aiStats.avg_confidence != null ? `${Math.round(aiStats.avg_confidence * 100)}%` : "—"}
+            />
+            <SettingsRow label="Low-confidence scans" value={String(aiStats.low_confidence_count)} />
+          </>
+        ) : null}
+        <SettingsRow label="How scanning works" onPress={() => router.push("/ai-info")} chevron last />
+      </SettingsGroup>
+      {aiStats?.accuracy_note ? <Text style={styles.caption}>{aiStats.accuracy_note}</Text> : null}
 
       <Text style={{ ...styles.sectionTitle, marginTop: 32 }}>Account</Text>
-      <Button label="Sign out" variant="secondary" onPress={signOut} />
-      <View style={{ marginTop: 12 }}>
-        <Button label="Delete account" variant="destructive" onPress={deleteAccount} />
-      </View>
+      <SettingsGroup>
+        <SettingsRow label="Sign out" onPress={signOut} chevron />
+        <SettingsRow label="Delete account" onPress={deleteAccount} destructive last />
+      </SettingsGroup>
     </Screen>
+  );
+}
+
+function SettingsGroup({ children }: { children: ReactNode }) {
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+function SettingsRow({
+  label,
+  value,
+  onPress,
+  destructive,
+  chevron,
+  last,
+}: {
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  destructive?: boolean;
+  chevron?: boolean;
+  last?: boolean;
+}) {
+  const labelColor = destructive ? colors.error : colors.textPrimary;
+  const inner = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        minHeight: 52,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <Text style={{ flex: 1, color: labelColor, fontSize: 16, fontWeight: "500" }}>{label}</Text>
+      {value != null ? (
+        <Text style={{ color: colors.textSecondary, fontSize: 15, fontVariant: ["tabular-nums"] }}>{value}</Text>
+      ) : null}
+      {chevron ? <Text style={{ color: colors.textMuted, fontSize: 18, marginLeft: 8 }}>›</Text> : null}
+    </View>
+  );
+  if (!onPress) return inner;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceElevated : "transparent" })}
+    >
+      {inner}
+    </Pressable>
   );
 }
 
@@ -395,11 +434,42 @@ const styles = {
     fontSize: 28,
     fontWeight: "700" as const,
   },
-  tagline: {
-    color: colors.textMuted,
+  hero: {
+    alignItems: "center" as const,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  heroNumber: {
+    color: colors.textPrimary,
+    fontSize: 72,
+    lineHeight: 78,
+    fontWeight: "800" as const,
+    fontVariant: ["tabular-nums"] as ["tabular-nums"],
+    letterSpacing: -2,
+  },
+  heroLabel: {
+    color: colors.textSecondary,
     fontSize: 14,
+    marginTop: 2,
+  },
+  heroSub: {
+    color: colors.textMuted,
+    fontSize: 13,
     marginTop: 6,
-    marginBottom: 8,
+    fontVariant: ["tabular-nums"] as ["tabular-nums"],
+  },
+  trialLine: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center" as const,
+    fontVariant: ["tabular-nums"] as ["tabular-nums"],
+    marginBottom: 4,
+  },
+  caption: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 10,
   },
   sectionTitle: {
     color: colors.textPrimary,

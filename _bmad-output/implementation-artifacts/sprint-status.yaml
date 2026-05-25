@@ -59,14 +59,14 @@ development_status:
   1-8-waterrow-scope-audit: done
   epic-1-retrospective: optional
 
-  epic-2: backlog
+  epic-2: in-progress
   2-1-sign-up-with-email-password: backlog
   2-2-log-in-with-email-password: backlog
   2-3-reset-password-via-email-deep-link: backlog
   2-4-onboarding-flow-with-smart-defaults: backlog
   2-5-compute-targets-start-trial-on-onboard: backlog
   2-6-edit-profile-recompute-targets: backlog
-  2-7-profile-surface-premium-pass: backlog
+  2-7-profile-surface-premium-pass: review
   2-8-sign-out: backlog
   2-9-delete-account-all-data: backlog
   epic-2-retrospective: optional
