@@ -82,14 +82,16 @@ export default function RootLayout() {
         }
       } catch (e) {
         const msg = (e as Error).message ?? "";
-        console.error(e);
         if (!cancelled) {
           if (isUnauthorized(e) || /profile not found/i.test(msg)) {
+            // Expected: a brand-new account has no profile until onboarding (or a
+            // transient token gap). Route to onboarding — not an error to log.
             setProfile(null);
             setProfileResolved(true);
           } else if (isNetworkError(e)) {
             toastError(msg);
           } else {
+            console.error(e);
             setProfileResolved(true);
           }
         }

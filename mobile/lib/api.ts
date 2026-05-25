@@ -186,7 +186,7 @@ export class ApiError extends Error {
   }
 }
 
-async function handle<T>(res: Response): Promise<T> {
+async function handle<T>(res: Response, quietStatuses: number[] = []): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status}).`;
     let raw = "";
@@ -210,7 +210,12 @@ async function handle<T>(res: Response): Promise<T> {
     } catch {
       /* keep full url */
     }
-    console.error(`API ${res.status} ${path} — ${raw || detail}`);
+    // A status the caller treats as normal control flow (e.g. 404 "no profile
+    // yet" -> onboarding, or "barcode not in DB" -> photo scan) is still thrown,
+    // but not logged as an error so the dev console stays meaningful.
+    if (!quietStatuses.includes(res.status)) {
+      console.error(`API ${res.status} ${path} — ${raw || detail}`);
+    }
     throw new ApiError(detail, res.status);
   }
   return (await res.json()) as T;
@@ -427,7 +432,9 @@ export async function onboard(body: OnboardingInput) {
 export async function getProfile(accessToken?: string) {
   const headers = await authHeader(accessToken);
   const res = await apiFetch(apiUrl("/profile/"), { headers });
-  return normalizeProfile(await handle<Profile>(res));
+  // 404 = no profile yet (brand-new account before onboarding) — expected; the
+  // caller routes to onboarding. Throw, but don't log it as an error.
+  return normalizeProfile(await handle<Profile>(res, [404]));
 }
 
 export async function getTrialStatus() {
@@ -528,7 +535,8 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
 export async function lookupBarcode(code: string): Promise<{ items: MealItem[] }> {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl(`/meals/barcode/${encodeURIComponent(code)}`), { headers });
-  return handle<{ items: MealItem[] }>(res);
+  // 404 = not in the food database — expected; the caller falls back to a photo scan.
+  return handle<{ items: MealItem[] }>(res, [404]);
 }
 
 export async function saveMeal(photoUrl: string | null, items: MealItem[]) {
