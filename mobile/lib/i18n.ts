@@ -606,6 +606,16 @@ const en: Dict = {
   "reset.savePassword": "Save password",
   "reset.passwordMin": "Password must be at least 6 characters.",
   "reset.passwordUpdated": "Password updated.",
+  // profile identity (avatar) + stragglers
+  "profile.changePhoto": "Change photo",
+  "profile.yourProfile": "Your profile",
+  "profile.years": "yr",
+  "profile.photoDenied": "Photo library access denied. Enable it in Settings to change your avatar.",
+  "profile.photoUnreadable": "Could not read that image. Try a different one.",
+  "profile.photoTooLarge": "Image is too large. Pick a smaller one or crop it down.",
+  "profile.photoSaveFailed": "Could not save photo. Try again.",
+  "mealSummary.total": "Meal total",
+  "common.failedToFetch": "Failed to fetch",
 };
 
 const id: Dict = {
@@ -1198,6 +1208,16 @@ const id: Dict = {
   "reset.savePassword": "Simpan kata sandi",
   "reset.passwordMin": "Kata sandi minimal 6 karakter.",
   "reset.passwordUpdated": "Kata sandi diperbarui.",
+  // profile identity (avatar) + stragglers
+  "profile.changePhoto": "Ganti foto",
+  "profile.yourProfile": "Profil Anda",
+  "profile.years": "thn",
+  "profile.photoDenied": "Akses galeri foto ditolak. Aktifkan di Pengaturan untuk mengganti avatar Anda.",
+  "profile.photoUnreadable": "Tidak dapat membaca gambar itu. Coba gambar lain.",
+  "profile.photoTooLarge": "Gambar terlalu besar. Pilih yang lebih kecil atau pangkas.",
+  "profile.photoSaveFailed": "Tidak dapat menyimpan foto. Coba lagi.",
+  "mealSummary.total": "Total makanan",
+  "common.failedToFetch": "Gagal memuat. Periksa koneksi Anda.",
 };
 
 const DICTS: Record<Lang, Dict> = { en, id };

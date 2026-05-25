@@ -6,6 +6,7 @@ import { Button, toastError } from "@/components/ui";
 import { Star } from "@/components/icons/Star";
 import type { Profile } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { translate, useT } from "@/lib/i18n";
 import { cmToIn, kgToLbs } from "@/lib/targets";
 import { colors } from "@/theme/colors";
 
@@ -13,12 +14,6 @@ export const PROFILE_PHOTO_KEY = "yourstrat_profile_photo";
 
 const AVATAR_SIZE = 120;
 const PHOTO_MAX_BYTES = 1_500_000;
-
-const GOAL_LABELS: Record<string, string> = {
-  lose: "Lose",
-  maintain: "Maintain",
-  gain: "Gain",
-};
 
 function initialsFromEmail(email: string): string {
   const local = email.split("@")[0] ?? "";
@@ -45,7 +40,7 @@ function formatStatsLine(profile: Profile): string {
   const hUnit = profile.units === "metric" ? "cm" : "in";
   const w = displayWeight(profile.weight_kg, profile.units);
   const h = displayHeight(profile.height_cm, profile.units);
-  return `${w} ${wUnit} · ${h} ${hUnit} · ${profile.age} yr`;
+  return `${w} ${wUnit} · ${h} ${hUnit} · ${profile.age} ${translate("profile.years")}`;
 }
 
 type Props = {
@@ -53,6 +48,7 @@ type Props = {
 };
 
 export function ProfileIdentity({ profile }: Props) {
+  const t = useT();
   const [email, setEmail] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -73,7 +69,7 @@ export function ProfileIdentity({ profile }: Props) {
     if (Platform.OS !== "web") {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        toastError("Photo library access denied. Enable it in Settings to change your avatar.");
+        toastError(t("profile.photoDenied"));
         return;
       }
     }
@@ -89,12 +85,12 @@ export function ProfileIdentity({ profile }: Props) {
       if (res.canceled) return;
       const asset = res.assets[0];
       if (!asset?.base64) {
-        toastError("Could not read that image. Try a different one.");
+        toastError(t("profile.photoUnreadable"));
         return;
       }
       const approxBytes = Math.floor((asset.base64.length * 3) / 4);
       if (approxBytes > PHOTO_MAX_BYTES) {
-        toastError("Image is too large. Pick a smaller one or crop it down.");
+        toastError(t("profile.photoTooLarge"));
         return;
       }
       const mime = asset.mimeType ?? "image/jpeg";
@@ -103,14 +99,14 @@ export function ProfileIdentity({ profile }: Props) {
       setPhotoUri(dataUri);
     } catch (e) {
       console.error(e);
-      toastError("Could not save photo. Try again.");
+      toastError(t("profile.photoSaveFailed"));
     } finally {
       setPicking(false);
     }
   };
 
   const initials = email ? initialsFromEmail(email) : "?";
-  const goalLabel = GOAL_LABELS[profile.goal] ?? profile.goal;
+  const goalLabel = t("goal." + profile.goal);
 
   return (
     <View style={{ alignItems: "center", paddingTop: 8, paddingBottom: 4 }}>
@@ -140,11 +136,11 @@ export function ProfileIdentity({ profile }: Props) {
       </View>
 
       <View style={{ marginTop: 16, width: "100%", maxWidth: 280 }}>
-        <Button label="Change photo" variant="secondary" onPress={pickPhoto} loading={picking} />
+        <Button label={t("profile.changePhoto")} variant="secondary" onPress={pickPhoto} loading={picking} />
       </View>
 
       <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 20, letterSpacing: 0.3 }}>
-        Your profile
+        {t("profile.yourProfile")}
       </Text>
       {email ? (
         <Text

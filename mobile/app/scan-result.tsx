@@ -188,7 +188,7 @@ export default function ScanResultScreen() {
 
           <>
 
-            <MealNutritionSummary totals={totals} title="Meal total" />
+            <MealNutritionSummary totals={totals} title={t("mealSummary.total")} />
 
             {lowMealConfidence ? (
               <View
