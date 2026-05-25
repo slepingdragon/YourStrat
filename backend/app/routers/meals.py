@@ -57,7 +57,14 @@ def _meal_with_items(sb, meal_row: dict) -> MealOut:
     ]
     photo = meal_row.get("photo_url")
     if photo and not photo.startswith("http"):
-        photo = signed_photo_url(sb, photo)
+        try:
+            photo = signed_photo_url(sb, photo)
+        except Exception:
+            # The value isn't a real storage object — older saves stored the
+            # on-device file path, which can't be signed. Never 500 the meal /
+            # journal / today over a missing thumbnail; just drop the photo.
+            logger.warning("could not sign photo_url %r; serving meal without photo", photo)
+            photo = None
     return MealOut(
         id=meal_row["id"],
         photo_url=photo,

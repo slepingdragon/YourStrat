@@ -124,7 +124,10 @@ export default function ScanResultScreen() {
 
       const payload = items.map((it) => normalizeMealItem(it));
 
-      await saveMeal(photoUri ?? null, payload);
+      // Meal photos aren't uploaded to storage yet, so the local device path is
+      // not a signable object — sending it stored an unsignable photo_url that
+      // 500'd the journal. Save without a photo until real upload is wired.
+      await saveMeal(null, payload);
 
       toastSuccess("Meal saved.");
 
