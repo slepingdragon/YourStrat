@@ -85,6 +85,7 @@ async def scan_meal(
     check_scan_allowed(sb, user["id"], profile.data, user.get("email"))
     data = await file.read()
     mime = file.content_type or "image/jpeg"
+    logger.info("scan: received image bytes=%d mime=%s", len(data), mime)
     try:
         result = await scan_food(data, mime)
     except Exception as e:

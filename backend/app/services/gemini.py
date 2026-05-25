@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from typing import TypedDict
 
@@ -6,6 +7,8 @@ import google.generativeai as genai
 
 from app.config import settings
 from app.prompts.food_scan import FOOD_SCAN_PROMPT
+
+logger = logging.getLogger(__name__)
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
@@ -189,8 +192,15 @@ async def scan_food(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
             temperature=0,  # deterministic: same photo -> same answer; biases to most-likely (accurate) recall
         ),
     )
+    raw = getattr(response, "text", None)
+    # Diagnostic: the exact model output, pre-normalization, so we can tell a
+    # model/prompt problem (0 carbs/fat in the raw) from a parsing one.
+    logger.info("gemini scan model=%s raw=%s", settings.GEMINI_MODEL, (raw or "")[:900])
     try:
-        data = json.loads(response.text)
+        data = json.loads(raw)
     except (json.JSONDecodeError, ValueError, TypeError):
+        logger.warning("gemini scan: non-JSON response")
         return {"items": []}
-    return _normalize_scan_result(data)
+    result = _normalize_scan_result(data)
+    logger.info("gemini scan parsed %d item(s)", len(result.get("items", [])))
+    return result
