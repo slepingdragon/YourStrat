@@ -83,3 +83,33 @@ First release. Photo + barcode meal scanning, calorie & macro targets with a dai
 - [ ] Confirm the **Photos → shared with Google** row (this is the one reviewers care about) matches the privacy policy.
 - [ ] Confirm "crash logs/analytics" row (none vs. declare SDK).
 - [ ] Capture 2–8 phone screenshots (Today ring, Scan result, Workouts session, Nutrition trend) + a 1024×500 feature graphic + 512×512 icon.
+
+---
+
+## Apple App Store (mirror — doing iOS later this week)
+
+> Same product, same copy. App Store Connect uses different field names than Play; map them as below so the listing is consistent across both stores. Keep the **release notes identical** to Play's "What's new" for every version.
+
+| App Store field | Value (mirror of Play) |
+|---|---|
+| **Name** (≤30) | `YourStrat` |
+| **Subtitle** (≤30) | `Scan meals. Track macros.` _(Apple's subtitle ≈ Play's short description; the full 63-char short desc won't fit — this is the trimmed mirror)_ |
+| **Promotional text** (≤170, editable without review) | `Log a meal in seconds with a photo or barcode, see your day on a calm pace ring, and run workouts with a built-in rest timer. No ads, no noise.` |
+| **Description** (≤4000) | Reuse the **Full description** above verbatim. |
+| **Keywords** (≤100, comma-separated) | `calorie,macro,counter,nutrition,meal,scan,barcode,workout,fitness,tracker,diet,gym` |
+| **What's New** (release notes) | Mirror the Play **v1.0.0** notes above, identical. |
+| **Support URL** / **Marketing URL** | `https://yourstrat.xaeryx.com` |
+| **Privacy policy URL** | `https://yourstrat.xaeryx.com/privacy` (same page) |
+| **Category** | Health & Fitness |
+
+**App Privacy ("nutrition labels" — Apple's Data-safety equivalent):** answer the same as the Play Data-safety table above —
+- Email → *Data Linked to You* (App Functionality).
+- Health & Fitness → *Data Linked to You* (App Functionality).
+- Photos → *Data Linked to You* (App Functionality); declare it's **shared with a third party (Google/Gemini)** to estimate nutrition. **Not** used for tracking/advertising.
+- Crash/analytics → declare only if an SDK is added (none today).
+
+**Age rating questionnaire:** expect **4+** (no objectionable content); answer "None" across the board.
+
+**EAS / build (iOS):** fill the real values in `mobile/eas.json` → `submit.production.ios` (`appleId`, `ascAppId`, `appleTeamId` — currently placeholders), create the app in App Store Connect (bundle `com.yourstrat.app`), then `eas build -p ios --profile production` (EAS manages certs/profiles) → `eas submit -p ios`. ~24h review.
+
+**Website mirror:** when the App Store listing is live, add an **App Store badge** next to the Google Play CTA in `site/index.html` (today it's Play-only) and point it at the App Store URL. _(Don't add the badge before the listing is live — a dead link looks broken.)_
