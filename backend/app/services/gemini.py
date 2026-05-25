@@ -84,6 +84,11 @@ def _validate_item_macros(item: dict) -> dict:
         sodium = MAX_SODIUM_MG
         adjusted = True
 
+    # Sugar is a subset of carbs — it can never exceed total carbs.
+    if sugar > carbs:
+        carbs = sugar
+        adjusted = True
+
     clamped_absurd_calories = False
     if calories > MAX_ITEM_CALORIES:
         calories = MAX_ITEM_CALORIES
