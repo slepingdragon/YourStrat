@@ -9,6 +9,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { useT } from "@/lib/i18n";
 import type { PaceState } from "@/lib/pace";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -63,6 +65,7 @@ export function IntakeRing({
   accessibilityLabel,
   trackColor = colors.border,
 }: Props) {
+  const tr = useT();
   const stroke = Math.max(6, Math.round(size * 0.09));
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
@@ -291,7 +294,7 @@ export function IntakeRing({
         <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 6, textAlign: "center" }}>{label}</Text>
       )}
       {!hideLabel && over ? (
-        <Text style={{ color: overColor, fontSize: 10, fontWeight: "600", marginTop: 2 }}>Over limit</Text>
+        <Text style={{ color: overColor, fontSize: 10, fontWeight: "600", marginTop: spacing.xs }}>{tr("metric.overLimit")}</Text>
       ) : null}
     </View>
   );

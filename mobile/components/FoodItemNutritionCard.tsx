@@ -2,8 +2,10 @@ import { Text, View } from "react-native";
 import { Card, Input } from "@/components/ui";
 import type { MealItem } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { formatGram, formatSodium } from "@/lib/mealNutrition";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 type Props = {
   item: MealItem;
@@ -78,24 +80,34 @@ function NumField({
 }
 
 export function FoodItemNutritionCard({ item, index, editable, onChange }: Props) {
+  const t = useT();
   const cal = formatKcal(item.calories || 0);
 
   // Confidence whiskers (Story 3.4): per-macro range + a spoken summary.
   const cr = item.confidence_range;
-  const macroLabel = `Protein ${formatGram(item.protein_g)}, carbs ${formatGram(item.carbs_g)}, fat ${formatGram(item.fat_g)}`;
-  const rangeText = (v: number) => `${Math.round(v * (1 - (cr ?? 0)))} to ${Math.round(v * (1 + (cr ?? 0)))} grams`;
+  const macroLabel = t("food.macroA11y", {
+    p: formatGram(item.protein_g),
+    c: formatGram(item.carbs_g),
+    f: formatGram(item.fat_g),
+  });
+  const rangeText = (v: number) =>
+    t("food.rangeText", { lo: Math.round(v * (1 - (cr ?? 0))), hi: Math.round(v * (1 + (cr ?? 0))) });
   const macroHint =
     cr != null && cr > 0
-      ? `Estimated ranges: protein ${rangeText(item.protein_g)}, carbs ${rangeText(item.carbs_g)}, fat ${rangeText(item.fat_g)}.`
+      ? t("food.rangeHint", {
+          p: rangeText(item.protein_g),
+          c: rangeText(item.carbs_g),
+          f: rangeText(item.fat_g),
+        })
       : undefined;
 
   return (
     <Card style={{ marginBottom: 14 }}>
       {editable && onChange ? (
         <>
-          <Input value={item.name} onChangeText={(v) => onChange("name", v)} placeholder="Food name" centered={false} />
+          <Input value={item.name} onChangeText={(v) => onChange("name", v)} placeholder={t("food.namePlaceholder")} centered={false} />
           <View style={{ height: 8 }} />
-          <Input value={item.portion ?? ""} onChangeText={(v) => onChange("portion", v)} placeholder="Portion" centered={false} />
+          <Input value={item.portion ?? ""} onChangeText={(v) => onChange("portion", v)} placeholder={t("food.portionPlaceholder")} centered={false} />
         </>
       ) : (
         <>
@@ -109,7 +121,7 @@ export function FoodItemNutritionCard({ item, index, editable, onChange }: Props
       <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: 14, gap: 12 }}>
         {editable && onChange ? (
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>Calories</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: spacing.xs }}>{t("food.calories")}</Text>
             <Input
               value={String(item.calories)}
               onChangeText={(v) => onChange("calories", v)}
@@ -120,7 +132,7 @@ export function FoodItemNutritionCard({ item, index, editable, onChange }: Props
         ) : (
           <View>
             <Text style={{ color: colors.star, fontSize: 32, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{cal}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>cal</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{t("food.cal")}</Text>
           </View>
         )}
         <View
@@ -129,36 +141,36 @@ export function FoodItemNutritionCard({ item, index, editable, onChange }: Props
           accessibilityHint={macroHint}
           style={{ flex: 2, flexDirection: "row", justifyContent: "space-between" }}
         >
-          <StatLine label="Protein" value={formatGram(item.protein_g)} color={colors.protein} range={cr} />
-          <StatLine label="Carbs" value={formatGram(item.carbs_g)} color={colors.carbs} range={cr} />
-          <StatLine label="Fat" value={formatGram(item.fat_g)} color={colors.fat} range={cr} />
+          <StatLine label={t("metric.protein")} value={formatGram(item.protein_g)} color={colors.protein} range={cr} />
+          <StatLine label={t("metric.carbs")} value={formatGram(item.carbs_g)} color={colors.carbs} range={cr} />
+          <StatLine label={t("metric.fat")} value={formatGram(item.fat_g)} color={colors.fat} range={cr} />
         </View>
       </View>
 
       <View style={{ flexDirection: "row", marginTop: 14, gap: 8 }}>
-        <StatLine label="Fiber" value={formatGram(item.fiber_g, true)} />
-        <StatLine label="Sugar" value={formatGram(item.sugar_g, true)} />
-        <StatLine label="Sodium" value={formatSodium(item.sodium_mg, true)} />
+        <StatLine label={t("metric.fiber")} value={formatGram(item.fiber_g, true)} />
+        <StatLine label={t("metric.sugar")} value={formatGram(item.sugar_g, true)} />
+        <StatLine label={t("metric.sodium")} value={formatSodium(item.sodium_mg, true)} />
       </View>
 
       {editable && onChange ? (
         <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border, gap: 10 }}>
-          <Text style={{ color: colors.textMuted, fontSize: 12 }}>Adjust macros</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t("food.adjustMacros")}</Text>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <NumField label="Protein (g)" value={String(item.protein_g)} onChangeText={(v) => onChange("protein_g", v)} />
-            <NumField label="Carbs (g)" value={String(item.carbs_g)} onChangeText={(v) => onChange("carbs_g", v)} />
-            <NumField label="Fat (g)" value={String(item.fat_g)} onChangeText={(v) => onChange("fat_g", v)} />
+            <NumField label={t("food.proteinG")} value={String(item.protein_g)} onChangeText={(v) => onChange("protein_g", v)} />
+            <NumField label={t("food.carbsG")} value={String(item.carbs_g)} onChangeText={(v) => onChange("carbs_g", v)} />
+            <NumField label={t("food.fatG")} value={String(item.fat_g)} onChangeText={(v) => onChange("fat_g", v)} />
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <NumField label="Fiber (g)" value={String(item.fiber_g ?? 0)} onChangeText={(v) => onChange("fiber_g", v)} />
-            <NumField label="Sugar (g)" value={String(item.sugar_g ?? 0)} onChangeText={(v) => onChange("sugar_g", v)} />
-            <NumField label="Sodium (mg)" value={String(item.sodium_mg ?? 0)} onChangeText={(v) => onChange("sodium_mg", v)} />
+            <NumField label={t("food.fiberG")} value={String(item.fiber_g ?? 0)} onChangeText={(v) => onChange("fiber_g", v)} />
+            <NumField label={t("food.sugarG")} value={String(item.sugar_g ?? 0)} onChangeText={(v) => onChange("sugar_g", v)} />
+            <NumField label={t("food.sodiumMg")} value={String(item.sodium_mg ?? 0)} onChangeText={(v) => onChange("sodium_mg", v)} />
           </View>
         </View>
       ) : null}
 
       {index != null && item.confidence != null && item.confidence < 0.7 ? (
-        <Text style={{ color: colors.warning, fontSize: 11, marginTop: 10 }}>Low confidence — double-check portions</Text>
+        <Text style={{ color: colors.warning, fontSize: 11, marginTop: spacing.md }}>{t("food.lowConfidence")}</Text>
       ) : null}
     </Card>
   );

@@ -9,6 +9,7 @@ import {
   type TodayMetricId,
 } from "@/lib/todayMetrics";
 import { formatKcal, formatMacroGrams } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -25,13 +26,15 @@ const PRIMARY_IDS: TodayMetricId[] = ["calories", "protein", "carbs", "fat"];
 const MORE_IDS: TodayMetricId[] = ["sugar", "sodium", "fiber"];
 
 export function NutritionRingsPanel({ totals, targets, primaryOnly, onMetricPress }: Props) {
+  const t = useT();
   const ids = primaryOnly ? PRIMARY_IDS : [...PRIMARY_IDS, ...MORE_IDS];
 
   const ring = (id: TodayMetricId) => {
     const spec = TODAY_METRIC_SPECS[id];
+    const label = t("metric." + id);
     const node = (
       <IntakeRing
-        label={spec.label}
+        label={label}
         value={getMetricValueFromTotals(totals, id)}
         target={getMetricTarget(targets, id)}
         color={spec.color}
@@ -45,7 +48,7 @@ export function NutritionRingsPanel({ totals, targets, primaryOnly, onMetricPres
         key={id}
         onPress={() => onMetricPress(id)}
         accessibilityRole="button"
-        accessibilityLabel={`${spec.label} details`}
+        accessibilityLabel={t("metric.detailsA11y", { label })}
         style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
       >
         {node}

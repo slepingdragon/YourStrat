@@ -10,6 +10,7 @@ import {
   getMetricValue,
   type TodayMetricId,
 } from "@/lib/todayMetrics";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -22,7 +23,9 @@ type Props = {
 
 function MetricCard({ id, today, targets }: { id: TodayMetricId; today: TodaySnapshot; targets: NutritionTargets }) {
   const router = useRouter();
+  const t = useT();
   const spec = TODAY_METRIC_SPECS[id];
+  const label = t("metric." + id);
   const consumed = getMetricValue(today, id);
   const target = getMetricTarget(targets, id);
   const over = target > 0 && consumed > target;
@@ -33,7 +36,7 @@ function MetricCard({ id, today, targets }: { id: TodayMetricId; today: TodaySna
     <Pressable
       onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id } })}
       accessibilityRole="button"
-      accessibilityLabel={`${spec.label}, ${Math.round(consumed)} of ${formatMetricAmount(target, spec.unit)}`}
+      accessibilityLabel={t("grid.metricA11y", { label, x: Math.round(consumed), y: formatMetricAmount(target, spec.unit) })}
       style={({ pressed }) => ({
         flexBasis: "48%",
         flexGrow: 1,
@@ -45,13 +48,13 @@ function MetricCard({ id, today, targets }: { id: TodayMetricId; today: TodaySna
         opacity: pressed ? 0.85 : 1,
       })}
     >
-      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{spec.label}</Text>
+      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "baseline" }}>
         <Text style={{ color: over ? colors.error : colors.textPrimary, fontSize: 22, fontWeight: "700", fontVariant: ["tabular-nums"] }}>
           {Math.round(consumed)}
         </Text>
         <Text style={{ color: colors.textSecondary, fontSize: 13, marginLeft: spacing.xs, fontVariant: ["tabular-nums"] }}>
-          / {formatMetricAmount(target, spec.unit)}
+          {t("grid.target", { amount: formatMetricAmount(target, spec.unit) })}
         </Text>
       </View>
       <View style={{ height: 3, backgroundColor: colors.border, borderRadius: 2, marginTop: spacing.sm, overflow: "hidden" }}>
@@ -63,12 +66,13 @@ function MetricCard({ id, today, targets }: { id: TodayMetricId; today: TodaySna
 
 /** The personalizable "Right now" nutrient grid (calories live in the hero). */
 function NutrientGridImpl({ today, targets, metrics, onCustomize }: Props) {
+  const t = useT();
   return (
     <View style={{ width: "100%" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md }}>
-        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Right now</Text>
-        <Pressable onPress={onCustomize} hitSlop={8} accessibilityRole="button" accessibilityLabel="Customize Today">
-          <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "600" }}>Customize</Text>
+        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{t("grid.rightNow")}</Text>
+        <Pressable onPress={onCustomize} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("today.customize")}>
+          <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "600" }}>{t("grid.customize")}</Text>
         </Pressable>
       </View>
       {metrics.length === 0 ? (
@@ -76,7 +80,7 @@ function NutrientGridImpl({ today, targets, metrics, onCustomize }: Props) {
           onPress={onCustomize}
           style={{ borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, alignItems: "center" }}
         >
-          <Text style={{ color: colors.textMuted, fontSize: 13 }}>No nutrients shown. Tap to add some.</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t("grid.empty")}</Text>
         </Pressable>
       ) : (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>

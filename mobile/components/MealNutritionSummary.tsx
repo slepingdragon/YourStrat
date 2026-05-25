@@ -2,8 +2,10 @@ import { Text, View } from "react-native";
 import { Card } from "@/components/ui";
 import type { MealTotals } from "@/lib/mealNutrition";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { formatGram, formatSodium } from "@/lib/mealNutrition";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 type MacroProps = { label: string; value: string; color: string };
 
@@ -44,6 +46,7 @@ type Props = {
 };
 
 export function MealNutritionSummary({ totals, title }: Props) {
+  const t = useT();
   return (
     <Card style={{ marginBottom: 20 }}>
       {title ? (
@@ -60,11 +63,11 @@ export function MealNutritionSummary({ totals, title }: Props) {
       >
         {formatKcal(totals.calories)}
       </Text>
-      <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginTop: 2 }}>calories</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 15, textAlign: "center", marginTop: spacing.xs }}>{t("mealSummary.calories")}</Text>
       <View style={{ flexDirection: "row", marginTop: 20, justifyContent: "space-between" }}>
-        <MacroChip label="Protein" value={formatGram(totals.protein_g)} color={colors.protein} />
-        <MacroChip label="Carbs" value={formatGram(totals.carbs_g)} color={colors.carbs} />
-        <MacroChip label="Fat" value={formatGram(totals.fat_g)} color={colors.fat} />
+        <MacroChip label={t("metric.protein")} value={formatGram(totals.protein_g)} color={colors.protein} />
+        <MacroChip label={t("metric.carbs")} value={formatGram(totals.carbs_g)} color={colors.carbs} />
+        <MacroChip label={t("metric.fat")} value={formatGram(totals.fat_g)} color={colors.fat} />
       </View>
       <View
         style={{
@@ -76,9 +79,9 @@ export function MealNutritionSummary({ totals, title }: Props) {
           justifyContent: "space-between",
         }}
       >
-        <MicroStat label="Fiber" value={formatGram(totals.fiber_g, true)} />
-        <MicroStat label="Sugar" value={formatGram(totals.sugar_g, true)} />
-        <MicroStat label="Sodium" value={formatSodium(totals.sodium_mg, true)} />
+        <MicroStat label={t("metric.fiber")} value={formatGram(totals.fiber_g, true)} />
+        <MicroStat label={t("metric.sugar")} value={formatGram(totals.sugar_g, true)} />
+        <MicroStat label={t("metric.sodium")} value={formatSodium(totals.sodium_mg, true)} />
       </View>
     </Card>
   );

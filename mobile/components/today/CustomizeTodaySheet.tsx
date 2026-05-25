@@ -3,13 +3,12 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { ChevronDown, Check } from "@/components/icons";
 import { Button } from "@/components/ui";
 import {
-  ALL_TODAY_SECTIONS,
-  TODAY_SECTION_LABELS,
   moveSection,
   type TodayLayout,
   type TodaySectionId,
 } from "@/lib/todayLayout";
-import { TODAY_GRID_METRICS, TODAY_METRIC_SPECS } from "@/lib/todayMetrics";
+import { TODAY_GRID_METRICS } from "@/lib/todayMetrics";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -48,6 +47,7 @@ function ReorderButton({ icon, disabled, onPress, label }: { icon: "up" | "down"
 }
 
 export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props) {
+  const t = useT();
   const [order, setOrder] = useState<TodaySectionId[]>(layout.order);
   const [hidden, setHidden] = useState<TodaySectionId[]>(layout.hidden);
   const [metrics, setMetrics] = useState(new Set(layout.metrics));
@@ -84,7 +84,7 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }} accessibilityLabel="Close customize">
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }} accessibilityLabel={t("customize.close")}>
         <Pressable
           onPress={(e) => e.stopPropagation()}
           style={{
@@ -97,15 +97,16 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
             maxHeight: "86%",
           }}
         >
-          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700" }}>Customize Today</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700" }}>{t("customize.title")}</Text>
           <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: spacing.xs, lineHeight: 20 }}>
-            Reorder or hide sections, and pick which nutrients show in the grid.
+            {t("customize.subtitle")}
           </Text>
 
           <ScrollView style={{ marginTop: spacing.lg }} showsVerticalScrollIndicator={false}>
-            <Text style={sectionLabel}>Sections</Text>
+            <Text style={sectionLabel}>{t("customize.sections")}</Text>
             {order.map((id, i) => {
               const isHidden = hidden.includes(id);
+              const sectionName = t("section." + id);
               return (
                 <View
                   key={id}
@@ -119,15 +120,15 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
                   }}
                 >
                   <Text style={{ flex: 1, color: isHidden ? colors.textMuted : colors.textPrimary, fontSize: 15, fontWeight: "600" }}>
-                    {TODAY_SECTION_LABELS[id]}
+                    {sectionName}
                   </Text>
-                  <ReorderButton icon="up" disabled={i === 0} onPress={() => setOrder((o) => moveSection(o, id, -1))} label={`Move ${TODAY_SECTION_LABELS[id]} up`} />
-                  <ReorderButton icon="down" disabled={i === order.length - 1} onPress={() => setOrder((o) => moveSection(o, id, 1))} label={`Move ${TODAY_SECTION_LABELS[id]} down`} />
+                  <ReorderButton icon="up" disabled={i === 0} onPress={() => setOrder((o) => moveSection(o, id, -1))} label={t("customize.moveUp", { x: sectionName })} />
+                  <ReorderButton icon="down" disabled={i === order.length - 1} onPress={() => setOrder((o) => moveSection(o, id, 1))} label={t("customize.moveDown", { x: sectionName })} />
                   <Pressable
                     onPress={() => toggleHidden(id)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: !isHidden }}
-                    accessibilityLabel={`${TODAY_SECTION_LABELS[id]} ${isHidden ? "hidden" : "shown"}`}
+                    accessibilityLabel={t("customize.toggleState", { label: sectionName, state: isHidden ? t("customize.hidden") : t("customize.shown") })}
                     style={{
                       paddingHorizontal: spacing.md,
                       height: 32,
@@ -140,24 +141,25 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
                     }}
                   >
                     <Text style={{ color: isHidden ? colors.textMuted : colors.bg, fontSize: 12, fontWeight: "700" }}>
-                      {isHidden ? "Hidden" : "Shown"}
+                      {isHidden ? t("customize.hidden") : t("customize.shown")}
                     </Text>
                   </Pressable>
                 </View>
               );
             })}
 
-            <Text style={[sectionLabel, { marginTop: spacing.xl }]}>Nutrients in the grid</Text>
+            <Text style={[sectionLabel, { marginTop: spacing.xl }]}>{t("customize.gridNutrients")}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
               {TODAY_GRID_METRICS.map((id) => {
                 const on = metrics.has(id);
+                const metricName = t("metric." + id);
                 return (
                   <Pressable
                     key={id}
                     onPress={() => toggleMetric(id)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
-                    accessibilityLabel={TODAY_METRIC_SPECS[id].label}
+                    accessibilityLabel={metricName}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -172,7 +174,7 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
                   >
                     {on ? <Check color={colors.bg} size={14} /> : null}
                     <Text style={{ color: on ? colors.bg : colors.textPrimary, fontSize: 13, fontWeight: on ? "700" : "500" }}>
-                      {TODAY_METRIC_SPECS[id].label}
+                      {metricName}
                     </Text>
                   </Pressable>
                 );
@@ -181,7 +183,7 @@ export function CustomizeTodaySheet({ visible, layout, onSave, onClose }: Props)
           </ScrollView>
 
           <View style={{ marginTop: spacing.lg }}>
-            <Button label="Done" onPress={save} />
+            <Button label={t("customize.done")} onPress={save} />
           </View>
         </Pressable>
       </Pressable>

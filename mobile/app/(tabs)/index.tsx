@@ -5,6 +5,7 @@ import { TodayDashboard } from "@/components/TodayDashboard";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Screen, toastError } from "@/components/ui";
 import { getNutritionJournal, getToday, listRoutines } from "@/lib/api";
+import { translate } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
@@ -30,7 +31,7 @@ export default function TodayScreen() {
       setToday(todayRes.value);
     } else {
       console.error(todayRes.reason);
-      toastError((todayRes.reason as Error)?.message ?? "Could not load today");
+      toastError((todayRes.reason as Error)?.message ?? translate("today.couldNotLoad"));
     }
     if (routinesRes.status === "fulfilled") {
       setRoutines(routinesRes.value);

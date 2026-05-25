@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "expo-router";
 import { Button, toastError } from "@/components/ui";
 import { startSession, type Routine, type TodaySnapshot } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { pickNextAction } from "@/lib/nextAction";
 import { useStore } from "@/lib/store";
 
@@ -12,6 +13,8 @@ type Props = {
 
 export function NextActionButton({ today, routines }: Props) {
   const router = useRouter();
+  // Subscribe to language so the action label re-resolves on language change.
+  useT();
   const setActiveSession = useStore((s) => s.setActiveSession);
   const [busy, setBusy] = useState(false);
   const action = pickNextAction(today, routines, new Date());

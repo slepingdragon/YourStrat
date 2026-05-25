@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import type { Meal } from "@/lib/api";
 import { ChevronRight } from "@/components/icons";
 import { formatKcal, formatMacroGrams } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing, radius } from "@/theme/spacing";
 
@@ -40,8 +41,9 @@ function MacroTriBar({ p, c, f }: { p: number; c: number; f: number }) {
  * (photo card that navigates) — different surface, different interaction.
  */
 function MealRowImpl({ meal, onOpen }: Props) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
-  const top = meal.items?.slice(0, 2).map((i) => i.name).join(", ") || "Meal";
+  const top = meal.items?.slice(0, 2).map((i) => i.name).join(", ") || t("common.meal");
 
   return (
     <Animated.View entering={FadeInDown.duration(320)} style={{ marginBottom: spacing.sm }}>
@@ -49,7 +51,11 @@ function MealRowImpl({ meal, onOpen }: Props) {
         onPress={() => setExpanded((e) => !e)}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${top}, ${formatKcal(meal.total_calories)} calories. ${expanded ? "Collapse" : "Expand"}.`}
+        accessibilityLabel={t("meal.rowA11y", {
+          name: top,
+          kcal: formatKcal(meal.total_calories),
+          action: expanded ? t("meal.collapse") : t("meal.expand"),
+        })}
         style={({ pressed }) => ({
           opacity: pressed ? 0.9 : 1,
           flexDirection: "row",
@@ -68,7 +74,7 @@ function MealRowImpl({ meal, onOpen }: Props) {
         </Text>
         <View style={{ flex: 1 }} />
         <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ["tabular-nums"] }}>
-          {formatKcal(meal.total_calories)} cal
+          {t("meal.cal", { kcal: formatKcal(meal.total_calories) })}
         </Text>
         <MacroTriBar p={meal.total_protein_g} c={meal.total_carbs_g} f={meal.total_fat_g} />
       </Pressable>
@@ -94,19 +100,22 @@ function MealRowImpl({ meal, onOpen }: Props) {
                   </Text>
                   <View style={{ flex: 1 }} />
                   <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
-                    {formatKcal(it.calories)} cal
+                    {t("meal.cal", { kcal: formatKcal(it.calories) })}
                   </Text>
                 </View>
               ))
             : null}
           <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"], marginTop: spacing.xs }}>
-            P {formatMacroGrams(meal.total_protein_g)}g · C {formatMacroGrams(meal.total_carbs_g)}g · F{" "}
-            {formatMacroGrams(meal.total_fat_g)}g
+            {t("meal.macroLine", {
+              p: formatMacroGrams(meal.total_protein_g),
+              c: formatMacroGrams(meal.total_carbs_g),
+              f: formatMacroGrams(meal.total_fat_g),
+            })}
           </Text>
           <Pressable
             onPress={onOpen}
             accessibilityRole="button"
-            accessibilityLabel="Open meal details"
+            accessibilityLabel={t("meal.openDetails")}
             hitSlop={8}
             style={({ pressed }) => ({
               flexDirection: "row",
@@ -116,7 +125,7 @@ function MealRowImpl({ meal, onOpen }: Props) {
               opacity: pressed ? 0.7 : 1,
             })}
           >
-            <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "600" }}>Open</Text>
+            <Text style={{ color: colors.spark, fontSize: 13, fontWeight: "600" }}>{t("meal.open")}</Text>
             <ChevronRight color={colors.spark} size={16} />
           </Pressable>
         </View>

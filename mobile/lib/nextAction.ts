@@ -1,4 +1,5 @@
 import type { Meal, Routine, TodaySnapshot } from "./api";
+import { translate } from "./i18n";
 
 export type NavigateRoute =
   | { pathname: "/scan" }
@@ -9,7 +10,7 @@ export type NextAction =
   | ({ kind: "navigate"; label: string } & NavigateRoute)
   | { kind: "start-session"; label: string; routineId: string };
 
-const LOG_FOOD: NextAction = { kind: "navigate", label: "Log food", pathname: "/scan" };
+const logFood = (): NextAction => ({ kind: "navigate", label: translate("nextAction.logFood"), pathname: "/scan" });
 
 function lastMealDate(meals: Meal[]): Date | null {
   if (!meals.length) return null;
@@ -22,7 +23,7 @@ function lastMealDate(meals: Meal[]): Date | null {
 }
 
 export function pickNextAction(today: TodaySnapshot | null, routines: Routine[] | null, now: Date): NextAction {
-  if (!today) return LOG_FOOD;
+  if (!today) return logFood();
 
   const hour = now.getHours();
   const meals = today.meals ?? [];
@@ -31,27 +32,27 @@ export function pickNextAction(today: TodaySnapshot | null, routines: Routine[] 
   const scheduled = today.scheduled_routine_today ?? null;
 
   if (active) {
-    const name = active.routine_name ?? "workout";
+    const name = active.routine_name ?? translate("common.workout");
     return {
       kind: "navigate",
-      label: `Resume ${name}`,
+      label: translate("nextAction.resume", { name }),
       pathname: "/session/[id]",
       params: { id: active.id, routineId: active.routine_id ?? undefined },
     };
   }
 
   if (scheduled && !completed) {
-    return { kind: "start-session", label: `Start ${scheduled.name}`, routineId: scheduled.id };
+    return { kind: "start-session", label: translate("nextAction.start", { name: scheduled.name }), routineId: scheduled.id };
   }
 
   if (meals.length === 0) {
-    if (hour < 11) return { kind: "navigate", label: "Log breakfast", pathname: "/scan" };
-    if (hour < 16) return { kind: "navigate", label: "Log lunch", pathname: "/scan" };
-    return { kind: "navigate", label: "Log dinner", pathname: "/scan" };
+    if (hour < 11) return { kind: "navigate", label: translate("nextAction.logBreakfast"), pathname: "/scan" };
+    if (hour < 16) return { kind: "navigate", label: translate("nextAction.logLunch"), pathname: "/scan" };
+    return { kind: "navigate", label: translate("nextAction.logDinner"), pathname: "/scan" };
   }
 
   if (today.remaining_calories < 0) {
-    return { kind: "navigate", label: "Plan a workout", pathname: "/workouts" };
+    return { kind: "navigate", label: translate("nextAction.planWorkout"), pathname: "/workouts" };
   }
 
   const proteinTarget = today.targets?.daily_protein_target_g ?? 0;
@@ -60,16 +61,16 @@ export function pickNextAction(today: TodaySnapshot | null, routines: Routine[] 
     today.consumed_protein_g < proteinTarget * 0.6 &&
     hour >= 14
   ) {
-    return { kind: "navigate", label: "Log a protein-heavy meal", pathname: "/scan" };
+    return { kind: "navigate", label: translate("nextAction.logProtein"), pathname: "/scan" };
   }
 
   if (hour >= 19) {
     const last = lastMealDate(meals);
     if (last && last.getHours() >= 17) {
-      return { kind: "navigate", label: "Log a snack", pathname: "/scan" };
+      return { kind: "navigate", label: translate("nextAction.logSnack"), pathname: "/scan" };
     }
-    return { kind: "navigate", label: "Log dinner", pathname: "/scan" };
+    return { kind: "navigate", label: translate("nextAction.logDinner"), pathname: "/scan" };
   }
 
-  return LOG_FOOD;
+  return logFood();
 }

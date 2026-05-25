@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Meal, NutritionDayTotals, TodaySnapshot } from "@/lib/api";
+import { translate } from "@/lib/i18n";
 import type { NutritionTargets } from "@/lib/nutritionTargets";
 import { colors } from "@/theme/colors";
 
@@ -201,8 +202,8 @@ export function metricGridCard(
 
   if (target <= 0) {
     return {
-      headline: "No target",
-      subline: "Set in Profile",
+      headline: translate("metric.noTarget"),
+      subline: translate("metric.setInProfile"),
       over: false,
       progress: 0,
     };
@@ -210,7 +211,7 @@ export function metricGridCard(
 
   const left = target - consumed;
   const amount = Math.abs(Math.round(left));
-  const goalWord = isLimitMetric(id) ? "limit" : "target";
+  const goalWord = isLimitMetric(id) ? translate("metric.limitWord") : translate("metric.targetWord");
   const consumedLabel =
     unit === "cal"
       ? `${Math.round(consumed)}`
@@ -223,11 +224,15 @@ export function metricGridCard(
       : unit === "mg"
         ? `${Math.round(target)}mg`
         : `${Math.round(target)}g`;
-  const subline = `${consumedLabel} of ${targetLabel} ${goalWord}`;
+  const subline = translate("metric.ofGoal", { consumed: consumedLabel, target: targetLabel, goal: goalWord });
 
   if (left > 0.5) {
     const headline =
-      unit === "mg" ? `${amount}mg to go` : unit === "cal" ? `${amount} left` : `${amount}g to go`;
+      unit === "mg"
+        ? translate("metric.toGoSuffix", { x: `${amount}mg` })
+        : unit === "cal"
+          ? translate("metric.leftSuffix", { x: `${amount}` })
+          : translate("metric.toGoSuffix", { x: `${amount}g` });
     return {
       headline,
       subline,
@@ -238,7 +243,11 @@ export function metricGridCard(
 
   if (left < -0.5) {
     const headline =
-      unit === "mg" ? `${amount}mg over` : unit === "cal" ? `${amount} over` : `${amount}g over`;
+      unit === "mg"
+        ? translate("metric.overSuffix", { x: `${amount}mg` })
+        : unit === "cal"
+          ? translate("metric.overSuffix", { x: `${amount}` })
+          : translate("metric.overSuffix", { x: `${amount}g` });
     return {
       headline,
       subline,
@@ -248,7 +257,7 @@ export function metricGridCard(
   }
 
   return {
-    headline: "On target",
+    headline: translate("metric.onTarget"),
     subline,
     over: false,
     progress: 1,
@@ -261,14 +270,14 @@ export function metricBalance(
   unit: "cal" | "g" | "mg"
 ): { text: string; color: string; over: boolean } {
   if (target <= 0) {
-    return { text: "Set a target in Profile", color: colors.textMuted, over: false };
+    return { text: translate("metric.setTargetProfile"), color: colors.textMuted, over: false };
   }
   const diff = target - consumed;
   const amount = Math.abs(Math.round(diff));
   const formatted = formatMetricAmount(amount, unit);
-  if (diff > 0) return { text: `${formatted} left`, color: colors.success, over: false };
-  if (diff < 0) return { text: `${formatted} over`, color: colors.error, over: true };
-  return { text: "On target", color: colors.success, over: false };
+  if (diff > 0) return { text: translate("metric.leftSuffix", { x: formatted }), color: colors.success, over: false };
+  if (diff < 0) return { text: translate("metric.overSuffix", { x: formatted }), color: colors.error, over: true };
+  return { text: translate("metric.onTarget"), color: colors.success, over: false };
 }
 
 export function toggleTodayMetric(

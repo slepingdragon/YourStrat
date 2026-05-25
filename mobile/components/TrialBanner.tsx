@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Card } from "@/components/ui";
 import { X } from "@/components/icons";
 import { normalizeTrial, type TrialStatus } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 
@@ -38,6 +39,7 @@ type Props = {
 
 export function TrialBanner({ trial: trialProp }: Props) {
   const router = useRouter();
+  const t = useT();
   const trial = normalizeTrial(trialProp);
   const [visible, setVisible] = useState(false);
 
@@ -72,22 +74,26 @@ export function TrialBanner({ trial: trialProp }: Props) {
   const urgent = trial.trial_active && trial.days_remaining <= 3;
   const ended = !trial.trial_active;
 
-  const scansLine = `${trial.scans_today}/${trial.scans_limit} food scans used today`;
-  let title = "Free trial";
+  const scansLine = t("trial.scansUsed", { used: trial.scans_today, limit: trial.scans_limit });
+  let title = t("trial.free");
   let body: string;
   if (ended) {
-    title = "Trial ended";
-    body = "Food scans are paused for now. You can still log meals manually and track workouts.";
+    title = t("trial.ended");
+    body = t("trial.endedBody");
   } else if (urgent) {
     title =
       trial.days_remaining <= 0
-        ? "Trial ends today"
+        ? t("trial.endsToday")
         : trial.days_remaining === 1
-          ? "Trial ends tomorrow"
-          : `${trial.days_remaining} days left in your trial`;
-    body = `${scansLine} · tap to manage`;
+          ? t("trial.endsTomorrow")
+          : t("trial.daysLeft", { days: trial.days_remaining });
+    body = t("trial.urgentBody", { scans: scansLine });
   } else {
-    body = `${trial.days_remaining} days left · up to ${trial.scans_limit} food scans per day during your trial (${trial.scans_today} used today)`;
+    body = t("trial.activeBody", {
+      days: trial.days_remaining,
+      limit: trial.scans_limit,
+      used: trial.scans_today,
+    });
   }
 
   return (
@@ -104,7 +110,7 @@ export function TrialBanner({ trial: trialProp }: Props) {
         <Pressable
           onPress={openTrialStatus}
           accessibilityRole="button"
-          accessibilityLabel={`${title}. ${body}. Opens your trial status in Profile.`}
+          accessibilityLabel={t("trial.a11y", { title, body })}
           style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
         >
           <Text style={{ color: urgent ? colors.urgent : colors.textPrimary, fontWeight: "600", fontSize: 15 }}>
@@ -115,7 +121,7 @@ export function TrialBanner({ trial: trialProp }: Props) {
         <Pressable
           onPress={dismiss}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss trial reminder"
+          accessibilityLabel={t("trial.dismiss")}
           hitSlop={12}
           style={{ padding: spacing.xs }}
         >

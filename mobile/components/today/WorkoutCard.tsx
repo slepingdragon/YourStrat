@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { startSession, type TodaySnapshot } from "@/lib/api";
 import { toastError } from "@/components/ui";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
 
@@ -12,8 +13,8 @@ type Props = {
 };
 
 type CardState =
-  | { kind: "in_progress"; name: string; sessionId: string; routineId: string | null }
-  | { kind: "completed"; name: string; sessionId: string; minutes: number; calories: number }
+  | { kind: "in_progress"; name: string | null; sessionId: string; routineId: string | null }
+  | { kind: "completed"; name: string | null; sessionId: string; minutes: number; calories: number }
   | { kind: "scheduled"; name: string; routineId: string }
   | { kind: "none" };
 
@@ -21,7 +22,7 @@ function pickState(today: TodaySnapshot): CardState {
   if (today.active_session) {
     return {
       kind: "in_progress",
-      name: today.active_session.routine_name ?? "Workout",
+      name: today.active_session.routine_name ?? null,
       sessionId: today.active_session.id,
       routineId: today.active_session.routine_id,
     };
@@ -30,7 +31,7 @@ function pickState(today: TodaySnapshot): CardState {
     const c = today.last_completed_session_today;
     return {
       kind: "completed",
-      name: c.routine_name ?? "Workout",
+      name: c.routine_name ?? null,
       sessionId: c.id,
       minutes: Math.round((c.duration_sec ?? 0) / 60),
       calories: c.calories_burned,
@@ -48,38 +49,39 @@ function pickState(today: TodaySnapshot): CardState {
 
 export function WorkoutCard({ today }: Props) {
   const router = useRouter();
+  const t = useT();
   const setActiveSession = useStore((s) => s.setActiveSession);
   const [busy, setBusy] = useState(false);
   const state = pickState(today);
 
   let borderColor = colors.border;
-  let topLabel = "Workout";
-  let headline = "No workout planned";
-  let sub = "Add a routine";
+  let topLabel = t("workout.title");
+  let headline = t("workout.none");
+  let sub = t("workout.addRoutine");
   let headlineColor = colors.textPrimary;
   let dot: string | null = null;
 
   if (state.kind === "in_progress") {
     borderColor = colors.spark;
-    topLabel = "Workout";
-    headline = state.name;
-    sub = "In progress";
+    topLabel = t("workout.title");
+    headline = state.name ?? t("common.workout");
+    sub = t("workout.inProgress");
     dot = colors.spark;
   } else if (state.kind === "completed") {
     borderColor = colors.success;
-    topLabel = "Workout";
-    headline = state.name;
-    sub = `${state.minutes} min · ${formatKcal(state.calories)} cal`;
+    topLabel = t("workout.title");
+    headline = state.name ?? t("common.workout");
+    sub = t("workout.minCal", { min: state.minutes, kcal: formatKcal(state.calories) });
   } else if (state.kind === "scheduled") {
     borderColor = colors.spark;
-    topLabel = "Workout";
+    topLabel = t("workout.title");
     headline = state.name;
-    sub = "Scheduled today";
+    sub = t("workout.scheduledToday");
     headlineColor = colors.textPrimary;
   } else {
-    topLabel = "Workout";
-    headline = "No workout planned";
-    sub = "Add a routine";
+    topLabel = t("workout.title");
+    headline = t("workout.none");
+    sub = t("workout.addRoutine");
     headlineColor = colors.textSecondary;
   }
 
@@ -126,7 +128,7 @@ export function WorkoutCard({ today }: Props) {
         opacity: pressed || busy ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`${topLabel}: ${headline}, ${sub}`}
+      accessibilityLabel={t("workout.a11y", { label: topLabel, headline, sub })}
     >
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", flex: 1 }}>{topLabel}</Text>

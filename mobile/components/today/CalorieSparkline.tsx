@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import type { NutritionDay } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -59,6 +60,7 @@ function segmentString(points: (Point | null)[]): string[] {
 
 export function CalorieSparkline({ days, target }: Props) {
   const router = useRouter();
+  const t = useT();
   const { points, maxY, avg } = useMemo(() => computePoints(days, target), [days, target]);
 
   const validCount = points.filter(Boolean).length;
@@ -77,7 +79,7 @@ export function CalorieSparkline({ days, target }: Props) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`Last 7 days, average ${formatKcal(avg)} calories. Opens nutrition history.`}
+      accessibilityLabel={t("sparkline.a11y", { kcal: formatKcal(avg) })}
     >
       <Svg width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">
         {targetY !== null ? (

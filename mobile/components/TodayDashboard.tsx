@@ -12,6 +12,7 @@ import { CustomizeTodaySheet } from "@/components/today/CustomizeTodaySheet";
 import { Settings } from "@/components/icons";
 import type { Meal, NutritionDay, Profile, Routine, TodaySnapshot } from "@/lib/api";
 import { formatKcal } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { resolvePace, type PaceState } from "@/lib/pace";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import {
@@ -39,21 +40,22 @@ function formatHeroNumber(n: number) {
   return formatKcal(Math.abs(n));
 }
 
-function pacePhrase(state: PaceState): string {
+function pacePhraseKey(state: PaceState): string {
   switch (state) {
     case "on":
-      return "On pace";
+      return "pace.on";
     case "behind":
-      return "Behind pace";
+      return "pace.behind";
     case "ahead":
-      return "Ahead of pace";
+      return "pace.ahead";
     case "over":
-      return "Over target";
+      return "pace.over";
   }
 }
 
 export function TodayDashboard({ today, profile, routines, journalDays }: Props) {
   const router = useRouter();
+  const tr = useT();
   const t = today?.targets ?? profile;
   const empty = !today?.meals?.length;
 
@@ -62,10 +64,10 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         value: formatHeroNumber(today.remaining_calories),
         label:
           today.remaining_calories < 0
-            ? "calories over"
+            ? tr("today.caloriesOver")
             : Math.abs(today.remaining_calories) <= 5
-              ? "at target"
-              : "calories left",
+              ? tr("today.atTarget")
+              : tr("today.caloriesLeft"),
         over: today.remaining_calories < 0,
         consumed: today.consumed_calories,
         burned: today.burned_calories,
@@ -111,15 +113,15 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
           justifyContent: empty ? "center" : "space-between",
         }}
       >
-        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Meals</Text>
+        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{tr("meal.section")}</Text>
         {!empty ? (
           <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
-            {today!.meals.length} logged · {formatKcal(mealsTotalCal)} cal
+            {tr("meal.loggedSummary", { n: today!.meals.length, kcal: formatKcal(mealsTotalCal) })}
           </Text>
         ) : null}
       </View>
       {empty ? (
-        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>No meals yet today.</Text>
+        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>{tr("meal.noneToday")}</Text>
       ) : (
         today?.meals.map((m: Meal) => <MealRow key={m.id} meal={m} onOpen={() => router.push(`/meal/${m.id}`)} />)
       )}
@@ -167,7 +169,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
           onPress={() => setCustomizeOpen(true)}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Customize Today"
+          accessibilityLabel={tr("today.customize")}
         >
           <Settings color={colors.textMuted} size={20} />
         </Pressable>
@@ -176,7 +178,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
 
       {!t ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 32 }}>
-          Find your North — finish onboarding to see your daily targets.
+          {tr("today.findNorth")}
         </Text>
       ) : null}
 
@@ -189,7 +191,11 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
             alignItems: "center",
           })}
           accessibilityRole="button"
-          accessibilityLabel={`${hero.value} ${hero.label}.${pace?.state ? ` ${pacePhrase(pace.state)}.` : ""} Open nutrition details.`}
+          accessibilityLabel={tr("today.heroA11y", {
+            value: hero.value,
+            label: hero.label,
+            pace: pace?.state ? tr("today.pacePhrase", { phrase: tr(pacePhraseKey(pace.state)) }) : "",
+          })}
         >
           <IntakeRing
             label=""
@@ -228,17 +234,17 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
               gap: 8,
             }}
           >
-            <EquationCell value={hero.consumed} unit="in" color={colors.textSecondary} />
+            <EquationCell value={hero.consumed} unit={tr("today.eqIn")} color={colors.textSecondary} />
             <EquationDot />
             <EquationCell
               value={hero.burned}
-              unit="burned"
+              unit={tr("today.eqBurned")}
               color={hero.burned > 0 ? colors.spark : colors.textMuted}
             />
             <EquationDot />
             <EquationCell
               value={Math.abs(today!.remaining_calories)}
-              unit={hero.over ? "over" : "left"}
+              unit={hero.over ? tr("today.eqOver") : tr("today.eqLeft")}
               color={hero.over ? colors.error : colors.textSecondary}
             />
           </View>
@@ -246,7 +252,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         </View>
       ) : t ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", marginBottom: 16 }}>
-          {formatKcal(t.daily_calorie_target)} cal target
+          {tr("today.calTarget", { kcal: formatKcal(t.daily_calorie_target) })}
         </Text>
       ) : null}
 
@@ -286,6 +292,7 @@ function EquationDot() {
 }
 
 function EffortRecap({ today }: { today: TodaySnapshot | null }) {
+  const tr = useT();
   const planned = today?.active_session?.planned_rpe;
   const actual = today?.last_completed_session_today?.actual_rpe;
   const burn = today?.burned_calories ?? 0;
@@ -315,19 +322,19 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
           textTransform: "uppercase",
         }}
       >
-        Today's effort
+        {tr("today.effortTitle")}
       </Text>
       <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
         {burn > 0 ? (
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontVariant: ["tabular-nums"] }}>
-            {formatKcal(burn)} cal burned
+            {tr("today.calBurned", { kcal: formatKcal(burn) })}
           </Text>
         ) : null}
         {planned != null ? (
           <>
             {burn > 0 ? <EquationDot /> : null}
             <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-              planned {planned}/10
+              {tr("today.planned", { n: planned })}
             </Text>
           </>
         ) : null}
@@ -335,7 +342,7 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
           <>
             {(burn > 0 || planned != null) ? <EquationDot /> : null}
             <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
-              actual {actual}/10
+              {tr("today.actual", { n: actual })}
             </Text>
           </>
         ) : null}
