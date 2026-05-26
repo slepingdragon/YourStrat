@@ -2,6 +2,8 @@
 
 > **Read this entire file before you touch a single line.** It is loaded automatically every session. If you break a rule here you have broken the build. There is no "good enough" — every change ships to a real user on a real device.
 
+> **⚠ SESSION HANDOFF (2026-05-26, desktop→laptop):** Read [SESSION_HANDOFF.md](SESSION_HANDOFF.md) **first** — it carries the prior session's state (local APK build fix + release-checklist status, and which parts are desktop-specific). Trim or delete that file and this banner once you've absorbed it.
+
 YourStrat is a **premium, polished, production fitness app**. Not a prototype, not a demo, not a vibe-coded weekend project. Every screen, every press, every transition must feel like a finished, App-Store-grade product. If a change you are about to make would not survive a side-by-side comparison with Apple Health, Linear, or Strong — do not make it.
 
 ---

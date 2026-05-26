@@ -1,101 +1,68 @@
-# Session Handoff — laptop → desktop (2026-05-23)
+# SESSION HANDOFF — desktop → laptop (2026-05-26)
 
-Switched machines mid-Android-Studio setup. Open this file on the desktop after `git pull`, then paste the block below into Claude Code. The detail section after is just for your reference.
+> The next Claude session (on the laptop) should read this top-to-bottom before acting, then
+> trim/delete it once absorbed. It's committed to git on purpose — that's how this reaches the
+> laptop. The `~/.claude` memory and the desktop `C:\dev` build workspace do **not** travel.
 
----
-
-## Paste this into Claude Code on the desktop
-
-```
-/bmad-help
-
-Quick orientation — I switched from laptop to desktop. Pick up where we left off.
-
-Where we are: mid-setup of Android Studio for YourStrat. End-state we want is "press Run in Android Studio → app installs on AVD → it talks to the Railway backend (https://yourstrat-production.up.railway.app)". JS/TS edits hot-reload via Metro after that; only native changes need a rebuild.
-
-Done on laptop (not transferable to desktop): installed Microsoft.OpenJDK.17 via winget. Everything else needs to be redone here.
-
-To do on desktop, in order:
-1. Toolchain check: `java -version` (need JDK 17), `adb version`, `$env:ANDROID_HOME`, `$env:JAVA_HOME`. If JDK 17 missing: `winget install Microsoft.OpenJDK.17`. If Android SDK missing or in a non-default path, find it (typically `%LOCALAPPDATA%\Android\Sdk`).
-2. Set permanent env vars: `setx ANDROID_HOME "<sdk>"`, `setx JAVA_HOME "<jdk17>"`, and add `%ANDROID_HOME%\platform-tools` + `%ANDROID_HOME%\emulator` to user PATH. Restart PowerShell.
-3. Verify in a fresh shell: `adb devices` works, `java -version` reports 17.x.
-4. STOP and ask me before running `npx expo prebuild --platform android` in `mobile/`. It generates the `mobile/android/` folder (~50 native files) and is a meaningful one-way change.
-5. After prebuild: open `mobile/android/` in Android Studio → wait for Gradle sync → press Run on an AVD.
-
-Two things to ignore:
-- The "Cannot find native module 'ExpoSecureStore'/'ExpoCrypto'" errors I showed last session were from a DIFFERENT project (`C:\Users\bania\Desktop\ember-pod\autopod-app`), not YourStrat. YourStrat doesn't depend on expo-secure-store. Don't try to "fix" them in YourStrat.
-- The working tree may show hundreds of modified BMad files (`.agents/skills/bmad-*`, `.claude/skills/bmad-*`, `_bmad/*`). They are LF→CRLF line-ending noise only — `git diff -w` returns empty. Leave them alone or run `git checkout -- .agents .claude _bmad`.
-
-Backend stays on Railway. Android Studio's Run button only builds/installs the app — backend redeploys via `git push`.
-
-Confirm you've read this, run a quick toolchain check, and tell me what JDK and SDK state the desktop is in before we touch anything else.
-```
+## TL;DR
+On the desktop I produced a working **local release APK** despite EAS being quota-blocked. The build
+fight that consumed the session was caused by the **space in the desktop's user path
+(`C:\Users\Brady J Bania`)** — and your **laptop user path is `C:\Users\bania` (no space), so this
+bug does NOT apply on the laptop.** On the laptop a normal build should just work.
 
 ---
 
-## Detail (reference, not part of the prompt above)
+## Read this before trying to build on the laptop
+- **`mobile/android/` is gitignored** and does NOT travel via git. After `git pull`, it won't exist
+  on the laptop. A native build needs it regenerated: `npx expo prebuild --platform android` in
+  `mobile/` — **ask Brady before running it** (CLAUDE.md §8: build-config change). It was already
+  run once on the desktop.
+- **You usually don't need a native build at all.** Everything shipped recently (multi-scan queue,
+  EN/ID i18n, scan-accuracy fix) is JS/TS — the dev-client + Metro (`mobile/play.cmd`, port 8888,
+  LAN) hot-reloads it. That's the right tool for the **device-verify pass**, which is the real blocker.
+- If you DO build on the laptop: PATH `java` may be the wrong version — use Android Studio's JBR or
+  the winget JDK 17. Laptop SDK is at `C:\Users\bania\AppData\Local\Android\Sdk` (no space → no NDK
+  bug). `gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` (S24 = arm64) should link fine.
 
-### Repo state at handoff
+## The desktop-only build gotcha (context, NOT a laptop problem)
+On the desktop, `gradlew assembleRelease` fails at the native link with a wall of `libc++` undefined
+symbols and `CLANG_~1: error: linker command failed`. Cause: the NDK lives under
+`C:\Users\Brady J Bania\…`; the space makes CMake call `clang++.exe` via its 8.3 short name
+`CLANG_~1.EXE`, so clang links in **C mode** and drops the C++ runtime. The desktop workaround was to
+build from space-free paths: a `C:\dev\YourStrat` copy + a synthetic `C:\dev\android-sdk` that
+junctions the real SDK but holds a **real-copied NDK**. Full recipe is in desktop agent memory
+`project_local_android_build_2026_05_25.md`. Permanent desktop fix would be reinstalling the SDK to
+`C:\Android\Sdk`. **None of this is needed on the laptop.**
 
-- Branch: `main`, in sync with `origin/main` apart from this `SESSION_HANDOFF.md`.
-- Modified files in working tree (LF→CRLF only, no content diff — confirmed with `git diff -w`):
-  - `.agents/skills/bmad-*/**`
-  - `.claude/skills/bmad-*/**`
-  - `_bmad/_config/*`, `_bmad/bmm/*`, `_bmad/core/*`, `_bmad/scripts/*`, `_bmad/config.toml`, `_bmad/config.user.toml`
-- Untracked `.bak` files in `_bmad/` (cruft from a BMad customize step).
-- None of the above were committed — they aren't real changes.
+---
 
-### Laptop toolchain audit (what we found, for comparison with desktop)
+## Where the release stands
+- **APK (desktop only):** `C:\Users\Brady J Bania\Desktop\yourstrat-arm64-release.apk` — `com.yourstrat.app`
+  v1.0.0, arm64-v8a, prod env baked (Railway + prod Supabase), debug-signed (sideload-only, not a Play upload).
+- **Device-verify (the gate):** install on the S24, walk signup → onboarding → scan meal → save →
+  log workout → Profile→Language toggle → delete account. A lot shipped unverified.
+- **Backend:** live + keyed (`/health` ok). **Privacy site:** live (https://yourstrat.xaeryx.com/privacy → 200).
+- **Account deletion:** done (migrations 008 + 009; `supabase/migrations/009_delete_user_no_storage.sql`).
+- **i18n:** Today / Nutrition / Workouts translated in recent commits (older "pending" memory note is stale).
+  Indonesian is best-effort; wants a fluent proofread; not device-verified.
+- **Play remaining:** EAS quota (~resets Jun 1, or upgrade) → AAB `eas build --profile production --platform android`
+  (let EAS own the upload keystore, never rotate) → create `com.yourstrat.app` → Internal testing →
+  store assets (512² icon, 1024×500 feature, ≥2 screenshots, contact email in `docs/STORE_LISTING.md`)
+  → Data safety form (meal photos shared w/ Google/Gemini) → privacy URL above. **Apple** later: fill
+  `mobile/eas.json` → submit.production.ios placeholders.
 
-| Component | Laptop status |
-|---|---|
-| Android SDK | `C:\Users\bania\AppData\Local\Android\Sdk` — complete (platform-tools, platforms, build-tools, emulator, cmdline-tools). |
-| `adb` | Works at `<sdk>\platform-tools\adb.exe`. **Not on PATH.** |
-| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | Empty. |
-| Android Studio | `C:\Program Files\Android\Android Studio`. |
-| Bundled JBR | JDK 21 (AGP 8 supports it, Expo prefers 17). |
-| AVDs | `Medium_Phone`, `Pixel_2`, `Pixel_9_Pro`. |
-| System Java on PATH | JDK 1.8 (Java 8) — wrong version, why we needed to install 17. |
-| JDK 17 | Installed via `winget install Microsoft.OpenJDK.17` (exit 0). |
+## Open decision for Brady (desktop)
+Keep the ~6 GB `C:\dev` workspace (fast ~3-min rebuilds) or delete it
+(`Remove-Item C:\dev\YourStrat, C:\dev\android-sdk -Recurse -Force`; junctions delete safely, real SDK untouched).
 
-The desktop likely has a different set — re-run the audit there before anything else.
+## Machine-switch checklist (per global CLAUDE.md)
+On the laptop: `git pull` (gets this file), `npm install` in `mobile/` if `package-lock.json` changed,
+re-create the `YourStrat Dev` desktop shortcut (per-machine, doesn't sync), re-add the Metro :8888
+firewall rule, confirm `play.cmd` boots + Expo Go connects.
 
-### Decisions already made
+## Uncommitted in the working tree (not from this session)
+`site/index.html`, `site/privacy.html` are modified — pre-existing, left untouched. This handoff +
+the CLAUDE.md pointer are the only things I'm committing.
 
-- **Stay on Railway** for the dev build's backend URL. We did not wire a local-uvicorn toggle.
-- **Goal is the "press play" workflow** — i.e. generate `mobile/android/`, open in Android Studio, run on AVD. Not just terminal `expo run:android`.
-- **Use JDK 17, not the Android Studio bundled JDK 21** — to stay on Expo's officially supported path.
-- **Set env vars permanently with `setx`**, not session-only.
-
-### What NOT to do
-
-- Don't commit the CRLF noise.
-- Don't run `expo prebuild` without re-confirming with me — per repo CLAUDE.md §8, build-config changes need approval, and prebuild is the biggest one.
-- Don't touch `mobile/babel.config.js`, `mobile/metro.config.js`, `mobile/app.json` plugin list without asking.
-- Don't try to "fix" the ember-pod ExpoSecureStore errors inside YourStrat — they aren't from this app.
-
-### Commands you'll actually use (desktop)
-
-```powershell
-# Toolchain check
-java -version
-adb version
-echo "ANDROID_HOME=$env:ANDROID_HOME  JAVA_HOME=$env:JAVA_HOME"
-
-# Install JDK 17 if missing
-winget install Microsoft.OpenJDK.17 --silent --accept-source-agreements --accept-package-agreements
-
-# Set env vars permanently (replace paths with what `Test-Path` confirmed)
-setx ANDROID_HOME "$env:LOCALAPPDATA\Android\Sdk"
-setx JAVA_HOME "C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot"
-# Then close + reopen PowerShell
-
-# Add to user PATH (run in fresh PS after setx above)
-$user = [Environment]::GetEnvironmentVariable("Path","User")
-$add  = "$env:LOCALAPPDATA\Android\Sdk\platform-tools;$env:LOCALAPPDATA\Android\Sdk\emulator"
-if ($user -notlike "*$add*") { [Environment]::SetEnvironmentVariable("Path","$user;$add","User") }
-
-# After restart of shell:
-adb devices
-emulator -list-avds
-```
+---
+Canonical cross-chat context: `~/.claude/CONTEXT.md`.
