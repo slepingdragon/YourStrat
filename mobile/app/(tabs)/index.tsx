@@ -6,9 +6,11 @@ import { TrialBanner } from "@/components/TrialBanner";
 import { Screen, toastError } from "@/components/ui";
 import { getNutritionJournal, getToday, listRoutines } from "@/lib/api";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 export default function TodayScreen() {
+  const t = useT();
   const session = useStore((s) => s.session);
   const today = useStore((s) => s.today);
   const profile = useStore((s) => s.profile);
@@ -30,7 +32,7 @@ export default function TodayScreen() {
       setToday(todayRes.value);
     } else {
       console.error(todayRes.reason);
-      toastError((todayRes.reason as Error)?.message ?? "Could not load today");
+      toastError((todayRes.reason as Error)?.message ?? t("today.couldNotLoad"));
     }
     if (routinesRes.status === "fulfilled") {
       setRoutines(routinesRes.value);

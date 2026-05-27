@@ -9,6 +9,7 @@ import { TodayHeader } from "@/components/today/TodayHeader";
 import { TodayTrioCards } from "@/components/today/TodayTrioCards";
 import type { Meal, NutritionDay, Profile, Routine, TodaySnapshot } from "@/lib/api";
 import { roundCal } from "@/lib/targets";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 const CONTENT_MAX_WIDTH = 400;
@@ -27,13 +28,14 @@ function formatHeroNumber(n: number) {
 
 export function TodayDashboard({ today, profile, routines, journalDays }: Props) {
   const router = useRouter();
-  const t = today?.targets ?? profile;
+  const t = useT();
+  const targets = today?.targets ?? profile;
   const empty = !today?.meals?.length;
 
   const hero = today
     ? {
         value: formatHeroNumber(today.remaining_calories),
-        label: today.remaining_calories < 0 ? "calories over" : "calories left",
+        label: today.remaining_calories < 0 ? t("today.caloriesOver") : t("today.caloriesLeft"),
         over: today.remaining_calories < 0,
         consumed: today.consumed_calories,
         burned: today.burned_calories,
@@ -50,9 +52,9 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
     <View style={{ width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center" }}>
       <TodayHeader />
 
-      {!t ? (
+      {!targets ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 32 }}>
-          Find your North — finish onboarding to see your daily targets.
+          {t("today.findNorth")}
         </Text>
       ) : null}
 
@@ -65,7 +67,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
             alignItems: "center",
           })}
           accessibilityRole="button"
-          accessibilityLabel={`${hero.value} ${hero.label}. Open nutrition details.`}
+          accessibilityLabel={t("today.heroA11y", { value: hero.value, label: hero.label, pace: "" })}
         >
           <View
             style={{
@@ -111,25 +113,25 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
               gap: 8,
             }}
           >
-            <EquationCell value={hero.consumed} unit="in" color={colors.textSecondary} />
+            <EquationCell value={hero.consumed} unit={t("today.eqIn")} color={colors.textSecondary} />
             <EquationDot />
             <EquationCell
               value={hero.burned}
-              unit="burned"
+              unit={t("today.eqBurned")}
               color={hero.burned > 0 ? colors.spark : colors.textMuted}
             />
             <EquationDot />
             <EquationCell
               value={Math.abs(today!.remaining_calories)}
-              unit={hero.over ? "over" : "left"}
+              unit={hero.over ? t("today.eqOver") : t("today.eqLeft")}
               color={hero.over ? colors.error : colors.textSecondary}
             />
           </View>
         </Pressable>
         </View>
-      ) : t ? (
+      ) : targets ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", marginBottom: 16 }}>
-          {t.daily_calorie_target.toLocaleString()} cal target
+          {t("today.calTarget", { kcal: targets.daily_calorie_target.toLocaleString() })}
         </Text>
       ) : null}
 
@@ -149,7 +151,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
 
       {journalDays && journalDays.length >= 2 ? (
         <View style={{ marginBottom: 20 }}>
-          <CalorieSparkline days={journalDays} target={t?.daily_calorie_target ?? 0} />
+          <CalorieSparkline days={journalDays} target={targets?.daily_calorie_target ?? 0} />
         </View>
       ) : null}
 
@@ -161,17 +163,17 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
           justifyContent: empty ? "center" : "space-between",
         }}
       >
-        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Meals</Text>
+        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{t("meal.section")}</Text>
         {!empty ? (
           <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
-            {today!.meals.length} logged · {roundCal(mealsTotalCal).toLocaleString()} cal
+            {t("meal.loggedSummary", { n: today!.meals.length, kcal: roundCal(mealsTotalCal).toLocaleString() })}
           </Text>
         ) : null}
       </View>
 
       {empty ? (
         <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>
-          No meals yet today.
+          {t("meal.noneToday")}
         </Text>
       ) : (
         today?.meals.map((m: Meal) => (
@@ -195,6 +197,7 @@ function EquationDot() {
 }
 
 function EffortRecap({ today }: { today: TodaySnapshot | null }) {
+  const t = useT();
   const planned = today?.active_session?.planned_rpe;
   const actual = today?.last_completed_session_today?.actual_rpe;
   const burn = today?.burned_calories ?? 0;
@@ -224,19 +227,19 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
           textTransform: "uppercase",
         }}
       >
-        Today's effort
+        {t("today.effortTitle")}
       </Text>
       <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
         {burn > 0 ? (
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontVariant: ["tabular-nums"] }}>
-            {Math.round(burn).toLocaleString()} cal burned
+            {t("today.calBurned", { kcal: Math.round(burn).toLocaleString() })}
           </Text>
         ) : null}
         {planned != null ? (
           <>
             {burn > 0 ? <EquationDot /> : null}
             <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-              planned {planned}/10
+              {t("today.planned", { n: planned })}
             </Text>
           </>
         ) : null}
@@ -244,7 +247,7 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
           <>
             {(burn > 0 || planned != null) ? <EquationDot /> : null}
             <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>
-              actual {actual}/10
+              {t("today.actual", { n: actual })}
             </Text>
           </>
         ) : null}
