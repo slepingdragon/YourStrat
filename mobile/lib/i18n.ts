@@ -58,9 +58,9 @@ const en: Dict = {
   "activity.active": "Active",
   "activity.very_active": "Very active",
   "profile.goal": "Goal",
-  "goal.lose": "Lose",
+  "goal.lose": "Lose weight",
   "goal.maintain": "Maintain",
-  "goal.gain": "Gain",
+  "goal.gain": "Gain weight",
   "profile.updated": "Profile updated. Targets recalculated.",
   // profile — AI & scans
   "profile.aiSection": "AI & food scans",
@@ -660,9 +660,9 @@ const id: Dict = {
   "activity.active": "Aktif",
   "activity.very_active": "Sangat aktif",
   "profile.goal": "Tujuan",
-  "goal.lose": "Turun",
+  "goal.lose": "Turunkan berat badan",
   "goal.maintain": "Pertahankan",
-  "goal.gain": "Naik",
+  "goal.gain": "Naikkan berat badan",
   "profile.updated": "Profil diperbarui. Target dihitung ulang.",
   // profile — AI & scans
   "profile.aiSection": "AI & pindai makanan",

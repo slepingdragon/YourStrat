@@ -3,9 +3,11 @@ import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Button, Input, LinkButton, toastError, toastSuccess } from "@/components/ui";
 import { signInWithGoogle, supabase } from "@/lib/supabase";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 export default function SignupScreen() {
+  const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,7 @@ export default function SignupScreen() {
       await signInWithGoogle();
     } catch (e) {
       console.error(e);
-      toastError((e as Error).message ?? "Google sign in failed. Try again.");
+      toastError((e as Error).message ?? t("auth.googleFailed"));
     } finally {
       setGoogleLoading(false);
     }
@@ -27,11 +29,11 @@ export default function SignupScreen() {
   const signUp = async () => {
     const trimmed = email.trim();
     if (!trimmed) {
-      toastError("Enter your email.");
+      toastError(t("auth.enterEmail"));
       return;
     }
     if (password.length < 6) {
-      toastError("Password must be at least 6 characters.");
+      toastError(t("auth.passwordMin"));
       return;
     }
     setLoading(true);
@@ -43,31 +45,31 @@ export default function SignupScreen() {
       return;
     }
     if (!data.session) {
-      toastSuccess("Check your email to confirm your account, then sign in.");
+      toastSuccess(t("auth.checkEmailConfirm"));
       router.replace("/(auth)/login");
       return;
     }
-    toastSuccess("Account created. Complete your profile.");
+    toastSuccess(t("auth.accountCreated"));
     router.replace("/(auth)/onboarding");
   };
 
   return (
     <Screen scroll>
       <Text style={{ color: colors.textPrimary, fontSize: 32, fontWeight: "700", textAlign: "center", marginTop: 48 }}>
-        Create account
+        {t("auth.createAccount")}
       </Text>
       <Text style={{ color: colors.textSecondary, textAlign: "center", marginTop: 8, marginBottom: 32 }}>
-        Email and password only.
+        {t("auth.emailPasswordOnly")}
       </Text>
-      <Input placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
+      <Input placeholder={t("auth.email")} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
       <View style={{ height: 12 }} />
-      <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+      <Input placeholder={t("auth.password")} secureTextEntry value={password} onChangeText={setPassword} />
       <View style={{ height: 24 }} />
-      <Button label="Sign up" onPress={signUp} loading={loading} />
+      <Button label={t("auth.signUp")} onPress={signUp} loading={loading} />
       <View style={{ height: 12 }} />
-      <Button label="Continue with Google" onPress={onGoogle} loading={googleLoading} variant="secondary" />
+      <Button label={t("auth.continueGoogle")} onPress={onGoogle} loading={googleLoading} variant="secondary" />
       <View style={{ height: 8 }} />
-      <LinkButton href="/(auth)/login" label="Already have an account" />
+      <LinkButton href="/(auth)/login" label={t("auth.alreadyHaveAccount")} />
     </Screen>
   );
 }
