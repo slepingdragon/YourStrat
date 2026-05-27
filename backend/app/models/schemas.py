@@ -97,6 +97,11 @@ class MealOut(BaseModel):
     items: list[MealItemOut] = []
 
 
+class MealItemDeleteResult(BaseModel):
+    meal_deleted: bool
+    meal: MealOut | None = None
+
+
 class ExerciseCreate(BaseModel):
     name: str
     type: ExerciseType

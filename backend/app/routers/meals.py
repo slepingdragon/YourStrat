@@ -5,7 +5,15 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import get_current_user, get_supabase
-from app.models.schemas import MealCreate, MealItemOut, MealOut, NutritionDay, NutritionDayTotals, NutritionJournal
+from app.models.schemas import (
+    MealCreate,
+    MealItemDeleteResult,
+    MealItemOut,
+    MealOut,
+    NutritionDay,
+    NutritionDayTotals,
+    NutritionJournal,
+)
 from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
 from app.services.trial import check_scan_allowed, increment_scan_count
@@ -199,3 +207,26 @@ def delete_meal(meal_id: str, user: dict = Depends(get_current_user)):
     if not res.data:
         raise HTTPException(status_code=404, detail="Meal not found")
     return {"ok": True}
+
+
+@router.delete("/{meal_id}/items/{item_id}", response_model=MealItemDeleteResult)
+def delete_meal_item(meal_id: str, item_id: str, user: dict = Depends(get_current_user)):
+    sb = get_supabase()
+    meal_res = sb.table("meals").select("*").eq("id", meal_id).eq("user_id", user["id"]).maybe_single().execute()
+    if not meal_res.data:
+        raise HTTPException(status_code=404, detail="Meal not found")
+
+    del_res = sb.table("meal_items").delete().eq("id", item_id).eq("meal_id", meal_id).execute()
+    if not del_res.data:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    remaining = sb.table("meal_items").select("*").eq("meal_id", meal_id).execute()
+    items = remaining.data or []
+    if not items:
+        sb.table("meals").delete().eq("id", meal_id).eq("user_id", user["id"]).execute()
+        return MealItemDeleteResult(meal_deleted=True, meal=None)
+
+    totals = _sum_items(items)
+    upd = sb.table("meals").update(totals).eq("id", meal_id).eq("user_id", user["id"]).execute()
+    updated_row = (upd.data or [{**meal_res.data, **totals}])[0]
+    return MealItemDeleteResult(meal_deleted=False, meal=_meal_with_items(sb, updated_row))

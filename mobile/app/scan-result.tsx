@@ -74,6 +74,14 @@ export default function ScanResultScreen() {
 
 
 
+  const removeItem = (idx: number) => {
+
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  };
+
+
+
   const updateItem = (idx: number, field: keyof MealItem, value: string) => {
 
     setItems((prev) => {
@@ -193,7 +201,7 @@ export default function ScanResultScreen() {
 
             {items.map((it, i) => (
 
-              <FoodItemNutritionCard key={i} item={it} index={i} editable onChange={(field, value) => updateItem(i, field, value)} />
+              <FoodItemNutritionCard key={i} item={it} index={i} editable onChange={(field, value) => updateItem(i, field, value)} onDelete={() => removeItem(i)} />
 
             ))}
 

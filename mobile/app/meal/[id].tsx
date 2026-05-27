@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Text, View } from "react-native";
+import { Alert, Platform, Text, View } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -10,7 +10,7 @@ import { MealNutritionSummary } from "@/components/MealNutritionSummary";
 
 import { Screen, Button, BackHeader, toastError, toastSuccess } from "@/components/ui";
 
-import { deleteMeal, getMeal, type Meal } from "@/lib/api";
+import { deleteMeal, deleteMealItem, getMeal, type Meal, type MealItem } from "@/lib/api";
 
 import { totalsFromMeal } from "@/lib/mealNutrition";
 
@@ -27,6 +27,8 @@ export default function MealDetailScreen() {
   const [meal, setMeal] = useState<Meal | null>(null);
 
   const [deleting, setDeleting] = useState(false);
+
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
 
 
@@ -79,6 +81,39 @@ export default function MealDetailScreen() {
   };
 
 
+
+  const removeItem = (item: MealItem) => {
+    const itemId = item.id;
+    if (!itemId || !id || deletingItemId) return;
+    const title = `Remove "${item.name}"?`;
+    const message = "This item is removed from the meal and your daily totals update.";
+    const run = async () => {
+      setDeletingItemId(itemId);
+      try {
+        const res = await deleteMealItem(id, itemId);
+        if (res.meal_deleted) {
+          toastSuccess("Meal removed.");
+          router.back();
+          return;
+        }
+        setMeal(res.meal);
+        toastSuccess("Item removed.");
+      } catch (e) {
+        console.error(e);
+        toastError((e as Error).message);
+      } finally {
+        setDeletingItemId(null);
+      }
+    };
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm(`${title}\n\n${message}`)) void run();
+      return;
+    }
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => void run() },
+    ]);
+  };
 
   if (!meal || !totals) {
 
@@ -138,7 +173,11 @@ export default function MealDetailScreen() {
 
             {meal.items!.map((it, i) => (
 
-              <FoodItemNutritionCard key={it.id ?? `${it.name}-${i}`} item={it} />
+              <FoodItemNutritionCard
+                key={it.id ?? `${it.name}-${i}`}
+                item={it}
+                onDelete={() => removeItem(it)}
+              />
 
             ))}
 

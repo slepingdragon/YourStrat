@@ -1,5 +1,6 @@
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Card, Input } from "@/components/ui";
+import { Trash } from "@/components/icons";
 import type { MealItem } from "@/lib/api";
 import { formatGram, formatSodium } from "@/lib/mealNutrition";
 import { colors } from "@/theme/colors";
@@ -9,6 +10,7 @@ type Props = {
   index?: number;
   editable?: boolean;
   onChange?: (field: keyof MealItem, value: string) => void;
+  onDelete?: () => void;
 };
 
 function StatLine({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -48,24 +50,55 @@ function NumField({
   );
 }
 
-export function FoodItemNutritionCard({ item, index, editable, onChange }: Props) {
+function DeleteButton({ onPress, accessibilityLabel }: { onPress: () => void; accessibilityLabel: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={8}
+      style={({ pressed }) => ({
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: pressed ? colors.surface : "transparent",
+      })}
+    >
+      <Trash color={colors.textMuted} size={18} />
+    </Pressable>
+  );
+}
+
+export function FoodItemNutritionCard({ item, index, editable, onChange, onDelete }: Props) {
   const cal = Math.round(item.calories || 0);
 
   return (
     <Card style={{ marginBottom: 14 }}>
       {editable && onChange ? (
         <>
-          <Input value={item.name} onChangeText={(v) => onChange("name", v)} placeholder="Food name" centered={false} />
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            <View style={{ flex: 1 }}>
+              <Input value={item.name} onChangeText={(v) => onChange("name", v)} placeholder="Food name" centered={false} />
+            </View>
+            {onDelete ? <DeleteButton onPress={onDelete} accessibilityLabel={`Remove ${item.name}`} /> : null}
+          </View>
           <View style={{ height: 8 }} />
           <Input value={item.portion ?? ""} onChangeText={(v) => onChange("portion", v)} placeholder="Portion" centered={false} />
         </>
       ) : (
-        <>
-          <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>{item.name}</Text>
-          {item.portion ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>{item.portion}</Text>
-          ) : null}
-        </>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>{item.name}</Text>
+            {item.portion ? (
+              <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 4 }}>{item.portion}</Text>
+            ) : null}
+          </View>
+          {onDelete ? <DeleteButton onPress={onDelete} accessibilityLabel={`Remove ${item.name}`} /> : null}
+        </View>
       )}
 
       <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: 14, gap: 12 }}>

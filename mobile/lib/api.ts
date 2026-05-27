@@ -489,6 +489,12 @@ export async function deleteMeal(id: string) {
   return handle<{ ok: boolean }>(res);
 }
 
+export async function deleteMealItem(mealId: string, itemId: string) {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl(`/meals/${mealId}/items/${itemId}`), { method: "DELETE", headers });
+  return handle<{ meal_deleted: boolean; meal: Meal | null }>(res);
+}
+
 export async function listExercises() {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/exercises/"), { headers });
