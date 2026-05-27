@@ -296,6 +296,8 @@ export type MealItem = {
   sugar_g?: number;
   sodium_mg?: number;
   confidence?: number | null;
+  /** Scan-only derived ± band for result-screen whiskers (Story 3.4); not persisted. */
+  confidence_range?: number | null;
 };
 
 export type Meal = {

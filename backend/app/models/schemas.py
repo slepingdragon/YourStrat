@@ -83,6 +83,17 @@ class MealItemOut(MealItemInput):
     id: str
 
 
+# Scan-only response (Story 3.4). `confidence_range` is a derived ± band for the
+# result-screen whiskers — deliberately NOT on MealItemInput, so the save path
+# (which inserts item fields into meal_items) never sees an unknown column.
+class ScanItemOut(MealItemInput):
+    confidence_range: float | None = None
+
+
+class ScanResult(BaseModel):
+    items: list[ScanItemOut] = []
+
+
 class MealOut(BaseModel):
     id: str
     photo_url: str | None

@@ -13,6 +13,7 @@ from app.models.schemas import (
     NutritionDay,
     NutritionDayTotals,
     NutritionJournal,
+    ScanResult,
 )
 from app.services.barcode import lookup_barcode
 from app.services.gemini import scan_food
@@ -87,7 +88,7 @@ def _meal_with_items(sb, meal_row: dict) -> MealOut:
     )
 
 
-@router.post("/scan")
+@router.post("/scan", response_model=ScanResult)
 async def scan_meal(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
