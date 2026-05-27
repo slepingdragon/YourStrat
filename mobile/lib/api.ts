@@ -127,13 +127,41 @@ function describeError(e: unknown): string {
   }
 }
 
-async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  try {
-    return await fetch(input, init);
-  } catch (e) {
-    const description = describeError(e);
-    console.error("apiFetch failed:", input, description, e);
-    throw new Error(`Failed to fetch: ${description}`);
+async function apiFetch(input: RequestInfo | URL, init?: RequestInit, timeoutMs = 30000): Promise<Response> {
+  // Retry idempotent reads once on a transient failure (5xx / network). The
+  // free-tier backend sleeps when idle, so the first request after a cold start
+  // can 500/drop while the dyno wakes; a single retry lets it self-heal. Never
+  // retry non-GET (POST/PUT/DELETE) — those aren't safe to repeat. A per-request
+  // timeout (AbortController) guarantees a call can't hang forever (e.g. a slow
+  // scan) — it fails with a clear message instead.
+  const method = (init?.method ?? "GET").toUpperCase();
+  const canRetry = method === "GET";
+  for (let attempt = 0; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(input, { ...init, signal: controller.signal });
+      clearTimeout(timer);
+      if (canRetry && res.status >= 500 && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 600));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      clearTimeout(timer);
+      const aborted = e instanceof Error && e.name === "AbortError";
+      if (canRetry && attempt === 0 && !aborted) {
+        await new Promise((r) => setTimeout(r, 600));
+        continue;
+      }
+      if (aborted) {
+        console.error("apiFetch timed out:", input, `${timeoutMs}ms`);
+        throw new Error("Request timed out — check your connection and try again.");
+      }
+      const description = describeError(e);
+      console.error("apiFetch failed:", input, description, e);
+      throw new Error(`Failed to fetch: ${description}`);
+    }
   }
 }
 
@@ -158,14 +186,35 @@ export class ApiError extends Error {
   }
 }
 
-async function handle<T>(res: Response): Promise<T> {
+async function handle<T>(res: Response, quietStatuses: number[] = []): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status}).`;
+    let raw = "";
     try {
-      const body = await res.json();
-      if (body?.detail) detail = formatDetail(body.detail);
+      const ct = res.headers.get("content-type") ?? "";
+      if (ct.includes("json")) {
+        const body = await res.json();
+        raw = JSON.stringify(body);
+        if (body?.detail) detail = formatDetail(body.detail);
+      } else {
+        raw = (await res.text()).slice(0, 500);
+      }
     } catch {
       /* ignore */
+    }
+    // Dev diagnostic: name the endpoint + the server's raw reason so a 500
+    // points at the failing call. The thrown (user-facing) message stays clean.
+    let path = res.url;
+    try {
+      path = new URL(res.url).pathname;
+    } catch {
+      /* keep full url */
+    }
+    // A status the caller treats as normal control flow (e.g. 404 "no profile
+    // yet" -> onboarding) is still thrown, but not logged as an error so the dev
+    // console stays meaningful.
+    if (!quietStatuses.includes(res.status)) {
+      console.error(`API ${res.status} ${path} — ${raw || detail}`);
     }
     throw new ApiError(detail, res.status);
   }
@@ -380,7 +429,9 @@ export async function onboard(body: OnboardingInput) {
 export async function getProfile(accessToken?: string) {
   const headers = await authHeader(accessToken);
   const res = await apiFetch(apiUrl("/profile/"), { headers });
-  return normalizeProfile(await handle<Profile>(res));
+  // 404 = no profile yet (brand-new account before onboarding) — expected; the
+  // caller routes to onboarding. Throw, but don't log it as an error.
+  return normalizeProfile(await handle<Profile>(res, [404]));
 }
 
 export async function getTrialStatus() {
@@ -459,11 +510,15 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
       type: mime,
     } as unknown as Blob);
   }
-  const res = await apiFetch(apiUrl("/meals/scan"), {
-    method: "POST",
-    headers: { ...headers },
-    body: form,
-  });
+  const res = await apiFetch(
+    apiUrl("/meals/scan"),
+    {
+      method: "POST",
+      headers: { ...headers },
+      body: form,
+    },
+    60000, // Gemini + a cold dyno can be slow; allow more headroom before timing out
+  );
   return handle<{ items: MealItem[] }>(res);
 }
 
