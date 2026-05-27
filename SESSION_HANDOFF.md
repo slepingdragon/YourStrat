@@ -30,10 +30,32 @@ privacy URL is live, then upload the AAB + fill App content in Play Console (see
 7. **Multi-scan queue** — keep shooting; results pile in an **app-wide ScanQueueBar** (you
    approved app-wide this session). `scanQueueStore` + bar + discard dialog.
 8. **Confidence whiskers** — per-macro uncertainty on the scan-result card; `ScanResult` schema.
-9. **i18n (scoped: infra + setup + scan)** — `lib/i18n.ts` engine + persisted Profile language
-   toggle (EN / Bahasa Indonesia); setup flow (onboarding/login/signup) + scan flow translated.
-   **Today / Nutrition / Workouts / rest of Profile + shared nutrient labels are NOT translated**
-   (English via fallback) — the documented follow-up pass.
+9. **i18n** — `lib/i18n.ts` engine + persisted Profile language toggle (EN / Bahasa Indonesia).
+   **Translated so far: setup (onboarding/login/signup), scan flow, and the entire Today group**
+   (dashboard, header, next-action, trio cards, workout card, sparkline, meal card, trial banner +
+   the `nextAction`/`todayInsights` helpers). **STILL English (via fallback) = the next pass:**
+   the **Nutrition group** (~15 files: `NutritionTrendsView`, `CalorieHero`, `MacroTriBar`,
+   `ScoreStrip`, `Sparkline`, `BurnTrendRow`, `MicroPinBar`, `MealSlotsList`, `CoachInsight`,
+   `WaterRow`, `NutrientTrendRow`, `NutritionDayView`, `nutrition/day/[date]`, `nutrition/metric/[id]`
+   + the `nutritionMetricCopy.ts` / `todayMetrics.ts` copy helpers), the **Workouts group**
+   (`(tabs)/workouts`, `session/[id]`, routine screens, `RestTimer`, `RpePicker`, etc.), and
+   **stragglers** (tab-bar labels in `(tabs)/_layout.tsx`, `ProfileIdentity`, the rest of `profile.tsx`,
+   and `FoodItemNutritionCard` macro labels).
+
+   **Continuation recipe (the pattern is established — see commits `92db511`, `8dda4b8`, `5bdc30d`):**
+   - Wrap each classic screen's copy in `t()`. The dict's EN value MUST equal the loved copy verbatim
+     (English never changes) — many keys already exist and match; verify before reusing.
+   - Loved-only components (not in new-design) need NEW keys (EN = loved copy, ID best-effort) — e.g.
+     Today needed `workoutCard.*` / `watchlist.*` / sparkline labels. Add to BOTH dict blocks (`en`
+     ~line 19, `id` ~line 640).
+   - Thread `t` through pure copy-generating helpers (did `nextAction`, `todayInsights`; Nutrition has
+     `nutritionMetricCopy.ts`). `grep` a helper's usage first — `buildTodayInsights` was dead code, skipped.
+   - The **guard**: wrapping a string on a line that also has a `padding`/`margin` literal forces
+     tokenizing it; off-grid values (2/6/10/20) → nearest `spacing.*` (imperceptible, grid-compliant).
+     Never `--no-verify`. Also rename any local `t` that collides with the translator (TodayDashboard's
+     `t` was "targets").
+   - After each group: `cd mobile; npx tsc --noEmit`, verify every used key resolves (a typo silently
+     falls back to the raw key), commit. Indonesian is best-effort → wants a fluent proofread + device pass.
 
 ## ⚠ The pre-commit guard is ACTIVE
 `.githooks/` is wired via `git config core.hooksPath .githooks` (set in this repo's git config
