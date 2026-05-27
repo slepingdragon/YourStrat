@@ -522,6 +522,13 @@ export async function scanMeal(uri: string, mime = "image/jpeg") {
   return handle<{ items: MealItem[] }>(res);
 }
 
+export async function lookupBarcode(code: string): Promise<{ items: MealItem[] }> {
+  const headers = await authHeader();
+  const res = await apiFetch(apiUrl(`/meals/barcode/${encodeURIComponent(code)}`), { headers });
+  // 404 = not in the food database — expected; the caller falls back to a photo scan.
+  return handle<{ items: MealItem[] }>(res, [404]);
+}
+
 export async function saveMeal(photoUrl: string | null, items: MealItem[]) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/meals/"), {

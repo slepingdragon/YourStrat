@@ -14,6 +14,7 @@ from app.models.schemas import (
     NutritionDayTotals,
     NutritionJournal,
 )
+from app.services.barcode import lookup_barcode
 from app.services.gemini import scan_food
 from app.services.storage import signed_photo_url, upload_meal_photo
 from app.services.trial import check_scan_allowed, increment_scan_count
@@ -63,7 +64,14 @@ def _meal_with_items(sb, meal_row: dict) -> MealOut:
     ]
     photo = meal_row.get("photo_url")
     if photo and not photo.startswith("http"):
-        photo = signed_photo_url(sb, photo)
+        try:
+            photo = signed_photo_url(sb, photo)
+        except Exception:
+            # The value isn't a real storage object — older saves stored the
+            # on-device file path, which can't be signed. Never 500 the meal /
+            # journal / today over a missing thumbnail; just drop the photo.
+            logger.warning("could not sign photo_url %r; serving meal without photo", photo)
+            photo = None
     return MealOut(
         id=meal_row["id"],
         photo_url=photo,
@@ -111,6 +119,23 @@ async def scan_meal(
             detail=f"Food scan failed: {str(e)[:200] or type(e).__name__}",
         ) from e
     increment_scan_count(sb, user["id"])
+    return result
+
+
+@router.get("/barcode/{code}")
+async def barcode_lookup(code: str, user: dict = Depends(get_current_user)):
+    """Exact nutrition for a packaged product by barcode (Open Food Facts).
+    Free + unlimited (no AI cost) — not gated by the daily scan limit."""
+    code = code.strip()
+    if not code.isdigit() or not (8 <= len(code) <= 14):
+        raise HTTPException(status_code=400, detail="That doesn't look like a product barcode.")
+    try:
+        result = await lookup_barcode(code)
+    except Exception as e:
+        logger.exception("barcode lookup failed")
+        raise HTTPException(status_code=503, detail="Food database is unreachable right now. Try the photo scan.") from e
+    if result is None:
+        raise HTTPException(status_code=404, detail="Not found in the food database. Snap a photo of the food instead.")
     return result
 
 
