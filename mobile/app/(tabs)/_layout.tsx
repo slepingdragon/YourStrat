@@ -2,11 +2,13 @@ import { Tabs } from "expo-router";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Book, Camera, Dumbbell, Profile, Star } from "@/components/icons";
+import { ScanQueueBar } from "@/components/scan/ScanQueueBar";
 import { colors } from "@/theme/colors";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       initialRouteName="index"
       screenOptions={{
@@ -79,5 +81,10 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+      {/* App-wide stack of unsaved scans — floats above every tab so multi-photo
+          scans pile up here instead of blocking the camera (transient queue;
+          owner-approved app-wide for this feature). */}
+      <ScanQueueBar />
+    </View>
   );
 }

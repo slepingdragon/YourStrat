@@ -8,6 +8,8 @@ import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { Screen, Button, toastError } from "@/components/ui";
 import { isApiError, lookupBarcode, scanMeal, type MealItem } from "@/lib/api";
+import { normalizeMealItem } from "@/lib/mealNutrition";
+import { useScanQueue } from "@/lib/scanQueueStore";
 import { colors } from "@/theme/colors";
 import { radius, spacing } from "@/theme/spacing";
 
@@ -59,6 +61,9 @@ function ShutterButton({ onPress, loading }: { onPress: () => void; loading: boo
 export default function ScanScreen() {
   const focused = useIsFocused();
   const router = useRouter();
+  const enqueue = useScanQueue((s) => s.enqueue);
+  const resolveScan = useScanQueue((s) => s.resolve);
+  const failScan = useScanQueue((s) => s.fail);
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const cameraRef = useRef<CameraView>(null);
@@ -112,15 +117,20 @@ export default function ScanScreen() {
     }
   };
 
-  // Scan a still image (shutter / library) -> review. Caller owns busy/loading.
-  const scanImage = async (uri: string) => {
-    try {
-      const result = await scanMeal(uri);
-      router.push({ pathname: "/scan-result", params: { items: JSON.stringify(result.items ?? []), photoUri: uri } });
-    } catch (e) {
-      console.error(e);
-      toastError((e as Error).message);
-    }
+  // Fire a scan in the BACKGROUND: drop a pending tab in the queue immediately,
+  // run the network call without blocking the shutter, then fill the tab in when
+  // it returns (or mark it failed). Lets the user keep shooting — scans pile up
+  // as tabs in the app-wide ScanQueueBar instead of forcing a wait per photo.
+  const runScan = (uri: string) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    enqueue(id, uri);
+    scanMeal(uri)
+      .then((result) => resolveScan(id, (result.items ?? []).map((it) => normalizeMealItem(it))))
+      .catch((e) => {
+        console.error(e);
+        failScan(id);
+        toastError((e as Error).message);
+      });
   };
 
   const capture = async () => {
@@ -129,8 +139,12 @@ export default function ScanScreen() {
     setLoading(true);
     try {
       const photo = await cameraRef.current?.takePictureAsync({ quality: 0.8 });
-      if (photo?.uri) await scanImage(photo.uri);
-      else toastError("Could not capture photo. Try again or use the photo library.");
+      if (photo?.uri) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); // "captured" — the scan runs in the background
+        runScan(photo.uri);
+      } else {
+        toastError("Could not capture photo. Try again or use the photo library.");
+      }
     } catch (e) {
       console.error(e);
       toastError("Could not capture photo. Try again.");
@@ -146,7 +160,7 @@ export default function ScanScreen() {
     setLoading(true);
     try {
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
-      if (!res.canceled && res.assets[0]?.uri) await scanImage(res.assets[0].uri);
+      if (!res.canceled && res.assets[0]?.uri) runScan(res.assets[0].uri);
     } catch (e) {
       console.error(e);
       toastError((e as Error).message);

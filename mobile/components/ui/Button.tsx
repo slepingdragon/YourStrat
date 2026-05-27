@@ -3,7 +3,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-na
 import * as Haptics from "expo-haptics";
 import { colors } from "@/theme/colors";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "destructive";
 
 type Props = {
   label: string;
@@ -13,6 +13,9 @@ type Props = {
   loading?: boolean;
   compact?: boolean;
   fullWidth?: boolean;
+  /** Overrides the spoken label (e.g. "Delete routine Push Day" when the
+   *  visible label is just "Delete"). Defaults to `label`. */
+  accessibilityLabel?: string;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -25,6 +28,7 @@ export function Button({
   loading,
   compact,
   fullWidth = true,
+  accessibilityLabel,
 }: Props) {
   const scale = useSharedValue(1);
   const isDisabled = disabled || loading;
@@ -32,17 +36,29 @@ export function Button({
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const bg = variant === "primary" ? colors.star : "transparent";
-  const fg = variant === "primary" ? colors.bg : variant === "ghost" ? colors.textSecondary : colors.textPrimary;
-  const borderWidth = variant === "secondary" ? 2 : 0;
-  const borderColor = variant === "secondary" ? colors.star : "transparent";
+  const fg =
+    variant === "primary"
+      ? colors.bg
+      : variant === "ghost"
+        ? colors.textSecondary
+        : variant === "destructive"
+          ? colors.urgent
+          : colors.textPrimary; // secondary
+  const outlined = variant === "secondary" || variant === "destructive";
+  const borderWidth = outlined ? 2 : 0;
+  const borderColor = variant === "destructive" ? colors.urgent : variant === "secondary" ? colors.star : "transparent";
 
   return (
     <AnimatedPressable
       onPress={() => {
         if (isDisabled) return;
         if (variant === "primary") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        else if (variant === "destructive") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onPress?.();
       }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: isDisabled }}
       onPressIn={() => {
         if (!isDisabled) scale.value = withTiming(0.95, { duration: 200 });
       }}

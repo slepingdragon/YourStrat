@@ -18,21 +18,35 @@ import { normalizeMealItem, sumMealItems } from "@/lib/mealNutrition";
 
 import { colors } from "@/theme/colors";
 
+import { spacing } from "@/theme/spacing";
+
+import { useScanQueue } from "@/lib/scanQueueStore";
+
+import { DiscardMealDialog } from "@/components/scan/DiscardMealDialog";
+
 
 
 export default function ScanResultScreen() {
 
   const router = useRouter();
 
-  const { items: itemsParam, photoUri } = useLocalSearchParams<{ items: string; photoUri?: string }>();
+  // Opened either from the scan queue (queueId -> read items from the store) or
+  // directly from a barcode match (items passed as a JSON param).
+  const { items: itemsParam, queueId } = useLocalSearchParams<{ items?: string; queueId?: string }>();
+
+  const queuedItems = useScanQueue((s) => (queueId ? s.queue.find((q) => q.id === queueId)?.items : undefined));
+
+  const removeFromQueue = useScanQueue((s) => s.remove);
 
   const [items, setItems] = useState<MealItem[]>(() => {
 
     try {
 
-      const parsed = JSON.parse(itemsParam || "[]") as Partial<MealItem>[];
+      const raw: Partial<MealItem>[] = queueId
+        ? (queuedItems ?? [])
+        : (JSON.parse(itemsParam || "[]") as Partial<MealItem>[]);
 
-      return Array.isArray(parsed) ? parsed.map((it) => normalizeMealItem(it)) : [];
+      return Array.isArray(raw) ? raw.map((it) => normalizeMealItem(it)) : [];
 
     } catch {
 
@@ -41,6 +55,8 @@ export default function ScanResultScreen() {
     }
 
   });
+
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -132,11 +148,20 @@ export default function ScanResultScreen() {
 
       const payload = items.map((it) => normalizeMealItem(it));
 
-      await saveMeal(photoUri ?? null, payload);
+      // Meal photos aren't uploaded to storage yet, so a local device path isn't
+      // a signable object — save without a photo until real upload is wired.
+      await saveMeal(null, payload);
 
       toastSuccess("Meal saved.");
 
-      router.replace("/(tabs)");
+      if (queueId) {
+        // Saved from the queue: drop this tab and return to the camera with the
+        // rest of the pile intact, so the user keeps clearing scans.
+        removeFromQueue(queueId);
+        router.back();
+      } else {
+        router.replace("/(tabs)");
+      }
 
     } catch (e) {
 
@@ -229,7 +254,24 @@ export default function ScanResultScreen() {
 
       </ScrollView>
 
-      <Button label="Save meal" onPress={save} loading={loading} disabled={!items.length} />
+      <View style={{ gap: spacing.sm }}>
+
+        <Button label="Save meal" onPress={save} loading={loading} disabled={!items.length} />
+
+        <Button label="Discard meal" variant="destructive" onPress={() => setConfirmDiscard(true)} disabled={loading} />
+
+      </View>
+
+      <DiscardMealDialog
+        visible={confirmDiscard}
+        label={items[0]?.name}
+        onCancel={() => setConfirmDiscard(false)}
+        onConfirm={() => {
+          setConfirmDiscard(false);
+          if (queueId) removeFromQueue(queueId);
+          router.back();
+        }}
+      />
 
     </Screen>
 
