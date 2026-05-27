@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_SERVICE_KEY: str
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"  # gemini-2.0-flash was retired for new API users
     DAILY_SCAN_LIMIT: int = 10
     # Comma-separated list of emails that bypass trial gating and scan limits.
     ADMIN_EMAILS: str = "giskanianurzara@gmail.com,baniabradyy@gmail.com"
