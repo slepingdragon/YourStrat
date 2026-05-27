@@ -1,0 +1,99 @@
+<!doctype html>
+<!-- Deploy under https://yourstrat.xaeryx.com/privacy . Contact email is
+     baniabradyy@gmail.com — swap to a domain alias (e.g. privacy@xaeryx.com)
+     if/when you set one up. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>YourStrat — Privacy Policy</title>
+  <meta name="description" content="How YourStrat collects, uses, and shares your information." />
+  <meta name="robots" content="index,follow" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z' fill='%23fafafa'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topbar">
+      <a class="brand" href="index.html">
+        <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z" fill="#fafafa"/></svg>
+        YourStrat
+      </a>
+      <a class="home" href="index.html">Home</a>
+    </nav>
+
+    <main class="prose">
+      <h1>Privacy Policy</h1>
+      <p class="meta">Effective date: May 25, 2026 · Last updated: May 25, 2026</p>
+
+      <p>This Privacy Policy explains how YourStrat ("we", "us") collects, uses, and shares information when you use the <strong>YourStrat</strong> mobile app (the "App").</p>
+
+      <h2>Summary</h2>
+      <p>YourStrat is a fitness and nutrition tracker. We collect the account and health/fitness information you provide so the App can work — your meals, workouts, and goals. Meal <strong>photos you choose to scan are sent to Google's Gemini API</strong> to estimate nutrition. We don't sell your data, we don't use third-party analytics, and you can <strong>delete your account and all associated data from within the App</strong> at any time.</p>
+
+      <h2>Information we collect</h2>
+      <ul>
+        <li><strong>Account information:</strong> your email address and an authentication credential, used to create and secure your account (handled by Supabase Auth).</li>
+        <li><strong>Profile / health &amp; fitness data you provide:</strong> units, weight, height, age, sex, activity level, goal, and the calorie/macro targets computed from them.</li>
+        <li><strong>Nutrition logs:</strong> meals you log — food names/portions, calories and macronutrients, optional meal <strong>photos</strong>, and barcodes you scan.</li>
+        <li><strong>Workout logs:</strong> routines, exercises, sessions, sets/reps/weights, durations, calories burned, and effort (RPE) ratings.</li>
+        <li><strong>Operational data:</strong> a per-day food-scan count and trial start/end dates, to enforce the free-trial scan limit.</li>
+      </ul>
+      <p>We do <strong>not</strong> request location, contacts, or microphone access. The App uses the <strong>camera</strong> (to scan meals) and <strong>photo access</strong> (to log a meal from an existing picture).</p>
+
+      <h2>How we use information</h2>
+      <ul>
+        <li>To provide core features: compute targets, log and display meals and workouts, and track progress.</li>
+        <li>To estimate nutrition from a meal photo or barcode (see "Third parties").</li>
+        <li>To enforce the free-trial daily scan limit, and to secure and operate the service.</li>
+      </ul>
+      <p>We do <strong>not</strong> use your data for advertising, and we do not sell it.</p>
+
+      <h2>Third parties we share with (to operate the App)</h2>
+      <ul>
+        <li><strong>Google (Gemini API):</strong> when you scan a meal <strong>photo</strong>, the image is sent to Google's Gemini API to estimate the foods and nutrition. We send the photo for that request; we don't send your account identity for this purpose.</li>
+        <li><strong>Open Food Facts:</strong> when you scan a <strong>barcode</strong>, we look up that product code in the Open Food Facts database. Only the barcode is sent — no personal data.</li>
+        <li><strong>Supabase:</strong> our database, file storage (meal photos), and authentication provider.</li>
+        <li><strong>Railway:</strong> hosts our backend API.</li>
+      </ul>
+      <p>These providers process data on our behalf to run the App. <strong>We do not use third-party analytics or crash-reporting SDKs.</strong></p>
+
+      <h2>Data storage, security, and retention</h2>
+      <ul>
+        <li>Data is stored in Supabase (Postgres + Storage) and transmitted over <strong>HTTPS/TLS</strong>.</li>
+        <li>We retain your data while your account is active. When you delete your account, your profile, meals (and photos), workouts, and related records are removed (see below).</li>
+      </ul>
+
+      <h2>Deleting your account and data</h2>
+      <p>You can delete your account at any time in the App: <strong>Profile → Delete account</strong>. This permanently removes your profile, meals and meal photos, workouts, and associated records, and cannot be undone. If you can't access the App, email <a href="mailto:baniabradyy@gmail.com">baniabradyy@gmail.com</a> to request deletion.</p>
+
+      <h2>Children</h2>
+      <p>YourStrat is <strong>not directed to children under 13</strong> (or the minimum age in your jurisdiction) and we do not knowingly collect their data.</p>
+
+      <h2>Your rights</h2>
+      <p>Depending on where you live, you may have rights to access, correct, or delete your data (e.g., GDPR/CCPA). Contact <a href="mailto:baniabradyy@gmail.com">baniabradyy@gmail.com</a>. In-app deletion is available to everyone as described above.</p>
+
+      <h2>Changes</h2>
+      <p>We may update this policy; we'll change the "Last updated" date and, for material changes, notify you in the App or by email.</p>
+
+      <h2>Contact</h2>
+      <p><a href="mailto:baniabradyy@gmail.com">baniabradyy@gmail.com</a> — YourStrat.</p>
+    </main>
+  </div>
+
+  <footer>
+    <div class="wrap footer-row">
+      <a href="index.html">YourStrat</a>
+      <span class="dot">·</span>
+      <span>Part of the Xaeryx family</span>
+      <span class="dot">·</span>
+      <span>© <span id="yr">2026</span> YourStrat</span>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

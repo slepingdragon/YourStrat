@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>YourStrat — calm meal & workout tracking</title>
+  <meta name="description" content="Scan meals, track macros, log workouts — calm, fast, no clutter. A focused fitness tracker, part of Xaeryx." />
+  <meta property="og:title" content="YourStrat" />
+  <meta property="og:description" content="Scan meals, track macros, log workouts — calm, fast, no clutter." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yourstrat.xaeryx.com" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z' fill='%23fafafa'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topbar">
+      <span class="brand">
+        <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z" fill="#fafafa"/></svg>
+        YourStrat
+      </span>
+      <a class="home" href="index.html">Home</a>
+    </nav>
+
+    <header class="hero">
+      <svg class="star-hero" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z" fill="#fafafa"/></svg>
+      <span class="chip"><span class="shimmer">Part of Xaeryx</span></span>
+      <h1>YourStrat</h1>
+      <p class="tagline">Scan meals, track macros, log workouts — calm, fast, no clutter.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=com.yourstrat.app">Get it on Google Play</a>
+        <a class="btn btn-ghost" href="privacy.html">Privacy</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="features" aria-label="What YourStrat does">
+        <div class="card">
+          <h3>Log a meal in seconds</h3>
+          <p>Snap a photo for an instant nutrition estimate, or scan a barcode for exact packaged-food data. Every number is editable before you save — no false precision.</p>
+        </div>
+        <div class="card">
+          <h3>Know your day at a glance</h3>
+          <p>Calorie and macro targets from a quick profile, a clean daily ring with a pace cue, and a 7-day trend — without charts to decode.</p>
+        </div>
+        <div class="card">
+          <h3>Train and track</h3>
+          <p>Build routines, run a session with a big readable weight display and a built-in rest timer. Calories burned flow back into your day.</p>
+        </div>
+        <div class="card">
+          <h3>Calm and private</h3>
+          <p>A focused dark design. No ads, no social feed, no notifications. Your data is yours — delete your account and everything in it, anytime.</p>
+        </div>
+      </section>
+
+      <p class="note">Nutrition estimates from photos are produced by AI and are approximate — always check the label on packaged foods.</p>
+    </main>
+  </div>
+
+  <footer>
+    <div class="wrap footer-row">
+      <a href="privacy.html">Privacy policy</a>
+      <span class="dot">·</span>
+      <span>Part of the Xaeryx family</span>
+      <span class="dot">·</span>
+      <span>© <span id="yr">2026</span> YourStrat</span>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

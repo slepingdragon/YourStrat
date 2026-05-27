@@ -1,0 +1,76 @@
+<!doctype html>
+<!-- Deploy under https://yourstrat.xaeryx.com/delete-account .
+     This is the account-deletion page required by Google Play (App content →
+     Data safety → Delete account URL). cleanUrls in vercel.json maps
+     /delete-account -> delete-account.html. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>YourStrat — Delete your account &amp; data</title>
+  <meta name="description" content="How to delete your YourStrat account and all associated data." />
+  <meta name="robots" content="index,follow" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z' fill='%23fafafa'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topbar">
+      <a class="brand" href="index.html">
+        <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2C55 36 64 45 98 50C64 55 55 64 50 98C45 64 36 55 2 50C36 45 45 36 50 2Z" fill="#fafafa"/></svg>
+        YourStrat
+      </a>
+      <a class="home" href="index.html">Home</a>
+    </nav>
+
+    <main class="prose">
+      <h1>Delete your account and data</h1>
+      <p class="meta">Applies to the YourStrat app · Last updated: May 26, 2026</p>
+
+      <p>You can delete your <strong>YourStrat</strong> account and all of its data at any time. Deletion is permanent and cannot be undone.</p>
+
+      <h2>Delete from inside the app (recommended)</h2>
+      <ol>
+        <li>Open <strong>YourStrat</strong> and sign in.</li>
+        <li>Go to the <strong>Profile</strong> tab.</li>
+        <li>Tap <strong>Delete account</strong>.</li>
+        <li>Confirm. Your account and data are removed immediately and you are signed out.</li>
+      </ol>
+
+      <h2>Can't access the app?</h2>
+      <p>Email <a href="mailto:baniabradyy@gmail.com">baniabradyy@gmail.com</a> from the email address on your account and ask us to delete it. We verify the request and complete deletion within <strong>30 days</strong>.</p>
+
+      <h2>What gets deleted</h2>
+      <p>Deleting your account permanently removes everything tied to it:</p>
+      <ul>
+        <li>Your account and email/login credential</li>
+        <li>Your profile and health &amp; fitness details (units, weight, height, age, sex, activity, goals, calorie/macro targets)</li>
+        <li>Your nutrition logs — meals, food items, calories and macros, and any meal photos</li>
+        <li>Your workout logs — routines, exercises, sessions, sets/reps/weights, and effort ratings</li>
+        <li>Operational records such as daily scan counts and trial state</li>
+      </ul>
+
+      <h2>What is kept, and for how long</h2>
+      <p>We keep <strong>no personal data</strong> after your account is deleted. Meal photos are sent to Google's Gemini API only at the moment of a scan to estimate nutrition; they are not stored on our servers. Any residual copies in routine, encrypted backups are overwritten within <strong>30 days</strong>. We retain no analytics or advertising data — the app uses none.</p>
+
+      <h2>Contact</h2>
+      <p><a href="mailto:baniabradyy@gmail.com">baniabradyy@gmail.com</a> — YourStrat. See also our <a href="privacy.html">Privacy Policy</a>.</p>
+    </main>
+  </div>
+
+  <footer>
+    <div class="wrap footer-row">
+      <a href="index.html">YourStrat</a>
+      <span class="dot">·</span>
+      <span>Part of the Xaeryx family</span>
+      <span class="dot">·</span>
+      <span>© <span id="yr">2026</span> YourStrat</span>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>
