@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Button, toastError } from "@/components/ui";
 import { startSession, type Routine, type TodaySnapshot } from "@/lib/api";
 import { pickNextAction } from "@/lib/nextAction";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   today: TodaySnapshot | null;
@@ -10,9 +11,10 @@ type Props = {
 };
 
 export function NextActionButton({ today, routines }: Props) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const action = pickNextAction(today, routines, new Date());
+  const action = pickNextAction(today, routines, new Date(), t);
 
   const onPress = useCallback(async () => {
     if (busy) return;

@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { startSession, type TodaySnapshot } from "@/lib/api";
 import { toastError } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -45,38 +46,35 @@ function pickState(today: TodaySnapshot): CardState {
 }
 
 export function WorkoutCard({ today }: Props) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const state = pickState(today);
 
+  const topLabel = t("workoutCard.title");
   let borderColor = colors.border;
-  let topLabel = "Workout";
-  let headline = "No workout planned";
-  let sub = "Add a routine";
+  let headline = t("workoutCard.noneHeadline");
+  let sub = t("workoutCard.noneSub");
   let headlineColor = colors.textPrimary;
   let dot: string | null = null;
 
   if (state.kind === "in_progress") {
     borderColor = colors.spark;
-    topLabel = "Workout";
     headline = state.name;
-    sub = "In progress";
+    sub = t("workoutCard.inProgress");
     dot = colors.spark;
   } else if (state.kind === "completed") {
     borderColor = colors.success;
-    topLabel = "Workout";
     headline = state.name;
-    sub = `${state.minutes} min · ${state.calories} cal`;
+    sub = t("workoutCard.completedSub", { min: state.minutes, kcal: state.calories });
   } else if (state.kind === "scheduled") {
     borderColor = colors.spark;
-    topLabel = "Workout";
     headline = state.name;
-    sub = "Scheduled today";
+    sub = t("workoutCard.scheduled");
     headlineColor = colors.textPrimary;
   } else {
-    topLabel = "Workout";
-    headline = "No workout planned";
-    sub = "Add a routine";
+    headline = t("workoutCard.noneHeadline");
+    sub = t("workoutCard.noneSub");
     headlineColor = colors.textSecondary;
   }
 
@@ -120,7 +118,7 @@ export function WorkoutCard({ today }: Props) {
         opacity: pressed || busy ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`${topLabel}: ${headline}, ${sub}`}
+      accessibilityLabel={t("workoutCard.a11y", { label: topLabel, headline, sub })}
     >
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
         <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", flex: 1 }}>{topLabel}</Text>

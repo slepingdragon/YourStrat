@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Card } from "@/components/ui";
 import { normalizeTrial, type TrialStatus } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 const DISMISS_KEY = "yourstrat_trial_banner_dismissed_on";
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export function TrialBanner({ trial: trialProp }: Props) {
+  const t = useT();
   const trial = normalizeTrial(trialProp);
   const [visible, setVisible] = useState(false);
 
@@ -63,15 +65,19 @@ export function TrialBanner({ trial: trialProp }: Props) {
   const urgent = trial.trial_active && trial.days_remaining <= 3;
   const ended = !trial.trial_active;
 
-  let title = "Free trial";
+  let title = t("trial.free");
   let body: string;
   if (ended) {
-    title = "Trial ended";
-    body = "Food scans are paused for now. You can still log meals manually and track workouts.";
+    title = t("trial.ended");
+    body = t("trial.endedBody");
   } else if (urgent) {
-    body = `${trial.days_remaining} day${trial.days_remaining === 1 ? "" : "s"} left in your trial · ${trial.scans_today}/${trial.scans_limit} food scans used today`;
+    const daysPart =
+      trial.days_remaining === 1
+        ? t("trial.daysLeftOne", { days: trial.days_remaining })
+        : t("trial.daysLeft", { days: trial.days_remaining });
+    body = `${daysPart} · ${t("trial.scansUsed", { used: trial.scans_today, limit: trial.scans_limit })}`;
   } else {
-    body = `${trial.days_remaining} days left · up to ${trial.scans_limit} food scans per day during your trial (${trial.scans_today} used today)`;
+    body = t("trial.activeBody", { days: trial.days_remaining, limit: trial.scans_limit, used: trial.scans_today });
   }
 
   return (
@@ -94,7 +100,7 @@ export function TrialBanner({ trial: trialProp }: Props) {
         <Pressable
           onPress={dismiss}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss trial reminder"
+          accessibilityLabel={t("trial.dismissA11y")}
           hitSlop={12}
         >
           <Text style={{ color: colors.textMuted, fontSize: 18, lineHeight: 20 }}>×</Text>

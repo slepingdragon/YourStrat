@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import type { NutritionDay } from "@/lib/api";
 import { roundCal } from "@/lib/targets";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -58,6 +59,7 @@ function segmentString(points: (Point | null)[]): string[] {
 }
 
 export function CalorieSparkline({ days, target }: Props) {
+  const t = useT();
   const router = useRouter();
   const { points, maxY, avg } = useMemo(() => computePoints(days, target), [days, target]);
 
@@ -77,10 +79,10 @@ export function CalorieSparkline({ days, target }: Props) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`Last 7 days, average ${roundCal(avg)} calories`}
+      accessibilityLabel={t("sparkline.a11y", { kcal: roundCal(avg) })}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600" }}>Last 7 days</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600" }}>{t("sparkline.last7")}</Text>
         <Text
           style={{
             color: colors.textMuted,
@@ -88,7 +90,7 @@ export function CalorieSparkline({ days, target }: Props) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          avg {roundCal(avg).toLocaleString()} cal
+          {t("sparkline.avg", { kcal: roundCal(avg).toLocaleString() })}
         </Text>
       </View>
       <Svg width="100%" height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none">

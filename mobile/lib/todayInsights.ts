@@ -132,8 +132,10 @@ export type WatchlistMetric = {
   tone: "error" | "warning";
 };
 
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
 /** Pick at most one nutrient that needs attention right now. Structured for a card UI. */
-export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | null): WatchlistMetric | null {
+export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | null, tr: TFn): WatchlistMetric | null {
   const t = today.targets ?? profile;
   if (!t) return null;
 
@@ -148,8 +150,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
   if (sodiumOver >= 1) {
     return {
       id: "sodium",
-      headline: "Sodium",
-      sub: `${roundG(sodiumOver)}mg over the ${HEART_LIMITS.sodium_mg.toLocaleString()}mg guide`,
+      headline: tr("metric.sodium"),
+      sub: tr("watchlist.overGuideMg", { x: roundG(sodiumOver), limit: HEART_LIMITS.sodium_mg.toLocaleString() }),
       tone: "error",
     };
   }
@@ -158,8 +160,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
   if (sugarOver >= 1) {
     return {
       id: "sugar",
-      headline: "Sugar",
-      sub: `${roundG(sugarOver)}g over the ${HEART_LIMITS.sugar_g}g guide`,
+      headline: tr("metric.sugar"),
+      sub: tr("watchlist.overGuideG", { x: roundG(sugarOver), limit: HEART_LIMITS.sugar_g }),
       tone: "error",
     };
   }
@@ -168,8 +170,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
   if (carbsOver >= 1) {
     return {
       id: "carbs",
-      headline: "Carbs",
-      sub: `${roundG(carbsOver)}g over target`,
+      headline: tr("metric.carbs"),
+      sub: tr("watchlist.overTarget", { x: roundG(carbsOver) }),
       tone: "warning",
     };
   }
@@ -178,8 +180,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
   if (fatOver >= 1) {
     return {
       id: "fat",
-      headline: "Fat",
-      sub: `${roundG(fatOver)}g over target`,
+      headline: tr("metric.fat"),
+      sub: tr("watchlist.overTarget", { x: roundG(fatOver) }),
       tone: "warning",
     };
   }
@@ -189,8 +191,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
     if (sugarLeft <= 15) {
       return {
         id: "sugar",
-        headline: "Sugar",
-        sub: `${roundG(sugarLeft)}g left before the ${HEART_LIMITS.sugar_g}g guide`,
+        headline: tr("metric.sugar"),
+        sub: tr("watchlist.leftGuideG", { x: roundG(sugarLeft), limit: HEART_LIMITS.sugar_g }),
         tone: "warning",
       };
     }
@@ -201,8 +203,8 @@ export function pickWatchlistMetric(today: TodaySnapshot, profile: Profile | nul
     if (sodiumLeft <= 400) {
       return {
         id: "sodium",
-        headline: "Sodium",
-        sub: `${roundG(sodiumLeft)}mg left before the ${HEART_LIMITS.sodium_mg.toLocaleString()}mg guide`,
+        headline: tr("metric.sodium"),
+        sub: tr("watchlist.leftGuideMg", { x: roundG(sodiumLeft), limit: HEART_LIMITS.sodium_mg.toLocaleString() }),
         tone: "warning",
       };
     }

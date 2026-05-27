@@ -3,7 +3,9 @@ import { useRouter } from "expo-router";
 import type { Profile, TodaySnapshot } from "@/lib/api";
 import { pickWatchlistMetric, type WatchlistMetric } from "@/lib/todayInsights";
 import { roundG } from "@/lib/targets";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 import { WorkoutCard } from "./WorkoutCard";
 
 type Props = {
@@ -12,6 +14,7 @@ type Props = {
 };
 
 function ProteinCard({ today }: { today: TodaySnapshot }) {
+  const t = useT();
   const router = useRouter();
   const target = today.targets?.daily_protein_target_g ?? 0;
   const consumed = today.consumed_protein_g ?? 0;
@@ -34,9 +37,9 @@ function ProteinCard({ today }: { today: TodaySnapshot }) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`Protein, ${roundG(consumed)} of ${roundG(target)} grams`}
+      accessibilityLabel={t("trio.proteinA11y", { x: roundG(consumed), y: roundG(target) })}
     >
-      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: 6 }}>Protein</Text>
+      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{t("metric.protein")}</Text>
       <View style={{ flexDirection: "row", alignItems: "baseline" }}>
         <Text
           style={{
@@ -56,7 +59,7 @@ function ProteinCard({ today }: { today: TodaySnapshot }) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          of {roundG(target)}g
+          {t("trio.ofTarget", { x: roundG(target) })}
         </Text>
       </View>
       <View
@@ -78,13 +81,14 @@ function ProteinCard({ today }: { today: TodaySnapshot }) {
           fontVariant: ["tabular-nums"],
         }}
       >
-        {over ? `${roundG(consumed - target)}g over` : `${roundG(left)}g to go`}
+        {over ? t("trio.gOver", { x: roundG(consumed - target) }) : t("trio.gToGo", { x: roundG(left) })}
       </Text>
     </Pressable>
   );
 }
 
 function WatchlistCardView({ metric }: { metric: WatchlistMetric }) {
+  const t = useT();
   const router = useRouter();
   const color = metric.tone === "error" ? colors.error : colors.warning;
   return (
@@ -100,9 +104,9 @@ function WatchlistCardView({ metric }: { metric: WatchlistMetric }) {
         opacity: pressed ? 0.85 : 1,
       })}
       accessibilityRole="button"
-      accessibilityLabel={`${metric.headline}, ${metric.sub}`}
+      accessibilityLabel={t("trio.watchlistA11y", { headline: metric.headline, sub: metric.sub })}
     >
-      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: 6 }}>Watchlist</Text>
+      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{t("trio.watchlist")}</Text>
       <Text style={{ color, fontSize: 16, fontWeight: "700" }}>{metric.headline}</Text>
       <Text
         style={{
@@ -119,7 +123,8 @@ function WatchlistCardView({ metric }: { metric: WatchlistMetric }) {
 }
 
 export function TodayTrioCards({ today, profile }: Props) {
-  const watchlist = pickWatchlistMetric(today, profile);
+  const t = useT();
+  const watchlist = pickWatchlistMetric(today, profile, t);
 
   return (
     <View style={{ width: "100%", gap: 10 }}>

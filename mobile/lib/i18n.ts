@@ -17,6 +17,24 @@ const STORAGE_KEY = "yourstrat_language";
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  // Today follow-up (loved-specific components: workout card, watchlist, sparkline)
+  "meal.fallbackName": "Meal",
+  "sparkline.last7": "Last 7 days",
+  "sparkline.avg": "avg {kcal} cal",
+  "trial.daysLeftOne": "{days} day left in your trial",
+  "trial.dismissA11y": "Dismiss trial reminder",
+  "watchlist.overGuideMg": "{x}mg over the {limit}mg guide",
+  "watchlist.overGuideG": "{x}g over the {limit}g guide",
+  "watchlist.overTarget": "{x}g over target",
+  "watchlist.leftGuideG": "{x}g left before the {limit}g guide",
+  "watchlist.leftGuideMg": "{x}mg left before the {limit}mg guide",
+  "workoutCard.title": "Workout",
+  "workoutCard.noneHeadline": "No workout planned",
+  "workoutCard.noneSub": "Add a routine",
+  "workoutCard.inProgress": "In progress",
+  "workoutCard.scheduled": "Scheduled today",
+  "workoutCard.completedSub": "{min} min · {kcal} cal",
+  "workoutCard.a11y": "{label}: {headline}, {sub}",
   // common
   "common.cancel": "Cancel",
   "common.saveChanges": "Save changes",
@@ -619,6 +637,24 @@ const en: Dict = {
 };
 
 const id: Dict = {
+  // Today follow-up (loved-specific components)
+  "meal.fallbackName": "Makanan",
+  "sparkline.last7": "7 hari terakhir",
+  "sparkline.avg": "rata-rata {kcal} kal",
+  "trial.daysLeftOne": "{days} hari tersisa dalam masa percobaan",
+  "trial.dismissA11y": "Tutup pengingat percobaan",
+  "watchlist.overGuideMg": "{x}mg di atas panduan {limit}mg",
+  "watchlist.overGuideG": "{x}g di atas panduan {limit}g",
+  "watchlist.overTarget": "{x}g di atas target",
+  "watchlist.leftGuideG": "{x}g lagi sebelum panduan {limit}g",
+  "watchlist.leftGuideMg": "{x}mg lagi sebelum panduan {limit}mg",
+  "workoutCard.title": "Latihan",
+  "workoutCard.noneHeadline": "Belum ada latihan",
+  "workoutCard.noneSub": "Tambah rutinitas",
+  "workoutCard.inProgress": "Sedang berlangsung",
+  "workoutCard.scheduled": "Dijadwalkan hari ini",
+  "workoutCard.completedSub": "{min} mnt · {kcal} kal",
+  "workoutCard.a11y": "{label}: {headline}, {sub}",
   // common
   "common.cancel": "Batal",
   "common.saveChanges": "Simpan perubahan",
