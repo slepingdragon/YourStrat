@@ -18,6 +18,7 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   // Today follow-up (loved-specific components: workout card, watchlist, sparkline)
+  "auth.changeLanguage": "Change language",
   "meal.fallbackName": "Meal",
   "sparkline.last7": "Last 7 days",
   "sparkline.avg": "avg {kcal} cal",
@@ -638,6 +639,7 @@ const en: Dict = {
 
 const id: Dict = {
   // Today follow-up (loved-specific components)
+  "auth.changeLanguage": "Ganti bahasa",
   "meal.fallbackName": "Makanan",
   "sparkline.last7": "7 hari terakhir",
   "sparkline.avg": "rata-rata {kcal} kal",

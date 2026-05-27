@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Screen, Button, Input, LinkButton, toastError } from "@/components/ui";
-import { Star } from "@/components/icons";
+import { Star, Edit } from "@/components/icons";
 import { signInWithGoogle, supabase } from "@/lib/supabase";
-import { translate, useT } from "@/lib/i18n";
+import { LANGUAGES, translate, useI18n, useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
+import { radius, spacing } from "@/theme/spacing";
 
 function signInErrorMessage(message: string): string {
   if (/email not confirmed/i.test(message)) return translate("auth.emailNotConfirmed");
@@ -15,6 +16,9 @@ function signInErrorMessage(message: string): string {
 
 export default function LoginScreen() {
   const t = useT();
+  const lang = useI18n((s) => s.lang);
+  const setLang = useI18n((s) => s.setLang);
+  const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +72,27 @@ export default function LoginScreen() {
         <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginTop: 16 }}>
           {t("auth.tagline")}
         </Text>
+        <Pressable
+          onPress={() => setLang(lang === "en" ? "id" : "en")}
+          accessibilityRole="button"
+          accessibilityLabel={t("auth.changeLanguage")}
+          hitSlop={8}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.sm,
+            marginTop: spacing.lg,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.lg,
+            borderRadius: radius.pill,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
+          <Edit size={16} color={colors.textSecondary} />
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "600" }}>{current.native}</Text>
+        </Pressable>
       </View>
       <Input placeholder={t("auth.email")} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
       <View style={{ height: 12 }} />
