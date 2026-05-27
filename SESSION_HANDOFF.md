@@ -3,11 +3,14 @@
 > Read this + CLAUDE.md before acting. Trim/delete once absorbed.
 
 ## TL;DR
-`origin/main` is the **loved "classic"** version. This session created a local branch
-**`port/new-design-features`** (11 commits, off `main`) that ports the *design-agnostic*
-work from the rejected `origin/new-design` back onto the loved version — backend, release,
-and feature work — **without** the visual redesign you rejected. **Not merged, not pushed.**
-Everything type-checks and backend scan tests pass, but **none of it is device-verified.**
+`origin/main` is the **loved "classic"** version. This session ported the *design-agnostic*
+work from the rejected `origin/new-design` back onto it — backend, release, and feature work —
+**without** the visual redesign you rejected. **MERGED to `main` + pushed** (Railway redeployed
+the backend); **versionCode bumped to 2**; a **signed release AAB was built**
+(`~/Desktop/YourStrat-20260527-1704.aab`, 28.9 MB, upload-keystore signed). Brady chose to skip
+device verification and test via the store download. **Remaining to ship:** deploy `site/` so the
+privacy URL is live, then upload the AAB + fill App content in Play Console (see below). Type-checks
++ backend scan tests pass; not device-verified by design.
 
 ## What's on the branch (11 commits, +3634/-192, 45 files)
 1. **Account deletion** (Play-mandatory) — migrations 007-009 + app.json permission trim. The
