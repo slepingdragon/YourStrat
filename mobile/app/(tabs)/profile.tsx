@@ -7,6 +7,7 @@ import { Screen, Button, Input, OptionCard, Card, Skeleton, toastError, toastSuc
 import { getProfile, getSessionStats, normalizeTrial, updateProfile, type SessionStats } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import { LANGUAGES, useI18n } from "@/lib/i18n";
 import { cmToIn, computeTargets, inToCm, kgToLbs, lbsToKg } from "@/lib/targets";
 import { colors } from "@/theme/colors";
 
@@ -34,6 +35,8 @@ export default function ProfileScreen() {
   const profile = useStore((s) => s.profile);
   const setProfile = useStore((s) => s.setProfile);
   const setSession = useStore((s) => s.setSession);
+  const lang = useI18n((s) => s.lang);
+  const setLang = useI18n((s) => s.setLang);
 
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
@@ -369,6 +372,13 @@ export default function ProfileScreen() {
         </View>
         <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
       </Pressable>
+
+      <Text style={styles.sectionTitle}>Language</Text>
+      <View style={{ gap: 12 }}>
+        {LANGUAGES.map((l) => (
+          <OptionCard key={l.code} label={l.native} selected={lang === l.code} onPress={() => setLang(l.code)} />
+        ))}
+      </View>
 
       <Text style={{ ...styles.sectionTitle, marginTop: 32 }}>Account</Text>
       <Button label="Sign out" variant="secondary" onPress={signOut} />

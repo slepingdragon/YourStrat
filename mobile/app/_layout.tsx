@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SetupEnvScreen } from "@/components/SetupEnvScreen";
 import { ToastHost, toastError } from "@/components/ui";
 import { getNativeApiConfigError, getProfile, isNetworkError, isUnauthorized, pingApiHealth } from "@/lib/api";
+import { loadLanguage } from "@/lib/i18n";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
   const pathname = usePathname();
   const router = useRouter();
   useEffect(() => {
+    void loadLanguage(); // restore the saved app language before first paint
     if (!isSupabaseConfigured) {
       setReady(true);
       return;
