@@ -1,101 +1,94 @@
-# Session Handoff — laptop → desktop (2026-05-23)
+# Session Handoff — resume on desktop (2026-05-27)
 
-Switched machines mid-Android-Studio setup. Open this file on the desktop after `git pull`, then paste the block below into Claude Code. The detail section after is just for your reference.
+> Open this after `git pull` on the desktop, then paste the block in **§A** into Claude Code.
+> The most important thing: **`origin/main` is now the LOVED ("classic") version.** Sync to it first so you are never editing an old version again.
 
 ---
 
-## Paste this into Claude Code on the desktop
+## A. Paste this into Claude Code on the desktop
 
 ```
-/bmad-help
+Resume YourStrat. Read SESSION_HANDOFF.md and CLAUDE.md fully before doing anything.
 
-Quick orientation — I switched from laptop to desktop. Pick up where we left off.
+CRITICAL — get on the loved version first:
+- `origin/main` is the LOVED "classic" design (commit 56b3685). That is the one I want.
+- On this desktop, run: `git fetch origin`, then `git checkout main`, then `git reset --hard origin/main`.
+  (If there is local work I care about, ask me before the reset.)
+- Do NOT use the `new-design` branch — that is the OTHER (newer) design I rejected. It is kept only as a backup.
 
-Where we are: mid-setup of Android Studio for YourStrat. End-state we want is "press Run in Android Studio → app installs on AVD → it talks to the Railway backend (https://yourstrat-production.up.railway.app)". JS/TS edits hot-reload via Metro after that; only native changes need a rebuild.
+Then confirm: `git log --oneline -1` shows 56b3685, and `mobile/app/(tabs)/profile.tsx` has NO `useT(`/i18n (hardcoded English = correct loved version).
 
-Done on laptop (not transferable to desktop): installed Microsoft.OpenJDK.17 via winget. Everything else needs to be redone here.
+Primary goal this session: build a Play-Store-ready signed AAB locally (no EAS — out of credits). See §C.
+Secondary goal: the feature backlog in §D, on the loved version.
 
-To do on desktop, in order:
-1. Toolchain check: `java -version` (need JDK 17), `adb version`, `$env:ANDROID_HOME`, `$env:JAVA_HOME`. If JDK 17 missing: `winget install Microsoft.OpenJDK.17`. If Android SDK missing or in a non-default path, find it (typically `%LOCALAPPDATA%\Android\Sdk`).
-2. Set permanent env vars: `setx ANDROID_HOME "<sdk>"`, `setx JAVA_HOME "<jdk17>"`, and add `%ANDROID_HOME%\platform-tools` + `%ANDROID_HOME%\emulator` to user PATH. Restart PowerShell.
-3. Verify in a fresh shell: `adb devices` works, `java -version` reports 17.x.
-4. STOP and ask me before running `npx expo prebuild --platform android` in `mobile/`. It generates the `mobile/android/` folder (~50 native files) and is a meaningful one-way change.
-5. After prebuild: open `mobile/android/` in Android Studio → wait for Gradle sync → press Run on an AVD.
-
-Two things to ignore:
-- The "Cannot find native module 'ExpoSecureStore'/'ExpoCrypto'" errors I showed last session were from a DIFFERENT project (`C:\Users\bania\Desktop\ember-pod\autopod-app`), not YourStrat. YourStrat doesn't depend on expo-secure-store. Don't try to "fix" them in YourStrat.
-- The working tree may show hundreds of modified BMad files (`.agents/skills/bmad-*`, `.claude/skills/bmad-*`, `_bmad/*`). They are LF→CRLF line-ending noise only — `git diff -w` returns empty. Leave them alone or run `git checkout -- .agents .claude _bmad`.
-
-Backend stays on Railway. Android Studio's Run button only builds/installs the app — backend redeploys via `git push`.
-
-Confirm you've read this, run a quick toolchain check, and tell me what JDK and SDK state the desktop is in before we touch anything else.
+Before running `npx expo prebuild --platform android`, STOP and confirm with me (it generates mobile/android/). Then proceed.
 ```
 
 ---
 
-## Detail (reference, not part of the prompt above)
+## B. What happened last session (so you have the story)
 
-### Repo state at handoff
+- This desktop was found **62 commits behind** GitHub. I synced it forward to the newer design, the user **disliked it**, and asked to revert to the loved older design and make it the live line.
+- Result, all on GitHub now (nothing lost):
+  - `origin/main` = `origin/classic` = **loved design** (56b3685 = original `a1c2f39` + a per-item-delete commit).
+  - `origin/new-design` = the rejected newer design (cbfa459, 62 commits). **Backup only.**
+  - Undo the whole thing (restore newer design as main): `git push --force origin new-design:main`.
+- Railway auto-deploys the backend from `main`, so the **live backend is now the loved version** (health verified up, no outage). Per-item meal delete is therefore live and working.
 
-- Branch: `main`, in sync with `origin/main` apart from this `SESSION_HANDOFF.md`.
-- Modified files in working tree (LF→CRLF only, no content diff — confirmed with `git diff -w`):
-  - `.agents/skills/bmad-*/**`
-  - `.claude/skills/bmad-*/**`
-  - `_bmad/_config/*`, `_bmad/bmm/*`, `_bmad/core/*`, `_bmad/scripts/*`, `_bmad/config.toml`, `_bmad/config.user.toml`
-- Untracked `.bak` files in `_bmad/` (cruft from a BMad customize step).
-- None of the above were committed — they aren't real changes.
+## C. Build a signed AAB locally (primary goal)
 
-### Laptop toolchain audit (what we found, for comparison with desktop)
+Toolchain already present on this machine: **JDK 17** (`JAVA_HOME` set) and **Android SDK** at `%LOCALAPPDATA%\Android\Sdk` (note: `ANDROID_HOME` is NOT set as a persistent env var — set it for the build).
 
-| Component | Laptop status |
-|---|---|
-| Android SDK | `C:\Users\bania\AppData\Local\Android\Sdk` — complete (platform-tools, platforms, build-tools, emulator, cmdline-tools). |
-| `adb` | Works at `<sdk>\platform-tools\adb.exe`. **Not on PATH.** |
-| `ANDROID_HOME` / `ANDROID_SDK_ROOT` | Empty. |
-| Android Studio | `C:\Program Files\Android\Android Studio`. |
-| Bundled JBR | JDK 21 (AGP 8 supports it, Expo prefers 17). |
-| AVDs | `Medium_Phone`, `Pixel_2`, `Pixel_9_Pro`. |
-| System Java on PATH | JDK 1.8 (Java 8) — wrong version, why we needed to install 17. |
-| JDK 17 | Installed via `winget install Microsoft.OpenJDK.17` (exit 0). |
+Steps:
+1. `npx expo prebuild --platform android` in `mobile/` — generates `mobile/android/` (git-ignored). **Confirm with the user before running.**
+2. Signing key for the AAB:
+   - To **update the EXISTING Play listing**, the AAB must be signed with the upload key Google expects. The listing was built by EAS, so the upload keystore lives in EAS — download it with `eas credentials` (Android → download keystore). Credential *viewing/download* does not consume build credits.
+   - If starting a fresh listing instead, generate a new keystore: `keytool -genkeypair -v -keystore yourstrat-upload.keystore -alias upload -keyalg RSA -keysize 2048 -validity 10000`.
+   - Wire it into `android/app/build.gradle` (`signingConfigs.release`) via a `keystore.properties` (keep it OUT of git).
+3. Bump `app.json` → `expo.android.versionCode` (currently **1**) to a higher number, or Play will reject the upload as a duplicate.
+4. Build: `cd mobile/android && .\gradlew bundleRelease` → output at `mobile/android/app/build/outputs/bundle/release/app-release.aab`. First build is slow (~10–20 min).
+5. Upload the AAB at Google Play Console → your app → new release (internal testing track is easiest first).
+6. iOS App Store is **not buildable on Windows** (needs a Mac/Xcode) — out of scope here.
 
-The desktop likely has a different set — re-run the audit there before anything else.
+Sanity APK alternative (to install/test on the phone over USB without the store): `.\gradlew assembleRelease` → `app/build/outputs/apk/release/`.
 
-### Decisions already made
+## D. Feature backlog (build on the loved version)
 
-- **Stay on Railway** for the dev build's backend URL. We did not wire a local-uvicorn toggle.
-- **Goal is the "press play" workflow** — i.e. generate `mobile/android/`, open in Android Studio, run on AVD. Not just terminal `expo run:android`.
-- **Use JDK 17, not the Android Studio bundled JDK 21** — to stay on Expo's officially supported path.
-- **Set env vars permanently with `setx`**, not session-only.
+1. **Item-delete** — DONE and live (trash button on each `FoodItemNutritionCard`, `DELETE /meals/{meal_id}/items/{item_id}`, recomputes meal totals, deletes meal when last item removed). Present on saved meals and the scan-confirm screen.
+2. **Simplify "Edit your details"** (`mobile/app/(tabs)/profile.tsx`) — user wants "one-click, easy, accessible." It's already collapsible; the expanded form is a long full re-entry. Three mocked layouts to pick from: **tap-to-edit rows (recommended)**, compact form, or essentials+more. *User hadn't chosen yet — ask.*
+3. **Healthy vs added sugar** — APPROVED. Add `added_sugar_g` to `meal_items` + `total_added_sugar_g` to `meals` (migration **007** — this branch only has 001–006). Update the Gemini prompt (`backend/app/prompts/food_scan.py`) to estimate added sugar (≤ total sugar; whole foods → 0). Daily added-sugar limit = **AHA by sex (36g male / 25g female)** using the profile's `sex`. Show natural-vs-added split on items + summary and an added-sugar budget on Today. Estimate is rough → keep it editable on the scan-confirm screen. Old meals show 0.
+4. **Portion-eaten slider** per item — a fun, visual slider (default 100%/as-scanned) that rescales that item's metrics, with an icon to its right showing how much is left/eaten. Optional feature. For SAVED meals it needs a `portion_fraction` column + recompute; for pre-save it's local math. Slider: build custom with the existing reanimated/gesture-handler (no new dependency) OR ask before adding a slider library.
+5. **Photo + AI-outline highlights** — biggest one. Show the meal photo with outlines/boxes of what the AI detected; a photo preview step right after a scan before the items list; a **settings toggle, OFF by default**. Gemini can return bounding boxes — extend the prompt + store boxes + render an SVG overlay. Boxes won't be pixel-perfect; frame as visual-accuracy aid. Scope it on its own before building.
 
-### What NOT to do
+Overall design philosophy the user wants: **one-click, simple, accessible.**
 
-- Don't commit the CRLF noise.
-- Don't run `expo prebuild` without re-confirming with me — per repo CLAUDE.md §8, build-config changes need approval, and prebuild is the biggest one.
-- Don't touch `mobile/babel.config.js`, `mobile/metro.config.js`, `mobile/app.json` plugin list without asking.
-- Don't try to "fix" the ember-pod ExpoSecureStore errors inside YourStrat — they aren't from this app.
+## E. Constraints & gotchas (loved version)
 
-### Commands you'll actually use (desktop)
+- **No i18n in this version** — copy is hardcoded English. Match that; do not add `t()`/`useT`.
+- **DB migrations** go up to `006`; next new one is `007`. (The `new-design` branch separately has 007–009 — different lineage, ignore.)
+- **No EAS build credits** — build locally only.
+- **Backend = Railway, deploys from `main`** (`git push` to main auto-deploys prod, which serves the live app). Test backend changes carefully; a local uvicorn (`backend/.venv`, port 18000) avoids touching prod.
+- **CLAUDE.md is binding** (premium feel, 60fps, one theme from `mobile/theme`, real backend wiring, type-check before "done", ask before new routes/deps/schema/build-config). Scope guard in `YOURSTRAT_BUILD.md §2` still applies.
+- **Published store binary is unchanged** by git/Railway — users only get the loved version once a new AAB is built (§C) and submitted.
+
+## F. Dev loop (view on phone + hot reload)
+
+Expo Go over USB + scrcpy (no EAS, no emulator). The S26 Ultra (`R5GYC4D2FXZ`) connects over USB; Expo Go is installed.
 
 ```powershell
-# Toolchain check
-java -version
-adb version
-echo "ANDROID_HOME=$env:ANDROID_HOME  JAVA_HOME=$env:JAVA_HOME"
+# adb lives here (not on PATH); set ANDROID_HOME for the session
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 
-# Install JDK 17 if missing
-winget install Microsoft.OpenJDK.17 --silent --accept-source-agreements --accept-package-agreements
+# 1) Start Metro from mobile/
+cd mobile; npx expo start --port 8081
 
-# Set env vars permanently (replace paths with what `Test-Path` confirmed)
-setx ANDROID_HOME "$env:LOCALAPPDATA\Android\Sdk"
-setx JAVA_HOME "C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot"
-# Then close + reopen PowerShell
-
-# Add to user PATH (run in fresh PS after setx above)
-$user = [Environment]::GetEnvironmentVariable("Path","User")
-$add  = "$env:LOCALAPPDATA\Android\Sdk\platform-tools;$env:LOCALAPPDATA\Android\Sdk\emulator"
-if ($user -notlike "*$add*") { [Environment]::SetEnvironmentVariable("Path","$user;$add","User") }
-
-# After restart of shell:
-adb devices
-emulator -list-avds
+# 2) Bridge USB + launch Expo Go on the phone
+& $adb reverse tcp:8081 tcp:8081
+& $adb shell am force-stop host.exp.exponent
+& $adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
 ```
+
+Notes: after a Metro restart, force-stop + relaunch Expo Go (it won't auto-reconnect). The phone has **Reduced motion ON** — turn it off (Settings → Accessibility) to judge animations. JS/UI edits hot-reload in ~1s; the app talks to the Railway backend via `EXPO_PUBLIC_API_URL`.
+
+Type-check before claiming done: `cd mobile; npx tsc --noEmit`.
