@@ -1,100 +1,94 @@
-# Session Handoff — resume on desktop (2026-05-27)
+# Session Handoff — YourStrat (2026-05-27)
 
-> Open this after `git pull` on the desktop, then paste the block in **§A** into Claude Code.
-> The most important thing: **`origin/main` is now the LOVED ("classic") version.** Sync to it first so you are never editing an old version again.
+> Read this + CLAUDE.md before acting. Trim/delete once absorbed.
 
----
+## TL;DR
+`origin/main` is the **loved "classic"** version. This session created a local branch
+**`port/new-design-features`** (11 commits, off `main`) that ports the *design-agnostic*
+work from the rejected `origin/new-design` back onto the loved version — backend, release,
+and feature work — **without** the visual redesign you rejected. **Not merged, not pushed.**
+Everything type-checks and backend scan tests pass, but **none of it is device-verified.**
 
-## A. Paste this into Claude Code on the desktop
+## What's on the branch (11 commits, +3634/-192, 45 files)
+1. **Account deletion** (Play-mandatory) — migrations 007-009 + app.json permission trim. The
+   FE already called `rpc("delete_user")`; the DB fn was missing. **Migrations 007-009 were
+   already run on the live Supabase last session — do NOT re-run.**
+2. **Scan-accuracy backend** — `gemini.py` structured outputs + accuracy prompt + `gemini-2.5-flash`.
+   Loved had the older, less-accurate scan. (8 backend tests pass.)
+3. **Public site + release docs** — `site/` (privacy + delete-account pages for Play) + store docs.
+   Audited: no private-`xaeryx.com` links (only the `yourstrat.xaeryx.com` subdomain).
+4. **API resilience** — retry idempotent GETs on cold-start 5xx, request timeout, diagnostic
+   logging, quiet expected 404s. (Skipped the backend PGRST303 retry — needs `safe_single`,
+   which the classic version predates.)
+5. **Dev/build tooling** — `mobile/play.cmd` (8888 launcher), `scripts/build-aab-local.ps1`,
+   `.githooks/` token-drift guard (see below), `.gitignore` android/ios.
+6. **Barcode scanning** — Open Food Facts lookup (`backend/app/services/barcode.py` + route),
+   camera detect → confirm popup → review. No new deps.
+7. **Multi-scan queue** — keep shooting; results pile in an **app-wide ScanQueueBar** (you
+   approved app-wide this session). `scanQueueStore` + bar + discard dialog.
+8. **Confidence whiskers** — per-macro uncertainty on the scan-result card; `ScanResult` schema.
+9. **i18n (scoped: infra + setup + scan)** — `lib/i18n.ts` engine + persisted Profile language
+   toggle (EN / Bahasa Indonesia); setup flow (onboarding/login/signup) + scan flow translated.
+   **Today / Nutrition / Workouts / rest of Profile + shared nutrient labels are NOT translated**
+   (English via fallback) — the documented follow-up pass.
 
-```
-Resume YourStrat. Read SESSION_HANDOFF.md and CLAUDE.md fully before doing anything.
+## ⚠ The pre-commit guard is ACTIVE
+`.githooks/` is wired via `git config core.hooksPath .githooks` (set in this repo's git config
+from prior sessions). It blocks **new** raw hex / non-token padding+margin / AI-commentary copy
+in staged `mobile/**` files. Don't `--no-verify`; fix to theme tokens. (It caught + I fixed
+several literals this session.)
 
-CRITICAL — get on the loved version first:
-- `origin/main` is the LOVED "classic" design (commit 56b3685). That is the one I want.
-- On this desktop, run: `git fetch origin`, then `git checkout main`, then `git reset --hard origin/main`.
-  (If there is local work I care about, ask me before the reset.)
-- Do NOT use the `new-design` branch — that is the OTHER (newer) design I rejected. It is kept only as a backup.
+## Gates before any of this goes live
+- **Merging `port/new-design-features` → `main` triggers a Railway PROD deploy** of the new
+  backend (scan accuracy, barcode, account-deletion route, ScanResult). The published store
+  binary is unaffected until a new AAB is built + submitted.
+- **Device-verify the branch first** (the real gate): signup → onboarding (try the language
+  toggle → Indonesian) → scan a meal (photo + barcode) → multi-scan queue → save → delete account.
+- **Indonesian is best-effort** — wants a fluent proofread; only setup + scan are translated.
+- Rejected design is safe on `origin/new-design`; restore it as main with
+  `git push --force origin new-design:main` if ever wanted.
 
-Then confirm: `git log --oneline -1` shows 56b3685, and `mobile/app/(tabs)/profile.tsx` has NO `useT(`/i18n (hardcoded English = correct loved version).
+## Recommended next steps
+1. Device-verify the branch (above). Fix anything that breaks.
+2. Merge to `main` → Railway redeploys the improved backend. Push.
+3. Optionally continue i18n (Today/Nutrition/Workouts) — see commit `4332ffd`/`92db511`/`8dda4b8`
+   for the pattern (wrap classic copy in `t()`, EN dict value MUST equal loved's exact copy).
+4. The **§A feature backlog** below (separate from the port) is still pending.
+5. Build the AAB (§B) when ready to ship the loved version to Play.
 
-Primary goal this session: build a Play-Store-ready signed AAB locally (no EAS — out of credits). See §C.
-Secondary goal: the feature backlog in §D, on the loved version.
+## A. Feature backlog (still pending — separate from the port)
+1. **Simplify "Edit your details"** (`profile.tsx`) — "one-click, easy, accessible." Three mocked
+   layouts: tap-to-edit rows (recommended), compact form, essentials+more. *Ask which.*
+2. **Healthy vs added sugar** — APPROVED. `added_sugar_g` on `meal_items` + `total_added_sugar_g`
+   on `meals` (**next migration = 010** now that 007-009 are ported). Gemini prompt estimates
+   added sugar (≤ total; whole foods → 0). Daily limit = AHA by sex (36g M / 25g F). Editable on
+   the scan-confirm screen; old meals show 0.
+3. **Portion-eaten slider** per item (default 100%) — rescales metrics. Saved meals need a
+   `portion_fraction` column; pre-save is local math. Custom slider (no new dep) or ask.
+4. **Photo + AI-outline highlights** — biggest; settings toggle OFF by default. Scope on its own.
 
-Before running `npx expo prebuild --platform android`, STOP and confirm with me (it generates mobile/android/). Then proceed.
-```
+Design philosophy: **one-click, simple, accessible.**
 
----
+## B. Build a signed AAB locally (no EAS credits)
+Step 0 — toolchain: `java -version` (need 17; `winget install Microsoft.OpenJDK.17`),
+`& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" version` (SDK present?). Set
+`JAVA_HOME`/`ANDROID_HOME` (`setx`, restart shell). Or use `scripts/build-aab-local.ps1`.
+1. `npx expo prebuild --platform android` in `mobile/` (generates git-ignored `mobile/android/`).
+   **Confirm before running** (CLAUDE.md §8: build-config).
+2. Signing: to update the EXISTING listing, download the EAS upload keystore via `eas credentials`
+   (Android → download; viewing doesn't burn credits). Wire into `android/app/build.gradle` via a
+   `keystore.properties` kept OUT of git. Fresh listing? `keytool -genkeypair ...`.
+3. Bump `app.json` → `expo.android.versionCode` (currently **1**).
+4. `cd mobile/android && .\gradlew bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
+5. Upload at Play Console (internal testing first). Privacy URL = `https://yourstrat.xaeryx.com/privacy`
+   (deploy `site/` to Vercel first — see `site/README.md`). iOS needs a Mac — out of scope.
 
-## B. What happened last session (so you have the story)
+## C. Dev loop (phone + hot reload)
+Preferred: **`mobile/play.cmd`** (now on this branch) — port 8888, LAN dev-client. Per-machine
+setup: desktop shortcut + `:8888` firewall rule. Phone + desktop on same WiFi.
+Alt (USB, no launcher): `cd mobile; npx expo start --port 8081`, then
+`& $adb reverse tcp:8081 tcp:8081` (adb at `$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe`).
+Type-check before "done": `cd mobile; npx tsc --noEmit`. Backend tests need a dummy env:
+`$env:SUPABASE_URL="http://localhost"; $env:SUPABASE_SERVICE_KEY="x"` then pytest from `backend/`.
 
-- This desktop was found **62 commits behind** GitHub. I synced it forward to the newer design, the user **disliked it**, and asked to revert to the loved older design and make it the live line.
-- Result, all on GitHub now (nothing lost):
-  - `origin/main` = `origin/classic` = **loved design** (56b3685 = original `a1c2f39` + a per-item-delete commit).
-  - `origin/new-design` = the rejected newer design (cbfa459, 62 commits). **Backup only.**
-  - Undo the whole thing (restore newer design as main): `git push --force origin new-design:main`.
-- Railway auto-deploys the backend from `main`, so the **live backend is now the loved version** (health verified up, no outage). Per-item meal delete is therefore live and working.
-
-## C. Build a signed AAB locally (primary goal)
-
-Step 0 — verify the toolchain (the machine that ran last session had JDK 17 + Android SDK; a different desktop may not). Check, and install what's missing:
-```powershell
-java -version                       # need 17.x; if missing: winget install Microsoft.OpenJDK.17
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" version   # SDK present?
-echo "JAVA_HOME=$env:JAVA_HOME  ANDROID_HOME=$env:ANDROID_HOME"
-```
-If the Android SDK is missing, install it (Android Studio, or `cmdline-tools` + `sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"`). Set `JAVA_HOME` to the JDK 17 path and `ANDROID_HOME` to the SDK path (`setx` for permanence), or at least export them for the build session. Restart the shell after `setx`.
-
-Steps:
-1. `npx expo prebuild --platform android` in `mobile/` — generates `mobile/android/` (git-ignored). **Confirm with the user before running.**
-2. Signing key for the AAB:
-   - To **update the EXISTING Play listing**, the AAB must be signed with the upload key Google expects. The listing was built by EAS, so the upload keystore lives in EAS — download it with `eas credentials` (Android → download keystore). Credential *viewing/download* does not consume build credits.
-   - If starting a fresh listing instead, generate a new keystore: `keytool -genkeypair -v -keystore yourstrat-upload.keystore -alias upload -keyalg RSA -keysize 2048 -validity 10000`.
-   - Wire it into `android/app/build.gradle` (`signingConfigs.release`) via a `keystore.properties` (keep it OUT of git).
-3. Bump `app.json` → `expo.android.versionCode` (currently **1**) to a higher number, or Play will reject the upload as a duplicate.
-4. Build: `cd mobile/android && .\gradlew bundleRelease` → output at `mobile/android/app/build/outputs/bundle/release/app-release.aab`. First build is slow (~10–20 min).
-5. Upload the AAB at Google Play Console → your app → new release (internal testing track is easiest first).
-6. iOS App Store is **not buildable on Windows** (needs a Mac/Xcode) — out of scope here.
-
-Sanity APK alternative (to install/test on the phone over USB without the store): `.\gradlew assembleRelease` → `app/build/outputs/apk/release/`.
-
-## D. Feature backlog (build on the loved version)
-
-1. **Item-delete** — DONE and live (trash button on each `FoodItemNutritionCard`, `DELETE /meals/{meal_id}/items/{item_id}`, recomputes meal totals, deletes meal when last item removed). Present on saved meals and the scan-confirm screen.
-2. **Simplify "Edit your details"** (`mobile/app/(tabs)/profile.tsx`) — user wants "one-click, easy, accessible." It's already collapsible; the expanded form is a long full re-entry. Three mocked layouts to pick from: **tap-to-edit rows (recommended)**, compact form, or essentials+more. *User hadn't chosen yet — ask.*
-3. **Healthy vs added sugar** — APPROVED. Add `added_sugar_g` to `meal_items` + `total_added_sugar_g` to `meals` (migration **007** — this branch only has 001–006). Update the Gemini prompt (`backend/app/prompts/food_scan.py`) to estimate added sugar (≤ total sugar; whole foods → 0). Daily added-sugar limit = **AHA by sex (36g male / 25g female)** using the profile's `sex`. Show natural-vs-added split on items + summary and an added-sugar budget on Today. Estimate is rough → keep it editable on the scan-confirm screen. Old meals show 0.
-4. **Portion-eaten slider** per item — a fun, visual slider (default 100%/as-scanned) that rescales that item's metrics, with an icon to its right showing how much is left/eaten. Optional feature. For SAVED meals it needs a `portion_fraction` column + recompute; for pre-save it's local math. Slider: build custom with the existing reanimated/gesture-handler (no new dependency) OR ask before adding a slider library.
-5. **Photo + AI-outline highlights** — biggest one. Show the meal photo with outlines/boxes of what the AI detected; a photo preview step right after a scan before the items list; a **settings toggle, OFF by default**. Gemini can return bounding boxes — extend the prompt + store boxes + render an SVG overlay. Boxes won't be pixel-perfect; frame as visual-accuracy aid. Scope it on its own before building.
-
-Overall design philosophy the user wants: **one-click, simple, accessible.**
-
-## E. Constraints & gotchas (loved version)
-
-- **No i18n in this version** — copy is hardcoded English. Match that; do not add `t()`/`useT`.
-- **DB migrations** go up to `006`; next new one is `007`. (The `new-design` branch separately has 007–009 — different lineage, ignore.)
-- **No EAS build credits** — build locally only.
-- **Backend = Railway, deploys from `main`** (`git push` to main auto-deploys prod, which serves the live app). Test backend changes carefully; a local uvicorn (`backend/.venv`, port 18000) avoids touching prod.
-- **CLAUDE.md is binding** (premium feel, 60fps, one theme from `mobile/theme`, real backend wiring, type-check before "done", ask before new routes/deps/schema/build-config). Scope guard in `YOURSTRAT_BUILD.md §2` still applies.
-- **Published store binary is unchanged** by git/Railway — users only get the loved version once a new AAB is built (§C) and submitted.
-
-## F. Dev loop (view on phone + hot reload)
-
-Expo Go over USB + scrcpy (no EAS, no emulator). The S26 Ultra (`R5GYC4D2FXZ`) connects over USB; Expo Go is installed.
-
-```powershell
-# adb lives here (not on PATH); set ANDROID_HOME for the session
-$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
-
-# 1) Start Metro from mobile/
-cd mobile; npx expo start --port 8081
-
-# 2) Bridge USB + launch Expo Go on the phone
-& $adb reverse tcp:8081 tcp:8081
-& $adb shell am force-stop host.exp.exponent
-& $adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"
-```
-
-Notes: after a Metro restart, force-stop + relaunch Expo Go (it won't auto-reconnect). The phone has **Reduced motion ON** — turn it off (Settings → Accessibility) to judge animations. JS/UI edits hot-reload in ~1s; the app talks to the Railway backend via `EXPO_PUBLIC_API_URL`.
-
-Type-check before claiming done: `cd mobile; npx tsc --noEmit`.
+Canonical cross-chat context: `~/.claude/CONTEXT.md`.
