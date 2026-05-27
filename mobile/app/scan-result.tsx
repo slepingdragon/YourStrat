@@ -24,11 +24,15 @@ import { useScanQueue } from "@/lib/scanQueueStore";
 
 import { DiscardMealDialog } from "@/components/scan/DiscardMealDialog";
 
+import { useT } from "@/lib/i18n";
+
 
 
 export default function ScanResultScreen() {
 
   const router = useRouter();
+
+  const t = useT();
 
   // Opened either from the scan queue (queueId -> read items from the store) or
   // directly from a barcode match (items passed as a JSON param).
@@ -80,7 +84,7 @@ export default function ScanResultScreen() {
 
     if (!items.length && !emptyNotified) {
 
-      toastError("No food detected. Try another photo or angle.");
+      toastError(t("scanResult.noFood"));
 
       setEmptyNotified(true);
 
@@ -136,7 +140,7 @@ export default function ScanResultScreen() {
 
     if (!items.length) {
 
-      toastError("Add at least one food item to save.");
+      toastError(t("scanResult.addItem"));
 
       return;
 
@@ -152,7 +156,7 @@ export default function ScanResultScreen() {
       // a signable object — save without a photo until real upload is wired.
       await saveMeal(null, payload);
 
-      toastSuccess("Meal saved.");
+      toastSuccess(t("scanResult.saved"));
 
       if (queueId) {
         // Saved from the queue: drop this tab and return to the camera with the
@@ -183,7 +187,7 @@ export default function ScanResultScreen() {
 
     <Screen>
 
-      <BackHeader title="Your meal" />
+      <BackHeader title={t("scanResult.title")} />
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }}>
 
@@ -191,7 +195,7 @@ export default function ScanResultScreen() {
 
           <>
 
-            <MealNutritionSummary totals={totals} title="Meal total" />
+            <MealNutritionSummary totals={totals} title={t("mealSummary.total")} />
 
             {lowMealConfidence ? (
               <View
@@ -205,22 +209,22 @@ export default function ScanResultScreen() {
                 }}
               >
                 <Text style={{ color: colors.warning, fontSize: 13, fontWeight: "600" }}>
-                  Lower confidence estimate
-                  {avgConfidence != null ? ` (${Math.round(avgConfidence * 100)}% avg)` : ""}
+                  {t("scanResult.lowConfidence")}
+                  {avgConfidence != null ? t("scanResult.lowConfidenceAvg", { pct: Math.round(avgConfidence * 100) }) : ""}
                 </Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 6, lineHeight: 18 }}>
-                  Review portions and macros before saving.
+                  {t("scanResult.reviewBeforeSaving")}
                 </Text>
               </View>
             ) : null}
 
             <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: 8, lineHeight: 18 }}>
-              Estimates — verify packaged foods on the label.
+              {t("scanResult.estimatesNote")}
             </Text>
 
             <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>
 
-              {items.length} item{items.length === 1 ? "" : "s"} — tap numbers to fix anything off
+              {items.length === 1 ? t("scanResult.itemsHintOne", { n: items.length }) : t("scanResult.itemsHintOther", { n: items.length })}
 
             </Text>
 
@@ -238,13 +242,13 @@ export default function ScanResultScreen() {
 
             <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "600", textAlign: "center" }}>
 
-              Nothing recognized
+              {t("scanResult.nothingTitle")}
 
             </Text>
 
             <Text style={{ color: colors.textSecondary, fontSize: 15, marginTop: 12, textAlign: "center", lineHeight: 22 }}>
 
-              Try a clearer photo with the food centered and good lighting.
+              {t("scanResult.nothingSub")}
 
             </Text>
 
@@ -256,9 +260,9 @@ export default function ScanResultScreen() {
 
       <View style={{ gap: spacing.sm }}>
 
-        <Button label="Save meal" onPress={save} loading={loading} disabled={!items.length} />
+        <Button label={t("scanResult.save")} onPress={save} loading={loading} disabled={!items.length} />
 
-        <Button label="Discard meal" variant="destructive" onPress={() => setConfirmDiscard(true)} disabled={loading} />
+        <Button label={t("scanResult.discardMeal")} variant="destructive" onPress={() => setConfirmDiscard(true)} disabled={loading} />
 
       </View>
 
