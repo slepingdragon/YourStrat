@@ -37,7 +37,13 @@ Before running `npx expo prebuild --platform android`, STOP and confirm with me 
 
 ## C. Build a signed AAB locally (primary goal)
 
-Toolchain already present on this machine: **JDK 17** (`JAVA_HOME` set) and **Android SDK** at `%LOCALAPPDATA%\Android\Sdk` (note: `ANDROID_HOME` is NOT set as a persistent env var — set it for the build).
+Step 0 — verify the toolchain (the machine that ran last session had JDK 17 + Android SDK; a different desktop may not). Check, and install what's missing:
+```powershell
+java -version                       # need 17.x; if missing: winget install Microsoft.OpenJDK.17
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" version   # SDK present?
+echo "JAVA_HOME=$env:JAVA_HOME  ANDROID_HOME=$env:ANDROID_HOME"
+```
+If the Android SDK is missing, install it (Android Studio, or `cmdline-tools` + `sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"`). Set `JAVA_HOME` to the JDK 17 path and `ANDROID_HOME` to the SDK path (`setx` for permanence), or at least export them for the build session. Restart the shell after `setx`.
 
 Steps:
 1. `npx expo prebuild --platform android` in `mobile/` — generates `mobile/android/` (git-ignored). **Confirm with the user before running.**
