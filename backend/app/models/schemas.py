@@ -203,6 +203,15 @@ class NutritionJournal(BaseModel):
     days: list[NutritionDay] = []
 
 
+class DailyTotalsPoint(BaseModel):
+    date: str
+    totals: NutritionDayTotals = Field(default_factory=NutritionDayTotals)
+
+
+class DailyTotalsSeries(BaseModel):
+    days: list[DailyTotalsPoint] = Field(default_factory=list)
+
+
 class ActiveSessionInfo(BaseModel):
     id: str
     routine_id: str | None

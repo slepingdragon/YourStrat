@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.deps import get_current_user, get_supabase
 from app.models.schemas import (
+    DailyTotalsPoint,
+    DailyTotalsSeries,
     MealCreate,
     MealItemDeleteResult,
     MealItemOut,
@@ -86,6 +88,27 @@ def _meal_with_items(sb, meal_row: dict) -> MealOut:
         total_sodium_mg=meal_row["total_sodium_mg"],
         items=items,
     )
+
+
+def _build_daily_totals(rows: list[dict], start_date: date, days: int) -> list[DailyTotalsPoint]:
+    totals_by_day = {
+        (start_date + timedelta(days=offset)).isoformat(): NutritionDayTotals()
+        for offset in range(days)
+    }
+    for row in rows:
+        scanned_at = str(row.get("scanned_at") or "")
+        day_key = scanned_at[:10]
+        totals = totals_by_day.get(day_key)
+        if totals is None:
+            continue
+        totals.calories += int(row.get("total_calories") or 0)
+        totals.protein_g += float(row.get("total_protein_g") or 0)
+        totals.carbs_g += float(row.get("total_carbs_g") or 0)
+        totals.fat_g += float(row.get("total_fat_g") or 0)
+        totals.fiber_g += float(row.get("total_fiber_g") or 0)
+        totals.sugar_g += float(row.get("total_sugar_g") or 0)
+        totals.sodium_mg += int(row.get("total_sodium_mg") or 0)
+    return [DailyTotalsPoint(date=day_key, totals=totals) for day_key, totals in totals_by_day.items()]
 
 
 @router.post("/scan", response_model=ScanResult)
@@ -215,6 +238,25 @@ def meals_today(user: dict = Depends(get_current_user)):
         "carbs_g": snap.consumed_carbs_g,
         "fat_g": snap.consumed_fat_g,
     }}
+
+
+@router.get("/daily-totals", response_model=DailyTotalsSeries)
+def meals_daily_totals(user: dict = Depends(get_current_user), days: int = 365):
+    sb = get_supabase()
+    window_days = max(1, min(days, 365))
+    start = date.today() - timedelta(days=window_days - 1)
+    since = datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc)
+    res = (
+        sb.table("meals")
+        .select(
+            "scanned_at,total_calories,total_protein_g,total_carbs_g,total_fat_g,total_fiber_g,total_sugar_g,total_sodium_mg"
+        )
+        .eq("user_id", user["id"])
+        .gte("scanned_at", since.isoformat())
+        .order("scanned_at")
+        .execute()
+    )
+    return DailyTotalsSeries(days=_build_daily_totals(res.data or [], start, window_days))
 
 
 @router.get("/{meal_id}", response_model=MealOut)
