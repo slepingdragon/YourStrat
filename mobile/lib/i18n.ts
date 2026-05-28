@@ -9,7 +9,7 @@ export type Lang = "en" | "id";
 
 export const LANGUAGES: { code: Lang; native: string; english: string }[] = [
   { code: "en", native: "English", english: "English" },
-  { code: "id", native: "Bahasa Indonesia", english: "Indonesian" },
+  { code: "id", native: "Indonesian", english: "Indonesian" },
 ];
 
 const STORAGE_KEY = "yourstrat_language";
@@ -38,6 +38,8 @@ const en: Dict = {
   "workoutCard.a11y": "{label}: {headline}, {sub}",
   // common
   "common.cancel": "Cancel",
+  "common.close": "Close",
+  "common.edit": "Edit",
   "common.saveChanges": "Save changes",
   // tabs
   "tabs.today": "Today",
@@ -59,6 +61,14 @@ const en: Dict = {
   "profile.editDetails": "Edit your details",
   "profile.editExpand": "Expand edit details",
   "profile.editCollapse": "Collapse edit details",
+  "profile.daySection": "Day reset",
+  "profile.daySectionHint": "Your daily calories reset at this time (default 2:00 AM). Dinner at 7 PM still counts toward today.",
+  "profile.dayStartMidnight": "12:00 AM",
+  "profile.dayStart2am": "2:00 AM",
+  "profile.dayStart4am": "4:00 AM",
+  "profile.dayStart6am": "6:00 AM",
+  "profile.saveDayReset": "Save day reset",
+  "profile.dayResetSaved": "Day reset time saved. Pull to refresh Today.",
   "profile.afterSave": "After save: ~{cal} cal/day · P {p}g",
   "profile.units": "Units",
   "profile.metric": "Metric (kg, cm)",
@@ -97,6 +107,8 @@ const en: Dict = {
   "profile.deleteError": "Couldn't delete your account. Check your connection and try again.",
   // profile — language
   "profile.language": "Language",
+  "profile.selectLanguage": "Select language",
+  "profile.languageHint": "Applies across the app. Changes take effect immediately.",
   // common (more)
   "common.back": "Back",
   // onboarding
@@ -342,6 +354,13 @@ const en: Dict = {
   "nutrition.fatLower": "fat",
   "nutrition.setupTargets": "Set up your targets first",
   "nutrition.finishOnboardingTrends": "Finish onboarding to see your daily calorie + macro goals and start tracking trends.",
+  "nutrition.trendsHeading": "TRENDS",
+  "nutrition.lastNDays": "Last {n} days",
+  "nutrition.byNutrient": "By nutrient",
+  "nutrition.trendRangeTitle": "Trend range",
+  "nutrition.trendRangeHint": "How many days to show on your nutrient charts.",
+  "nutrition.trendRangeDays": "{n} days",
+  "nutrition.trendRangeA11y": "Change trend range. Currently {n} days.",
   "nutrition.finishOnboardingMeals": "Finish onboarding to see your daily calorie + macro goals and start tracking meals.",
   "nutrition.historyOutdated": "Meal history may be outdated — pull to refresh when you're back online.",
   "nutrition.thisWeek": "This week",
@@ -659,6 +678,8 @@ const id: Dict = {
   "workoutCard.a11y": "{label}: {headline}, {sub}",
   // common
   "common.cancel": "Batal",
+  "common.close": "Tutup",
+  "common.edit": "Ubah",
   "common.saveChanges": "Simpan perubahan",
   // tabs
   "tabs.today": "Hari Ini",
@@ -680,6 +701,14 @@ const id: Dict = {
   "profile.editDetails": "Ubah detail Anda",
   "profile.editExpand": "Buka detail",
   "profile.editCollapse": "Tutup detail",
+  "profile.daySection": "Reset hari",
+  "profile.daySectionHint": "Kalori harian direset pada jam ini (default 02:00). Makan malam jam 19:00 tetap masuk hari ini.",
+  "profile.dayStartMidnight": "00:00",
+  "profile.dayStart2am": "02:00",
+  "profile.dayStart4am": "04:00",
+  "profile.dayStart6am": "06:00",
+  "profile.saveDayReset": "Simpan reset hari",
+  "profile.dayResetSaved": "Waktu reset hari disimpan. Tarik untuk muat ulang Hari Ini.",
   "profile.afterSave": "Setelah disimpan: ~{cal} kal/hari · P {p}g",
   "profile.units": "Satuan",
   "profile.metric": "Metrik (kg, cm)",
@@ -718,6 +747,8 @@ const id: Dict = {
   "profile.deleteError": "Tidak dapat menghapus akun Anda. Periksa koneksi Anda lalu coba lagi.",
   // profile — language
   "profile.language": "Bahasa",
+  "profile.selectLanguage": "Pilih bahasa",
+  "profile.languageHint": "Berlaku di seluruh aplikasi. Perubahan langsung aktif.",
   // common (more)
   "common.back": "Kembali",
   // onboarding
@@ -963,6 +994,13 @@ const id: Dict = {
   "nutrition.fatLower": "lemak",
   "nutrition.setupTargets": "Atur target Anda dulu",
   "nutrition.finishOnboardingTrends": "Selesaikan orientasi untuk melihat target kalori + makro harian Anda dan mulai melacak tren.",
+  "nutrition.trendsHeading": "TREN",
+  "nutrition.lastNDays": "{n} hari terakhir",
+  "nutrition.byNutrient": "Per nutrisi",
+  "nutrition.trendRangeTitle": "Rentang tren",
+  "nutrition.trendRangeHint": "Berapa hari ditampilkan di grafik nutrisi Anda.",
+  "nutrition.trendRangeDays": "{n} hari",
+  "nutrition.trendRangeA11y": "Ubah rentang tren. Saat ini {n} hari.",
   "nutrition.finishOnboardingMeals": "Selesaikan orientasi untuk melihat target kalori + makro harian Anda dan mulai melacak makanan.",
   "nutrition.historyOutdated": "Riwayat makanan mungkin sudah usang — tarik untuk menyegarkan saat Anda kembali online.",
   "nutrition.thisWeek": "Minggu ini",

@@ -1,16 +1,25 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { IntakeRing } from "@/components/IntakeRing";
 import { MealCard } from "@/components/MealCard";
 import { CalorieSparkline } from "@/components/today/CalorieSparkline";
 import { NextActionButton } from "@/components/today/NextActionButton";
 import { TodayHeader } from "@/components/today/TodayHeader";
+import { CalorieHeroHeadline } from "@/components/today/CalorieHeroHeadline";
 import { TodayTrioCards } from "@/components/today/TodayTrioCards";
+import {
+  overStrokeColorForCalories,
+  ringColorForCalories,
+  textColorForCalories,
+} from "@/lib/calorieHeroVisuals";
 import type { Meal, NutritionDay, Profile, Routine, TodaySnapshot } from "@/lib/api";
 import { roundCal } from "@/lib/targets";
 import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { glassInline } from "@/theme/glass";
+import { spacing } from "@/theme/spacing";
 
 const CONTENT_MAX_WIDTH = 400;
 const HERO_SIZE = 200;
@@ -59,7 +68,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
       ) : null}
 
       {hero ? (
-        <View style={{ width: "100%", alignItems: "center", marginBottom: 16 }}>
+        <Animated.View entering={FadeIn.duration(500)} style={{ width: "100%", alignItems: "center", marginBottom: spacing.lg }}>
         <Pressable
           onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id: "calories" } })}
           style={({ pressed }) => ({
@@ -71,46 +80,48 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         >
           <View
             style={{
-              width: HERO_SIZE,
-              height: HERO_SIZE,
+              width: HERO_SIZE + 80,
+              height: HERO_SIZE + 40,
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
             }}
           >
-            <View style={{ position: "absolute" }}>
+            <View style={{ position: "absolute", width: HERO_SIZE, height: HERO_SIZE }}>
               <IntakeRing
                 label=""
                 value={hero.consumed}
                 target={hero.target}
-                color={colors.star}
+                color={ringColorForCalories(hero.consumed, hero.target)}
+                overColor={overStrokeColorForCalories(hero.consumed, hero.target)}
                 unit="cal"
                 size={HERO_SIZE}
                 hideCenter
                 hideLabel
+                animated
+                glow
               />
             </View>
-            <View style={{ alignItems: "center" }}>
-              <Text
-                style={{
-                  color: hero.over ? colors.error : colors.textPrimary,
-                  fontSize: 52,
-                  fontWeight: "800",
-                  fontVariant: ["tabular-nums"],
-                  letterSpacing: -1,
-                }}
-              >
-                {hero.value}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 2 }}>{hero.label}</Text>
+            <View style={{ alignItems: "center", zIndex: 1 }}>
+              <CalorieHeroHeadline
+                value={hero.value}
+                label={hero.label}
+                consumed={hero.consumed}
+                target={hero.target}
+                over={hero.over}
+              />
             </View>
           </View>
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginTop: 10,
+              justifyContent: "center",
+              flexWrap: "wrap",
+              marginTop: spacing.sm + 2,
               gap: 8,
+              width: "100%",
+              paddingHorizontal: spacing.sm,
             }}
           >
             <EquationCell value={hero.consumed} unit={t("today.eqIn")} color={colors.textSecondary} />
@@ -124,11 +135,11 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
             <EquationCell
               value={Math.abs(today!.remaining_calories)}
               unit={hero.over ? t("today.eqOver") : t("today.eqLeft")}
-              color={hero.over ? colors.error : colors.textSecondary}
+              color={textColorForCalories(hero.consumed, hero.target, today!.remaining_calories)}
             />
           </View>
         </Pressable>
-        </View>
+        </Animated.View>
       ) : targets ? (
         <Text style={{ color: colors.textSecondary, textAlign: "center", marginBottom: 16 }}>
           {t("today.calTarget", { kcal: targets.daily_calorie_target.toLocaleString() })}
@@ -155,24 +166,24 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
         </View>
       ) : null}
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "baseline",
-          marginBottom: 12,
-          justifyContent: empty ? "center" : "space-between",
-        }}
-      >
-        <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{t("meal.section")}</Text>
+      <View style={{ alignItems: "center", marginBottom: spacing.md, gap: 4 }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: "600", textAlign: "center" }}>{t("meal.section")}</Text>
         {!empty ? (
-          <Text style={{ color: colors.textMuted, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontSize: 12,
+              fontVariant: ["tabular-nums"],
+              textAlign: "center",
+            }}
+          >
             {t("meal.loggedSummary", { n: today!.meals.length, kcal: roundCal(mealsTotalCal).toLocaleString() })}
           </Text>
         ) : null}
       </View>
 
       {empty ? (
-        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center" }}>
+        <Text style={{ color: colors.textMuted, lineHeight: 22, textAlign: "center", paddingBottom: spacing.sm }}>
           {t("meal.noneToday")}
         </Text>
       ) : (
@@ -186,7 +197,7 @@ export function TodayDashboard({ today, profile, routines, journalDays }: Props)
 
 function EquationCell({ value, unit, color }: { value: number; unit: string; color: string }) {
   return (
-    <Text style={{ color, fontSize: 12, fontVariant: ["tabular-nums"] }}>
+    <Text style={{ color, fontSize: 12, fontVariant: ["tabular-nums"], textAlign: "center" }}>
       {Math.round(value).toLocaleString()} {unit}
     </Text>
   );
@@ -208,14 +219,13 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
     <View
       style={{
         width: "100%",
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderWidth: 1,
+        ...glassInline.card,
         borderRadius: 16,
         paddingHorizontal: 16,
         paddingVertical: 12,
         marginBottom: 16,
         gap: 6,
+        alignItems: "center",
       }}
     >
       <Text
@@ -225,11 +235,20 @@ function EffortRecap({ today }: { today: TodaySnapshot | null }) {
           fontWeight: "700",
           letterSpacing: 0.6,
           textTransform: "uppercase",
+          textAlign: "center",
         }}
       >
         {t("today.effortTitle")}
       </Text>
-      <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "baseline",
+          flexWrap: "wrap",
+          gap: 8,
+          justifyContent: "center",
+        }}
+      >
         {burn > 0 ? (
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontVariant: ["tabular-nums"] }}>
             {t("today.calBurned", { kcal: Math.round(burn).toLocaleString() })}

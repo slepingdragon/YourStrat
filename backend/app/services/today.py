@@ -1,7 +1,13 @@
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from supabase import Client
 
+from app.services.day_window import (
+    DEFAULT_DAY_START_MINUTES,
+    DEFAULT_TIMEZONE,
+    day_bounds_iso,
+    logical_local_date,
+)
 from app.models.schemas import (
     ActiveSessionInfo,
     CompletedSessionInfo,
@@ -13,13 +19,6 @@ from app.models.schemas import (
     TrialStatus,
 )
 from app.services.trial import build_trial_status
-
-
-def _today_bounds() -> tuple[str, str]:
-    today = date.today()
-    start = datetime.combine(today, time.min, tzinfo=timezone.utc).isoformat()
-    end = datetime.combine(today, time.max, tzinfo=timezone.utc).isoformat()
-    return start, end
 
 
 def _round_cal(n: float) -> int:
@@ -71,14 +70,16 @@ def _profile_from_row(sb: Client, user_id: str, row: dict, user_email: str | Non
 
 def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | None = None) -> TodaySnapshot:
     profile = _profile_from_row(sb, user_id, profile_row, user_email)
-    start, end = _today_bounds()
+    tz_name = profile_row.get("timezone") or DEFAULT_TIMEZONE
+    day_start = int(profile_row.get("day_start_minutes") or DEFAULT_DAY_START_MINUTES)
+    start, end = day_bounds_iso(tz_name, day_start)
 
     meals_res = (
         sb.table("meals")
         .select("*")
         .eq("user_id", user_id)
         .gte("scanned_at", start)
-        .lte("scanned_at", end)
+        .lt("scanned_at", end)
         .order("scanned_at", desc=True)
         .execute()
     )
@@ -122,7 +123,7 @@ def fetch_today(sb: Client, user_id: str, profile_row: dict, user_email: str | N
         consumed["sodium_mg"] += m["total_sodium_mg"]
 
     burned, active, completed = _fetch_workout_state(sb, user_id, start, end)
-    scheduled = _scheduled_routine_today(sb, user_id)
+    scheduled = _scheduled_routine_today(sb, user_id, tz_name, day_start)
 
     remaining = profile.daily_calorie_target + burned - consumed["calories"]
     net = consumed["calories"] - burned
@@ -155,7 +156,7 @@ def _fetch_workout_state(
         .select("id, routine_id, started_at, ended_at, duration_sec, calories_burned, planned_rpe, actual_rpe")
         .eq("user_id", user_id)
         .gte("started_at", start)
-        .lte("started_at", end)
+        .lt("started_at", end)
         .order("started_at", desc=True)
         .execute()
     )
@@ -203,10 +204,13 @@ def _fetch_workout_state(
     return burned, active, completed
 
 
-def _scheduled_routine_today(sb: Client, user_id: str) -> ScheduledRoutineInfo | None:
+def _scheduled_routine_today(
+    sb: Client, user_id: str, tz_name: str, day_start_minutes: int
+) -> ScheduledRoutineInfo | None:
     # routine_days.day_of_week uses 0=Sun..6=Sat.
     # Python date.weekday(): 0=Mon..6=Sun. Convert: (weekday + 1) % 7.
-    dow = (date.today().weekday() + 1) % 7
+    logical = logical_local_date(tz_name, day_start_minutes)
+    dow = (logical.weekday() + 1) % 7
 
     days_res = (
         sb.table("routine_days")

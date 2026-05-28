@@ -74,6 +74,7 @@ export function Button({
           opacity: isDisabled ? 0.4 : 1,
           borderRadius: 999,
           minHeight: compact ? 48 : 56,
+          paddingVertical: compact ? 12 : 14,
           paddingHorizontal: compact ? 20 : 24,
           alignItems: "center",
           justifyContent: "center",
@@ -86,7 +87,18 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={{ color: fg, fontSize: compact ? 15 : 17, fontWeight: "700" }}>{label}</Text>
+        <Text
+          style={{
+            color: fg,
+            fontSize: compact ? 15 : 17,
+            fontWeight: "700",
+            textAlign: "center",
+            width: "100%",
+            lineHeight: compact ? 20 : 22,
+          }}
+        >
+          {label}
+        </Text>
       )}
     </AnimatedPressable>
   );

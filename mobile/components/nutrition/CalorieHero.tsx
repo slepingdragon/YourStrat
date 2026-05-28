@@ -1,20 +1,17 @@
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, { Circle } from "react-native-svg";
+import { IntakeRing } from "@/components/IntakeRing";
+import { CalorieHeroHeadline } from "@/components/today/CalorieHeroHeadline";
+import { HeroBloomAura } from "@/components/today/HeroBloomAura";
+import {
+  calorieOverSeverity,
+  overStrokeColorForCalories,
+  ringColorForCalories,
+} from "@/lib/calorieHeroVisuals";
 import { colors } from "@/theme/colors";
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import { spacing } from "@/theme/spacing";
 
 const SIZE = 200;
-const STROKE = 14;
-const RADIUS = (SIZE - STROKE) / 2;
-const CIRC = 2 * Math.PI * RADIUS;
 
 type Props = {
   consumed: number;
@@ -28,28 +25,9 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
   const over = target > 0 && netConsumed > target;
   const remaining = Math.max(target - netConsumed, 0);
   const overAmount = Math.max(netConsumed - target, 0);
-  const progress = target > 0 ? Math.min(1, Math.max(0, netConsumed / target)) : 0;
-
-  const animatedProgress = useSharedValue(0);
-
-  useEffect(() => {
-    animatedProgress.value = withTiming(progress, {
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [progress, animatedProgress]);
-
-  const animatedRingProps = useAnimatedProps(() => {
-    const len = CIRC * animatedProgress.value;
-    return {
-      strokeDasharray: `${len} ${CIRC - len}`,
-    };
-  });
-
-  const ringColor = over ? colors.error : colors.star;
-  const numberColor = over ? colors.error : colors.textPrimary;
   const headline = over ? Math.round(overAmount).toLocaleString() : Math.round(remaining).toLocaleString();
   const headlineLabel = over ? "calories over" : "calories left";
+  const severity = calorieOverSeverity(netConsumed, target);
 
   const inner = (
     <View
@@ -59,54 +37,40 @@ function CalorieHeroImpl({ consumed, burned, target, onPress }: Props) {
         paddingVertical: 16,
       }}
     >
-      <View style={{ width: SIZE, height: SIZE, alignItems: "center", justifyContent: "center" }}>
-        <Svg width={SIZE} height={SIZE} style={{ position: "absolute" }}>
-          <Circle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS}
-            stroke={colors.surfaceElevated}
-            strokeWidth={STROKE}
-            fill="none"
+      <View
+        style={{
+          width: SIZE + 80,
+          height: SIZE + 40,
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}
+      >
+        <HeroBloomAura size={SIZE} overSeverity={severity} />
+        <View style={{ position: "absolute", width: SIZE, height: SIZE }}>
+          <IntakeRing
+            label=""
+            value={netConsumed}
+            target={target}
+            color={ringColorForCalories(netConsumed, target)}
+            overColor={overStrokeColorForCalories(netConsumed, target)}
+            unit="cal"
+            size={SIZE}
+            hideCenter
+            hideLabel
+            animated
+            glow
           />
-          <AnimatedCircle
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS}
-            stroke={ringColor}
-            strokeWidth={STROKE}
-            fill="none"
-            strokeLinecap="round"
-            rotation={-90}
-            origin={`${SIZE / 2}, ${SIZE / 2}`}
-            animatedProps={animatedRingProps}
+        </View>
+        <View style={{ alignItems: "center", paddingHorizontal: spacing.sm, zIndex: 1 }}>
+          <CalorieHeroHeadline
+            value={headline}
+            label={headlineLabel}
+            consumed={netConsumed}
+            target={target}
+            over={over}
+            fontSize={56}
           />
-        </Svg>
-        <View style={{ alignItems: "center", paddingHorizontal: 8 }}>
-          <Text
-            style={{
-              color: numberColor,
-              fontSize: 56,
-              fontWeight: "800",
-              fontVariant: ["tabular-nums"],
-              letterSpacing: -2,
-              lineHeight: 60,
-            }}
-            numberOfLines={1}
-            accessibilityLabel={`${headline} ${headlineLabel}`}
-          >
-            {headline}
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: 13,
-              marginTop: 4,
-              letterSpacing: 0.4,
-            }}
-          >
-            {headlineLabel}
-          </Text>
         </View>
       </View>
 

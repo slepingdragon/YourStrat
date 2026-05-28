@@ -1,82 +1,166 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { IntakeRing } from "@/components/IntakeRing";
+import { useCallback, useMemo, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { SourceLinkRow } from "@/components/SourceLinkRow";
-import { Card, Screen, BackHeader, toastError } from "@/components/ui";
-import { getNutritionJournal, type Meal, type NutritionDayTotals } from "@/lib/api";
+import { TrendChart, type TrendPoint } from "@/components/nutrition/TrendChart";
+import { BackHeader, Screen, SegmentedControl, Skeleton, toastError } from "@/components/ui";
+import { getDailyMealTotals, type DailyTotalsPoint } from "@/lib/api";
 import { isNutritionMetricId, METRIC_INFO } from "@/lib/nutritionMetricCopy";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
 import {
   formatMetricAmount,
   getMetricTarget,
-  getMetricValueFromMeal,
-  getMetricValueFromTotals,
   metricBalance,
   TODAY_METRIC_SPECS,
 } from "@/lib/todayMetrics";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
-const EMPTY_TOTALS: NutritionDayTotals = {
-  calories: 0,
-  protein_g: 0,
-  carbs_g: 0,
-  fat_g: 0,
-  fiber_g: 0,
-  sugar_g: 0,
-  sodium_mg: 0,
+const RANGE_OPTIONS = [
+  { key: "7d", label: "7d", days: 7 },
+  { key: "30d", label: "30d", days: 30 },
+  { key: "90d", label: "90d", days: 90 },
+  { key: "1y", label: "1y", days: 365 },
+] as const;
+
+type RangeKey = (typeof RANGE_OPTIONS)[number]["key"];
+
+const UNIT_SUFFIX: Record<"cal" | "g" | "mg", string> = {
+  cal: "",
+  g: "g",
+  mg: "mg",
 };
 
-const HERO_RING = 120;
+function formatLongDate(dateKey: string): string {
+  const d = new Date(`${dateKey}T12:00:00`);
+  const now = new Date();
+  const withYear = d.getFullYear() !== now.getFullYear();
+  return d.toLocaleDateString(
+    undefined,
+    withYear
+      ? { weekday: "short", month: "short", day: "numeric", year: "numeric" }
+      : { weekday: "short", month: "short", day: "numeric" },
+  );
+}
 
-function mealTitle(meal: Meal) {
-  return meal.items?.slice(0, 2).map((i) => i.name).join(", ") || "Meal";
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Text
+      style={{
+        color: colors.textMuted,
+        fontSize: 11,
+        fontWeight: "700",
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        marginTop: spacing.xl,
+        marginBottom: spacing.md,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function Row({
+  label,
+  value,
+  color = colors.textPrimary,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <Text style={{ color: colors.textSecondary, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color, fontSize: 15, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
+        {value}
+      </Text>
+    </View>
+  );
 }
 
 export default function NutritionMetricDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const profile = useStore((s) => s.profile);
   const targets = targetsFromProfile(profile);
   const metricId = id && isNutritionMetricId(id) ? id : null;
-
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const [totals, setTotals] = useState<NutritionDayTotals>({ ...EMPTY_TOTALS });
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const loadErrorShown = useRef(false);
+  const [range, setRange] = useState<RangeKey>("30d");
+  const [dailyTotals, setDailyTotals] = useState<DailyTotalsPoint[]>([]);
+  const [scrubPoint, setScrubPoint] = useState<TrendPoint | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await getNutritionJournal();
-      const today = data.days.find((d) => d.date === todayKey);
-      setTotals(today?.totals ?? { ...EMPTY_TOTALS });
-      setMeals(today?.meals ?? []);
+      const data = await getDailyMealTotals(365);
+      setDailyTotals(data.days);
     } catch (e) {
       console.error(e);
-      if (!loadErrorShown.current) {
-        loadErrorShown.current = true;
-        toastError((e as Error).message);
-      }
+      toastError((e as Error).message, () => void load());
+    } finally {
+      setLoading(false);
     }
-  }, [todayKey]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load])
+    }, [load]),
   );
 
-  const mealRows = useMemo(() => {
-    if (!metricId) return [];
-    return meals
-      .map((meal) => ({
-        id: meal.id,
-        title: mealTitle(meal),
-        amount: getMetricValueFromMeal(meal, metricId),
-      }))
-      .filter((row) => row.amount > 0);
-  }, [meals, metricId]);
+  const metricKey = metricId ?? "calories";
+  const info = METRIC_INFO[metricKey];
+  const spec = TODAY_METRIC_SPECS[metricKey];
+  const unitSuffix = UNIT_SUFFIX[spec.unit];
+  const selectedRangeDays = RANGE_OPTIONS.find((o) => o.key === range)?.days ?? 30;
+  const rangePoints = useMemo<TrendPoint[]>(() => {
+    const slice = dailyTotals.slice(-selectedRangeDays);
+    return slice.map((d) => ({
+      date: d.date,
+      value:
+        metricKey === "calories"
+          ? d.totals.calories
+          : metricKey === "protein"
+            ? d.totals.protein_g
+            : metricKey === "carbs"
+              ? d.totals.carbs_g
+              : metricKey === "fat"
+                ? d.totals.fat_g
+                : metricKey === "fiber"
+                  ? d.totals.fiber_g
+                  : metricKey === "sugar"
+                    ? d.totals.sugar_g
+                    : d.totals.sodium_mg,
+    }));
+  }, [dailyTotals, metricKey, selectedRangeDays]);
+
+  const target = targets ? getMetricTarget(targets, metricKey) : 0;
+  const average = useMemo(() => {
+    if (!rangePoints.length) return 0;
+    const total = rangePoints.reduce((sum, p) => sum + p.value, 0);
+    return total / rangePoints.length;
+  }, [rangePoints]);
+
+  const latest = rangePoints[rangePoints.length - 1] ?? null;
+  const currentPoint = scrubPoint ?? latest;
+  const consumed = currentPoint?.value ?? 0;
+  const balance = metricBalance(consumed, target, spec.unit);
+  const lineColor = metricBalance(latest?.value ?? 0, target, spec.unit).color;
+  const avgDelta = consumed - average;
+  const avgDeltaPrefix = avgDelta > 0 ? "+" : "";
+  const periodHigh = rangePoints.reduce((max, p) => Math.max(max, p.value), 0);
+  const periodLow = rangePoints.reduce((min, p) => Math.min(min, p.value), periodHigh);
 
   if (!metricId || !targets) {
     return (
@@ -89,68 +173,101 @@ export default function NutritionMetricDetailScreen() {
     );
   }
 
-  const info = METRIC_INFO[metricId];
-  const spec = TODAY_METRIC_SPECS[metricId];
-  const consumed = getMetricValueFromTotals(totals, metricId);
-  const target = getMetricTarget(targets, metricId);
-  const balance = metricBalance(consumed, target, spec.unit);
-
   return (
     <Screen padding={false}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl }}
+        showsVerticalScrollIndicator={false}
+      >
         <BackHeader title={info.title} />
 
-        <View style={{ alignItems: "center", marginTop: 8 }}>
-          <IntakeRing
-            label={info.title}
-            value={consumed}
-            target={target}
-            color={spec.color}
-            unit={spec.unit}
-            size={HERO_RING}
+        <View style={{ marginTop: spacing.md }}>
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontSize: 12,
+              fontWeight: "600",
+              textTransform: "uppercase",
+              letterSpacing: 0.6,
+            }}
+          >
+            {scrubPoint ? "Scrubbed" : "Latest"}
+          </Text>
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: 52,
+              fontWeight: "700",
+              marginTop: spacing.xs,
+              fontVariant: ["tabular-nums"],
+              letterSpacing: -1,
+            }}
+          >
+            {formatMetricAmount(consumed, spec.unit)}
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: spacing.xs / 2 }}>
+            {currentPoint ? formatLongDate(currentPoint.date) : "No data yet"}
+          </Text>
+          <Text
+            style={{
+              color: balance.color,
+              fontSize: 14,
+              fontWeight: "600",
+              marginTop: spacing.sm,
+            }}
+          >
+            {balance.text}
+          </Text>
+        </View>
+
+        <View style={{ marginTop: spacing.xl }}>
+          <SegmentedControl
+            options={RANGE_OPTIONS.map((o) => ({ key: o.key, label: o.label }))}
+            value={range}
+            onChange={(next) => {
+              setRange(next as RangeKey);
+              setScrubPoint(null);
+            }}
           />
         </View>
 
-        <Text
-          style={{
-            color: balance.color,
-            fontSize: 20,
-            fontWeight: "700",
-            textAlign: "center",
-            marginTop: 16,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {balance.text}
+        <View style={{ marginTop: spacing.lg }}>
+          {loading ? (
+            <Skeleton height={280} radius={12} />
+          ) : (
+            <TrendChart
+              data={rangePoints}
+              target={target}
+              avg={average}
+              height={280}
+              lineColor={lineColor}
+              unitSuffix={unitSuffix}
+              onScrubChange={setScrubPoint}
+            />
+          )}
+        </View>
+
+        <SectionLabel>Readout</SectionLabel>
+        <Row label="vs target" value={balance.text} color={balance.color} />
+        <Row
+          label="vs period avg"
+          value={`${avgDeltaPrefix}${formatMetricAmount(Math.abs(avgDelta), spec.unit)}`}
+          color={avgDelta >= 0 ? colors.warning : colors.success}
+        />
+        <Row label="Period high" value={formatMetricAmount(periodHigh, spec.unit)} />
+        <Row label="Period low" value={formatMetricAmount(periodLow, spec.unit)} />
+        <Row label="Period average" value={formatMetricAmount(average, spec.unit)} />
+        <Row label="Current target" value={formatMetricAmount(target, spec.unit)} color={colors.starDim} />
+
+        <SectionLabel>What this is</SectionLabel>
+        <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>{info.about}</Text>
+        <Text style={{ color: colors.textMuted, lineHeight: 20, marginTop: spacing.md, fontSize: 13 }}>
+          {info.tip}
         </Text>
 
-        <Card style={{ marginTop: 24 }}>
-          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 8 }}>Your numbers</Text>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-            <Text style={{ color: colors.textSecondary }}>Today&apos;s total</Text>
-            <Text style={{ color: colors.textPrimary, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-              {formatMetricAmount(consumed, spec.unit)}
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.textSecondary }}>Your target</Text>
-            <Text style={{ color: colors.textPrimary, fontWeight: "600", fontVariant: ["tabular-nums"] }}>
-              {formatMetricAmount(target, spec.unit)}
-            </Text>
-          </View>
-        </Card>
-
-        <Card style={{ marginTop: 16 }}>
-          <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 8 }}>What this is</Text>
-          <Text style={{ color: colors.textSecondary, lineHeight: 22 }}>{info.about}</Text>
-          <Text style={{ color: colors.textMuted, lineHeight: 20, marginTop: 12, fontSize: 13 }}>{info.tip}</Text>
-        </Card>
-
         {info.learnMore.length > 0 ? (
-          <Card style={{ marginTop: 16, paddingBottom: 8 }}>
-            <Text style={{ color: colors.textPrimary, fontWeight: "600", marginBottom: 4 }}>
-              Learn more (sources)
-            </Text>
+          <>
+            <SectionLabel>Learn more</SectionLabel>
             {info.learnMore.map((source, index) => (
               <View key={source.url}>
                 {index > 0 ? (
@@ -159,41 +276,8 @@ export default function NutritionMetricDetailScreen() {
                 <SourceLinkRow source={source} />
               </View>
             ))}
-          </Card>
+          </>
         ) : null}
-
-        <Text style={{ color: colors.textPrimary, fontWeight: "600", marginTop: 28, marginBottom: 12 }}>
-          Meals today
-        </Text>
-        {mealRows.length === 0 ? (
-          <Text style={{ color: colors.textMuted, lineHeight: 22 }}>
-            Log a meal from the Camera tab to see updates here.
-          </Text>
-        ) : (
-          mealRows.map((row) => (
-            <Pressable
-              key={row.id}
-              onPress={() => router.push({ pathname: "/meal/[id]", params: { id: row.id } })}
-              accessibilityRole="button"
-              accessibilityLabel={`Open meal ${row.title}`}
-            >
-              <Card style={{ marginBottom: 12, flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-                <Text style={{ color: colors.textPrimary, fontWeight: "600", flex: 1 }} numberOfLines={2}>
-                  {row.title}
-                </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontVariant: ["tabular-nums"],
-                    fontWeight: "600",
-                  }}
-                >
-                  {formatMetricAmount(row.amount, spec.unit)}
-                </Text>
-              </Card>
-            </Pressable>
-          ))
-        )}
       </ScrollView>
     </Screen>
   );

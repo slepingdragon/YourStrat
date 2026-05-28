@@ -8,6 +8,7 @@ import { getNutritionJournal, type NutritionDay } from "@/lib/api";
 import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 
 function dayHeading(dateKey: string) {
   const d = new Date(`${dateKey}T12:00:00`);
@@ -59,7 +60,7 @@ export default function NutritionDayScreen() {
 
   return (
     <Screen padding={false}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingBottom: spacing.xxxl }} showsVerticalScrollIndicator={false}>
         <BackHeader title={title} />
 
         {totals ? (

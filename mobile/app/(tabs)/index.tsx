@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TodayDashboard } from "@/components/TodayDashboard";
 import { TrialBanner } from "@/components/TrialBanner";
 import { Screen, toastError } from "@/components/ui";
@@ -8,8 +9,12 @@ import { getNutritionJournal, getToday, listRoutines } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+
+const TAB_BAR_BODY = 72;
 
 export default function TodayScreen() {
+  const insets = useSafeAreaInsets();
   const t = useT();
   const session = useStore((s) => s.session);
   const today = useStore((s) => s.today);
@@ -62,11 +67,12 @@ export default function TodayScreen() {
     <Screen padding={false}>
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 16,
-          paddingBottom: 48,
+          paddingHorizontal: spacing.xl,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.xxl + TAB_BAR_BODY + insets.bottom,
           alignItems: "center",
         }}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.star} />}
       >
         <TrialBanner trial={profile?.trial ?? today?.targets?.trial} />

@@ -3,7 +3,9 @@ import { Pressable, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/lib/api";
 import { useStore } from "@/lib/store";
+import { GlassPanel } from "@/components/ui/GlassPanel";
 import { colors } from "@/theme/colors";
+import { radius, spacing } from "@/theme/spacing";
 
 const TOAST_MS_NO_ACTION = 3500;
 const TOAST_MS_WITH_ACTION = 6500;
@@ -33,18 +35,17 @@ export function ToastHost() {
         alignItems: "center",
       }}
     >
-      <View
+      <GlassPanel
+        variant="modal"
+        intensity={64}
         style={{
-          backgroundColor: colors.surfaceElevated,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 12,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
+          borderRadius: radius.lg,
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.lg,
           maxWidth: 480,
           flexDirection: "row",
           alignItems: "center",
-          gap: 12,
+          gap: spacing.md,
         }}
       >
         <Text style={{ color: colors.textPrimary, flex: 1, textAlign: toast.action ? "left" : "center" }}>
@@ -65,7 +66,7 @@ export function ToastHost() {
             <Text style={{ color: colors.spark, fontWeight: "700" }}>{toast.action.label}</Text>
           </Pressable>
         ) : null}
-      </View>
+      </GlassPanel>
     </View>
   );
 }

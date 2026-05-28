@@ -1,10 +1,13 @@
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import Animated, { FadeIn } from "react-native-reanimated";
 import type { Profile, TodaySnapshot } from "@/lib/api";
 import { pickWatchlistMetric, type WatchlistMetric } from "@/lib/todayInsights";
 import { roundG } from "@/lib/targets";
 import { useT } from "@/lib/i18n";
+import { AnimatedProgressBar } from "@/components/ui";
 import { colors } from "@/theme/colors";
+import { glassInline } from "@/theme/glass";
 import { spacing } from "@/theme/spacing";
 import { WorkoutCard } from "./WorkoutCard";
 
@@ -29,24 +32,35 @@ function ProteinCard({ today }: { today: TodaySnapshot }) {
       onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id: "protein" } })}
       style={({ pressed }) => ({
         width: "100%",
-        backgroundColor: colors.surface,
+        ...glassInline.card,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
         padding: 14,
         opacity: pressed ? 0.85 : 1,
+        alignItems: "center",
       })}
       accessibilityRole="button"
       accessibilityLabel={t("trio.proteinA11y", { x: roundG(consumed), y: roundG(target) })}
     >
-      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{t("metric.protein")}</Text>
-      <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 11,
+          fontWeight: "600",
+          marginBottom: spacing.xs,
+          textAlign: "center",
+          width: "100%",
+        }}
+      >
+        {t("metric.protein")}
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", flexWrap: "wrap", gap: 4 }}>
         <Text
           style={{
             color: over ? colors.error : colors.textPrimary,
             fontSize: 22,
             fontWeight: "700",
             fontVariant: ["tabular-nums"],
+            textAlign: "center",
           }}
         >
           {roundG(consumed)}
@@ -55,30 +69,22 @@ function ProteinCard({ today }: { today: TodaySnapshot }) {
           style={{
             color: colors.textSecondary,
             fontSize: 13,
-            marginLeft: 6,
             fontVariant: ["tabular-nums"],
+            textAlign: "center",
           }}
         >
           {t("trio.ofTarget", { x: roundG(target) })}
         </Text>
       </View>
-      <View
-        style={{
-          height: 3,
-          backgroundColor: colors.border,
-          borderRadius: 2,
-          marginTop: 10,
-          overflow: "hidden",
-        }}
-      >
-        <View style={{ height: 3, width: `${inProgress * 100}%`, backgroundColor: barColor, borderRadius: 2 }} />
-      </View>
+      <AnimatedProgressBar progress={inProgress} color={barColor} style={{ marginTop: spacing.sm + 2, width: "100%" }} />
       <Text
         style={{
           color: colors.textMuted,
           fontSize: 11,
           marginTop: 6,
           fontVariant: ["tabular-nums"],
+          textAlign: "center",
+          width: "100%",
         }}
       >
         {over ? t("trio.gOver", { x: roundG(consumed - target) }) : t("trio.gToGo", { x: roundG(left) })}
@@ -96,24 +102,36 @@ function WatchlistCardView({ metric }: { metric: WatchlistMetric }) {
       onPress={() => router.push({ pathname: "/nutrition/metric/[id]", params: { id: metric.id } })}
       style={({ pressed }) => ({
         width: "100%",
-        backgroundColor: colors.surface,
+        ...glassInline.card,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
         padding: 14,
         opacity: pressed ? 0.85 : 1,
+        alignItems: "center",
       })}
       accessibilityRole="button"
       accessibilityLabel={t("trio.watchlistA11y", { headline: metric.headline, sub: metric.sub })}
     >
-      <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", marginBottom: spacing.xs }}>{t("trio.watchlist")}</Text>
-      <Text style={{ color, fontSize: 16, fontWeight: "700" }}>{metric.headline}</Text>
+      <Text
+        style={{
+          color: colors.textMuted,
+          fontSize: 11,
+          fontWeight: "600",
+          marginBottom: spacing.xs,
+          textAlign: "center",
+          width: "100%",
+        }}
+      >
+        {t("trio.watchlist")}
+      </Text>
+      <Text style={{ color, fontSize: 16, fontWeight: "700", textAlign: "center", width: "100%" }}>{metric.headline}</Text>
       <Text
         style={{
           color: colors.textSecondary,
           fontSize: 12,
           marginTop: 4,
           fontVariant: ["tabular-nums"],
+          textAlign: "center",
+          width: "100%",
         }}
       >
         {metric.sub}
@@ -127,7 +145,7 @@ export function TodayTrioCards({ today, profile }: Props) {
   const watchlist = pickWatchlistMetric(today, profile, t);
 
   return (
-    <View style={{ width: "100%", gap: 10 }}>
+    <Animated.View entering={FadeIn.duration(400).delay(100)} style={{ width: "100%", gap: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
         <View style={{ flex: 1 }}>
           <ProteinCard today={today} />
@@ -137,6 +155,6 @@ export function TodayTrioCards({ today, profile }: Props) {
         </View>
       </View>
       {watchlist ? <WatchlistCardView metric={watchlist} /> : null}
-    </View>
+    </Animated.View>
   );
 }

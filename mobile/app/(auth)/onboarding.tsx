@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen, Button, Input, OptionCard, ProgressBar, toastError } from "@/components/ui";
 import { isNetworkError, onboard } from "@/lib/api";
+import { DEFAULT_DAY_START_MINUTES, deviceTimezone } from "@/lib/dayWindow";
 import { computeTargets, inToCm, lbsToKg } from "@/lib/targets";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -83,6 +84,8 @@ export default function OnboardingScreen() {
         sex,
         activity_level: activity,
         goal,
+        timezone: deviceTimezone(),
+        day_start_minutes: DEFAULT_DAY_START_MINUTES,
       });
       setProfile(profile);
       router.replace("/(tabs)");

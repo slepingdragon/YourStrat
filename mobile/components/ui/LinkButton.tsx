@@ -2,7 +2,7 @@ import { Pressable, Text } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { colors } from "@/theme/colors";
 
-type Tone = "primary" | "muted";
+type Tone = "primary" | "muted" | "accent";
 
 type Props = {
   href: Href;
@@ -12,7 +12,8 @@ type Props = {
 
 export function LinkButton({ href, label, tone = "primary" }: Props) {
   const router = useRouter();
-  const color = tone === "muted" ? colors.textMuted : colors.textSecondary;
+  const color =
+    tone === "muted" ? colors.textMuted : tone === "accent" ? colors.spark : colors.textSecondary;
   return (
     <Pressable
       accessibilityRole="link"
@@ -27,7 +28,7 @@ export function LinkButton({ href, label, tone = "primary" }: Props) {
         opacity: pressed ? 0.6 : 1,
       })}
     >
-      <Text style={{ color, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+      <Text style={{ color, fontSize: 15, fontWeight: tone === "accent" ? "700" : "600", textAlign: "center" }}>
         {label}
       </Text>
     </Pressable>

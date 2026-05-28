@@ -30,7 +30,7 @@ The agent must **not** build any of the following, even if "it would only take a
 - ❌ Multiple AI models, agent pipelines, "smart" anything beyond the food-photo call
 - ❌ Subscription / paywall plumbing
 - ❌ Admin panels, internal dashboards, mint-code scripts
-- ❌ Stat graphs more than a 7-day sparkline
+- ❌ Stat graphs more than a 7-day sparkline (except the per-metric Nutrition detail charts in §4.1)
 - ❌ Anything not explicitly listed in §4 "v1 Scope IN"
 
 If the agent thinks something is missing, it must stop and ask. **It must not invent features.**
@@ -127,6 +127,7 @@ No exclamation marks. No emojis in copy. Calm, factual, navigational.
 | **Onboarding** | One flow: units (metric/imperial), weight, height, age, sex, activity level, goal (lose / maintain / gain). Calculate BMR (Mifflin-St Jeor) → daily calorie target → macro split. |
 | **Food scan** | Camera or photo library → upload → Gemini Flash vision → JSON of items (name, portion, calories, protein, carbs, fat, fiber, sugar, sodium). Confirmation screen before saving. Edit portions if needed. |
 | **Daily log** | Today's meals, totals, remaining vs target. Tap a meal to view/edit/delete. |
+| **Nutrition detail charts** | Per-metric detail chart with range tabs (7d, 30d, 90d, 1y) and scrub readout for value/date vs target and period average. |
 | **Workout builder** | Create a routine = ordered list of exercises. Per exercise: name, type (strength / cardio / mobility), defaults (sets × reps or duration). Saved per user. |
 | **Workout session** | Pick a routine → run it. Per-exercise timer, set/rep tracking. Rest timer between sets (60s default, editable). On finish, save the session and an estimated calories-burned (MET-based, see §6.4). |
 | **Today screen** | Net calories: target + burned − consumed. Macro rings. "You're 38g protein short." "You're 12g over on saturated fat." |
@@ -322,6 +323,7 @@ Default MET per exercise type: strength=5.0, cardio=8.0, mobility=2.5. Override 
 | POST | `/meals/scan` | Upload photo → Gemini → return scan result (NOT saved) |
 | POST | `/meals/` | Save a confirmed meal |
 | GET | `/meals/today` | Today's meals + daily totals + remaining |
+| GET | `/meals/daily-totals` | Daily nutrition aggregates for trend charts (up to 365 days) |
 | GET / DELETE | `/meals/{id}` | Single meal |
 | GET / POST | `/exercises/` | List / create user exercises |
 | GET / POST | `/routines/` | List / create routines |

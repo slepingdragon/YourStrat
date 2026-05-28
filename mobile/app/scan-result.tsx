@@ -189,7 +189,7 @@ export default function ScanResultScreen() {
 
       <BackHeader title={t("scanResult.title")} />
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: spacing.lg }} showsVerticalScrollIndicator={false}>
 
         {items.length > 0 ? (
 

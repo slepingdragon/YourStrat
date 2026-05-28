@@ -1,5 +1,6 @@
 import { Platform, Text, TextInput, TextInputProps, TextStyle, View } from "react-native";
 import { useState } from "react";
+import { GlassPanel } from "@/components/ui/GlassPanel";
 import { colors } from "@/theme/colors";
 
 type Props = TextInputProps & { centered?: boolean; error?: string | null };
@@ -22,15 +23,15 @@ export function Input({ centered = true, style, error, ...rest }: Props) {
       : colors.border;
   return (
     <View>
-      <View
+      <GlassPanel
+        variant="input"
+        intensity={32}
         style={{
-          backgroundColor: colors.surface,
           borderWidth: 2,
           borderColor,
           borderRadius: 12,
           minHeight: 56,
           justifyContent: "center",
-          overflow: "hidden",
         }}
       >
         <TextInput
@@ -52,7 +53,7 @@ export function Input({ centered = true, style, error, ...rest }: Props) {
           ]}
           {...rest}
         />
-      </View>
+      </GlassPanel>
       {error ? (
         <Text
           accessibilityLiveRegion="polite"

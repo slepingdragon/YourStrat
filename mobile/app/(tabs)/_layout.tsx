@@ -1,9 +1,11 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Book, Camera, Dumbbell, Profile, Star } from "@/components/icons";
 import { ScanQueueBar } from "@/components/scan/ScanQueueBar";
 import { colors } from "@/theme/colors";
+import { glass, glassTint } from "@/theme/glass";
+import { spacing } from "@/theme/spacing";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
@@ -14,16 +16,23 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: glass.overlayModal,
+          borderTopColor: glass.border,
           height: 72 + insets.bottom,
-          paddingTop: 4,
-          paddingBottom: insets.bottom + 10,
+          paddingTop: spacing.xs,
+          paddingBottom: insets.bottom + spacing.sm + 2,
+          ...(Platform.OS === "web" ? glassTint("modal") : null),
         },
-        tabBarItemStyle: { paddingVertical: 2 },
+        tabBarItemStyle: { paddingVertical: spacing.xs / 2, alignItems: "center" },
         tabBarActiveTintColor: colors.star,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginTop: -2 },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "600",
+          marginTop: -2,
+          textAlign: "center",
+          width: "100%",
+        },
       }}
     >
       <Tabs.Screen

@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "com.yourstrat.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo/yourstrat-star.png",
         "backgroundColor": "#08080B"

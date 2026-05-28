@@ -265,7 +265,12 @@ export function normalizeTrial(raw?: Partial<TrialStatus> | null): TrialStatus {
 }
 
 export function normalizeProfile(raw: Profile): Profile {
-  return { ...raw, trial: normalizeTrial(raw.trial) };
+  return {
+    ...raw,
+    timezone: raw.timezone || "UTC",
+    day_start_minutes: raw.day_start_minutes ?? 120,
+    trial: normalizeTrial(raw.trial),
+  };
 }
 
 export type Profile = {
@@ -281,6 +286,8 @@ export type Profile = {
   daily_protein_target_g: number;
   daily_carbs_target_g: number;
   daily_fat_target_g: number;
+  timezone: string;
+  day_start_minutes: number;
   trial: TrialStatus;
 };
 
@@ -416,6 +423,8 @@ export type OnboardingInput = {
   sex: "male" | "female";
   activity_level: string;
   goal: string;
+  timezone?: string;
+  day_start_minutes?: number;
 };
 
 export async function onboard(body: OnboardingInput) {
@@ -442,7 +451,9 @@ export async function getTrialStatus() {
   return normalizeTrial(await handle<TrialStatus>(res));
 }
 
-export async function updateProfile(body: Partial<OnboardingInput>) {
+export type ProfileUpdate = Partial<OnboardingInput>;
+
+export async function updateProfile(body: ProfileUpdate) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl("/profile/"), {
     method: "PUT",
@@ -486,10 +497,45 @@ export type NutritionJournal = {
   days: NutritionDay[];
 };
 
+export type DailyTotalsPoint = {
+  date: string;
+  totals: NutritionDayTotals;
+};
+
+export type DailyTotalsSeries = {
+  days: DailyTotalsPoint[];
+};
+
 export async function getNutritionJournal(days = 14) {
   const headers = await authHeader();
   const res = await apiFetch(apiUrl(`/meals/journal?days=${days}`), { headers });
   return handle<NutritionJournal>(res);
+}
+
+export async function getDailyMealTotals(days = 365): Promise<DailyTotalsSeries> {
+  const headers = await authHeader();
+  const clamped = Math.max(1, Math.min(365, Math.round(days)));
+  try {
+    const res = await apiFetch(apiUrl(`/meals/daily-totals?days=${clamped}`), { headers });
+    return await handle<DailyTotalsSeries>(res);
+  } catch (e) {
+    // Endpoint added late in dev — older backends (incl. Railway prod until next
+    // deploy) don't have /meals/daily-totals and fall through to /meals/{id}
+    // which 500s on the non-UUID. Fall back to the journal (≤30d) so trend
+    // screens still render real data instead of error-toasting on every focus.
+    if (e instanceof ApiError && (e.status === 500 || e.status === 404)) {
+      try {
+        const fallbackDays = Math.min(clamped, 30);
+        const journal = await getNutritionJournal(fallbackDays);
+        return {
+          days: journal.days.map((d) => ({ date: d.date, totals: d.totals })),
+        };
+      } catch {
+        return { days: [] };
+      }
+    }
+    throw e;
+  }
 }
 
 export async function getToday() {

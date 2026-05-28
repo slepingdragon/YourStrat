@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { startSession, type TodaySnapshot } from "@/lib/api";
 import { toastError } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/colors";
+import { glassInline } from "@/theme/glass";
+import { spacing } from "@/theme/spacing";
 
 type Props = {
   today: TodaySnapshot;
@@ -43,6 +52,36 @@ function pickState(today: TodaySnapshot): CardState {
     };
   }
   return { kind: "none" };
+}
+
+function PulsingDot({ color }: { color: string }) {
+  const pulse = useSharedValue(0.45);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: pulse.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: color,
+        },
+        dotStyle,
+      ]}
+    />
+  );
 }
 
 export function WorkoutCard({ today }: Props) {
@@ -110,36 +149,40 @@ export function WorkoutCard({ today }: Props) {
       disabled={busy}
       style={({ pressed }) => ({
         width: "100%",
-        backgroundColor: colors.surface,
+        ...glassInline.card,
         borderRadius: 12,
-        borderWidth: 1,
         borderColor,
         padding: 14,
         opacity: pressed || busy ? 0.85 : 1,
+        alignItems: "center",
       })}
       accessibilityRole="button"
       accessibilityLabel={t("workoutCard.a11y", { label: topLabel, headline, sub })}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", flex: 1 }}>{topLabel}</Text>
-        {dot ? (
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: dot,
-            }}
-          />
-        ) : null}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: spacing.xs + 2,
+          gap: 6,
+          alignSelf: "stretch",
+        }}
+      >
+        <Text style={{ color: colors.textMuted, fontSize: 11, fontWeight: "600", textAlign: "center" }}>
+          {topLabel}
+        </Text>
+        {dot ? <PulsingDot color={dot} /> : null}
       </View>
       <Text
         style={{
           color: headlineColor,
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: "700",
+          lineHeight: 20,
+          textAlign: "center",
+          alignSelf: "stretch",
         }}
-        numberOfLines={1}
       >
         {headline}
       </Text>
@@ -149,8 +192,10 @@ export function WorkoutCard({ today }: Props) {
           fontSize: 12,
           marginTop: 4,
           fontVariant: ["tabular-nums"],
+          lineHeight: 16,
+          textAlign: "center",
+          alignSelf: "stretch",
         }}
-        numberOfLines={1}
       >
         {sub}
       </Text>

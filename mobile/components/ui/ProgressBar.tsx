@@ -1,13 +1,16 @@
-import { View } from "react-native";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { AnimatedProgressBar } from "./AnimatedProgressBar";
 
 type Props = { progress: number };
 
 export function ProgressBar({ progress }: Props) {
-  const p = Math.min(1, Math.max(0, progress));
   return (
-    <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, marginBottom: 24 }}>
-      <View style={{ height: 4, width: `${p * 100}%`, backgroundColor: colors.star, borderRadius: 2 }} />
-    </View>
+    <AnimatedProgressBar
+      progress={progress}
+      color={colors.star}
+      height={4}
+      style={{ marginBottom: spacing.xl }}
+    />
   );
 }

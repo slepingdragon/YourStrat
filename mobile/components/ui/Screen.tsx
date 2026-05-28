@@ -3,6 +3,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, View, ViewStyle 
 import { SafeAreaView, Edge } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { BloomBackground } from "./BloomBackground";
 
 type Props = {
   children: ReactNode;
@@ -34,21 +36,25 @@ export function Screen({
   );
 
   return (
-    <SafeAreaView edges={edges} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style="light" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        {scroll ? (
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: scrollGrow ? 1 : 0, paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {content}
-          </ScrollView>
-        ) : (
-          content
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <View style={{ flex: 1, backgroundColor: colors.bg, overflow: "hidden" }}>
+      <BloomBackground />
+      <SafeAreaView edges={edges} style={{ flex: 1 }}>
+        <StatusBar style="light" />
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          {scroll ? (
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ flexGrow: scrollGrow ? 1 : 0, paddingBottom: spacing.xxxl - spacing.sm }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {content}
+            </ScrollView>
+          ) : (
+            content
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }

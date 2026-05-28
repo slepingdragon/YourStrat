@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, Pressable, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ProfileIdentity } from "@/components/ProfileIdentity";
-import { ChevronDown } from "@/components/icons";
-import { Screen, Button, Input, OptionCard, Card, Skeleton, toastError, toastSuccess } from "@/components/ui";
-import { getProfile, getSessionStats, normalizeTrial, updateProfile, type SessionStats } from "@/lib/api";
+import { Protein, Carbs, Fat } from "@/components/icons";
+import { Screen, Button, Input, Card, Skeleton, SegmentedControl, LanguagePicker, toastError, toastSuccess } from "@/components/ui";
+import {
+  getProfile,
+  getSessionStats,
+  getToday,
+  normalizeTrial,
+  updateProfile,
+  type SessionStats,
+} from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
-import { LANGUAGES, useI18n } from "@/lib/i18n";
+import { DAY_START_OPTIONS, DEFAULT_DAY_START_MINUTES, deviceTimezone } from "@/lib/dayWindow";
+import { useT } from "@/lib/i18n";
 import { cmToIn, computeTargets, inToCm, kgToLbs, lbsToKg } from "@/lib/targets";
 import { colors } from "@/theme/colors";
+import { glass } from "@/theme/glass";
+import { spacing } from "@/theme/spacing";
 
 const ACTIVITY_OPTIONS: { key: string; label: string }[] = [
   { key: "sedentary", label: "Sedentary" },
@@ -19,7 +29,7 @@ const ACTIVITY_OPTIONS: { key: string; label: string }[] = [
   { key: "very_active", label: "Very active" },
 ];
 
-const CARD_PAD = { padding: 24 };
+const CARD_PAD = { padding: spacing.lg };
 
 function displayWeight(kg: number, units: "metric" | "imperial") {
   return units === "metric" ? String(Math.round(kg * 10) / 10) : String(Math.round(kgToLbs(kg) * 10) / 10);
@@ -30,14 +40,13 @@ function displayHeight(cm: number, units: "metric" | "imperial") {
 }
 
 export default function ProfileScreen() {
+  const t = useT();
   const router = useRouter();
   const session = useStore((s) => s.session);
   const profile = useStore((s) => s.profile);
   const setProfile = useStore((s) => s.setProfile);
+  const setToday = useStore((s) => s.setToday);
   const setSession = useStore((s) => s.setSession);
-  const lang = useI18n((s) => s.lang);
-  const setLang = useI18n((s) => s.setLang);
-
   const [stats, setStats] = useState<SessionStats | null>(null);
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const [weight, setWeight] = useState("");
@@ -46,7 +55,9 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<"male" | "female">("male");
   const [activity, setActivity] = useState("moderate");
   const [goal, setGoal] = useState<"lose" | "maintain" | "gain">("maintain");
+  const [dayStartMinutes, setDayStartMinutes] = useState(DEFAULT_DAY_START_MINUTES);
   const [loading, setLoading] = useState(false);
+  const [daySaveLoading, setDaySaveLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [weightError, setWeightError] = useState<string | null>(null);
   const [heightError, setHeightError] = useState<string | null>(null);
@@ -60,6 +71,7 @@ export default function ProfileScreen() {
     setSex(p.sex);
     setActivity(p.activity_level);
     setGoal(p.goal as "lose" | "maintain" | "gain");
+    setDayStartMinutes(p.day_start_minutes ?? DEFAULT_DAY_START_MINUTES);
   }, []);
 
   useEffect(() => {
@@ -134,6 +146,8 @@ export default function ProfileScreen() {
         sex,
         activity_level: activity,
         goal,
+        timezone: deviceTimezone(),
+        day_start_minutes: dayStartMinutes,
       });
       setProfile(p);
       hydrate(p);
@@ -199,192 +213,266 @@ export default function ProfileScreen() {
 
   const trial = normalizeTrial(profile.trial);
 
+  const macros = [
+    { label: "Protein", value: profile.daily_protein_target_g, color: colors.protein, Icon: Protein },
+    { label: "Carbs", value: profile.daily_carbs_target_g, color: colors.carbs, Icon: Carbs },
+    { label: "Fat", value: profile.daily_fat_target_g, color: colors.fat, Icon: Fat },
+  ];
+
   return (
-    <Screen scroll>
-      <Text style={styles.pageTitle}>Profile</Text>
-      <Text style={styles.tagline}>This is your space.</Text>
-
-      <ProfileIdentity profile={profile} />
-
-      <Text style={styles.sectionTitle}>{trial.is_admin ? "Access" : "Free trial"}</Text>
-      <Card style={CARD_PAD}>
-        {trial.is_admin ? (
-          <>
-            <Text style={styles.targetCalories}>Admin access</Text>
-            <Text style={styles.targetMacros}>Unlimited food scans · no trial limit.</Text>
-          </>
-        ) : trial.trial_active ? (
-          <>
-            <Text style={styles.targetCalories}>
-              {trial.days_remaining} day{trial.days_remaining === 1 ? "" : "s"} left
-            </Text>
-            <Text style={styles.targetMacros}>
-              Food scans today: {trial.scans_today} / {trial.scans_limit}
-            </Text>
-            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 10, lineHeight: 20 }}>
-              Your trial includes nutrient scans from photos. Limits reset each day.
-            </Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.targetCalories}>Trial ended</Text>
-            <Text style={styles.targetMacros}>
-              Scans used today: {trial.scans_today} / {trial.scans_limit}
-            </Text>
-            <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 10, lineHeight: 20 }}>
-              Full access is coming soon. You can still log meals and workouts. Contact support if you need help.
-            </Text>
-          </>
-        )}
-      </Card>
-
-      {stats && stats.lifetime_sessions > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Lifetime stats</Text>
-          <Card style={CARD_PAD}>
-            <Text style={styles.targetCalories}>
-              {stats.lifetime_calories_burned.toLocaleString()} cal burned
-            </Text>
-            <Text style={styles.targetMacros}>
-              {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"} logged
-              {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
-            </Text>
-          </Card>
-        </>
-      ) : null}
-
-      <Text style={styles.sectionTitle}>Daily targets</Text>
-      <Card style={CARD_PAD}>
-        <Text style={styles.targetCalories}>{profile.daily_calorie_target.toLocaleString()} cal / day</Text>
-        <Text style={styles.targetMacros}>
-          Protein {profile.daily_protein_target_g}g · Carbs {profile.daily_carbs_target_g}g · Fat{" "}
-          {profile.daily_fat_target_g}g
-        </Text>
-      </Card>
-
-      <Pressable
-        onPress={() => setEditOpen((o) => !o)}
-        accessibilityRole="button"
-        accessibilityLabel={editOpen ? "Collapse edit details" : "Expand edit details"}
-        accessibilityState={{ expanded: editOpen }}
-        style={styles.editHeader}
+    <Screen>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: spacing.xxxl - spacing.sm }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.editHeaderTitle}>Edit your details</Text>
-        <View style={{ transform: [{ rotate: editOpen ? "180deg" : "0deg" }] }}>
-          <ChevronDown color={colors.textMuted} size={20} />
-        </View>
-      </Pressable>
+        <View>
+          <Text style={styles.pageTitle}>Profile</Text>
+          <Text style={styles.tagline}>This is your space.</Text>
 
-      {editOpen ? (
-        <Card style={[CARD_PAD, { marginTop: 0 }]}>
-          {targetsChanged && preview ? (
-            <Text style={{ color: colors.spark, marginBottom: 16, fontSize: 13 }}>
-              After save: ~{preview.daily_calorie_target.toLocaleString()} cal/day · P{" "}
-              {preview.daily_protein_target_g}g
-            </Text>
+          <ProfileIdentity profile={profile} />
+
+          <Text style={styles.sectionTitle}>{trial.is_admin ? "Access" : "Free trial"}</Text>
+          <Card style={CARD_PAD}>
+            {trial.is_admin ? (
+              <>
+                <Text style={styles.targetCalories}>Admin access</Text>
+                <Text style={styles.targetMacros}>Unlimited food scans · no trial limit.</Text>
+              </>
+            ) : trial.trial_active ? (
+              <>
+                <Text style={styles.targetCalories}>
+                  {trial.days_remaining} day{trial.days_remaining === 1 ? "" : "s"} left
+                </Text>
+                <Text style={styles.targetMacros}>
+                  Food scans today: {trial.scans_today} / {trial.scans_limit}
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: spacing.sm + 2, lineHeight: 20 }}>
+                  Your trial includes nutrient scans from photos. Limits reset each day.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.targetCalories}>Trial ended</Text>
+                <Text style={styles.targetMacros}>
+                  Scans used today: {trial.scans_today} / {trial.scans_limit}
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: spacing.sm + 2, lineHeight: 20 }}>
+                  Full access is coming soon. You can still log meals and workouts. Contact support if you need help.
+                </Text>
+              </>
+            )}
+          </Card>
+
+          {stats && stats.lifetime_sessions > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>Lifetime stats</Text>
+              <Card style={CARD_PAD}>
+                <Text style={styles.targetCalories}>
+                  {stats.lifetime_calories_burned.toLocaleString()} cal burned
+                </Text>
+                <Text style={styles.targetMacros}>
+                  {stats.lifetime_sessions} workout{stats.lifetime_sessions === 1 ? "" : "s"} logged
+                  {stats.avg_actual_rpe != null ? ` · avg effort ${stats.avg_actual_rpe}/10` : ""}
+                </Text>
+              </Card>
+            </>
           ) : null}
 
-          <Text style={styles.fieldSection}>Units</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Metric (kg, cm)" selected={units === "metric"} onPress={() => onUnitsChange("metric")} />
-            <OptionCard
-              label="Imperial (lb, in)"
-              selected={units === "imperial"}
-              onPress={() => onUnitsChange("imperial")}
+          <Text style={styles.sectionTitle}>Daily targets</Text>
+          <Card style={CARD_PAD}>
+            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+              <Text style={[styles.heroNumber, { fontVariant: ["tabular-nums"] }]}>
+                {profile.daily_calorie_target.toLocaleString()}
+              </Text>
+              <Text style={styles.heroUnit}>cal / day</Text>
+            </View>
+            <View style={styles.macroRow}>
+              {macros.map((m) => (
+                <View key={m.label} style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.xs + 2 }}>
+                    <m.Icon size={14} />
+                    <Text style={styles.macroLabel}>{m.label}</Text>
+                  </View>
+                  <Text style={[styles.macroValue, { color: m.color, fontVariant: ["tabular-nums"] }]}>
+                    {m.value}g
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.editHeader}>
+          <Text style={styles.editHeaderTitle} numberOfLines={1}>
+            {t("profile.editDetails")}
+          </Text>
+          <Pressable
+            onPress={() => (editOpen ? setEditOpen(false) : setEditOpen(true))}
+            accessibilityRole="button"
+            accessibilityLabel={editOpen ? t("profile.editCollapse") : t("profile.editExpand")}
+            accessibilityState={{ expanded: editOpen }}
+            hitSlop={12}
+            style={({ pressed }) => [styles.editPill, pressed ? styles.editPillPressed : null]}
+          >
+            <Text style={styles.editPillText}>{editOpen ? t("common.close") : t("common.edit")}</Text>
+          </Pressable>
+        </View>
+
+        {editOpen ? (
+          <Card style={CARD_PAD}>
+            {targetsChanged && preview ? (
+              <Text style={{ color: colors.spark, marginBottom: spacing.lg, fontSize: 13 }}>
+                After save: ~{preview.daily_calorie_target.toLocaleString()} cal/day · P{" "}
+                {preview.daily_protein_target_g}g
+              </Text>
+            ) : null}
+
+            <Text style={styles.fieldSection}>Units</Text>
+            <SegmentedControl
+              value={units}
+              onChange={(v) => onUnitsChange(v as "metric" | "imperial")}
+              options={[
+                { key: "metric", label: "Metric" },
+                { key: "imperial", label: "Imperial" },
+              ]}
+            />
+
+            <Text style={styles.fieldSection}>Body</Text>
+            <Text style={styles.label}>Weight ({units === "metric" ? "kg" : "lb"})</Text>
+            <Input
+              value={weight}
+              onChangeText={(v) => {
+                setWeight(v);
+                if (weightError) setWeightError(null);
+              }}
+              keyboardType="decimal-pad"
+              placeholder={units === "metric" ? "70" : "155"}
+              centered={false}
+              error={weightError}
+            />
+            <Text style={styles.label}>Height ({units === "metric" ? "cm" : "in"})</Text>
+            <Input
+              value={height}
+              onChangeText={(v) => {
+                setHeight(v);
+                if (heightError) setHeightError(null);
+              }}
+              keyboardType="decimal-pad"
+              placeholder={units === "metric" ? "175" : "69"}
+              centered={false}
+              error={heightError}
+            />
+            <Text style={styles.label}>Age</Text>
+            <Input
+              value={age}
+              onChangeText={(v) => {
+                setAge(v);
+                if (ageError) setAgeError(null);
+              }}
+              keyboardType="number-pad"
+              placeholder="30"
+              centered={false}
+              error={ageError}
+            />
+
+            <Text style={styles.label}>Sex</Text>
+            <SegmentedControl
+              value={sex}
+              onChange={(v) => setSex(v as "male" | "female")}
+              options={[
+                { key: "male", label: "Male" },
+                { key: "female", label: "Female" },
+              ]}
+            />
+
+            <Text style={styles.fieldSection}>Activity</Text>
+            <SegmentedControl wrap value={activity} onChange={setActivity} options={ACTIVITY_OPTIONS} />
+
+            <Text style={styles.fieldSection}>Goal</Text>
+            <SegmentedControl
+              value={goal}
+              onChange={(v) => setGoal(v as "lose" | "maintain" | "gain")}
+              options={[
+                { key: "lose", label: "Lose" },
+                { key: "maintain", label: "Maintain" },
+                { key: "gain", label: "Gain" },
+              ]}
+            />
+
+            <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
+              <Button label="Save changes" onPress={save} loading={loading} />
+              <Button label={t("common.close")} variant="ghost" onPress={() => setEditOpen(false)} />
+            </View>
+          </Card>
+        ) : null}
+
+        <View>
+          <Text style={styles.sectionTitle}>AI & food scans</Text>
+          <Pressable
+            onPress={() => router.push("/ai-info")}
+            accessibilityRole="button"
+            style={styles.aiLinkRow}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "600" }}>How scanning works</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: spacing.xs, lineHeight: 18 }}>
+                Accuracy, your stats, and what to expect from AI estimates
+              </Text>
+            </View>
+            <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
+          </Pressable>
+
+          <Text style={styles.sectionTitle}>{t("profile.language")}</Text>
+          <LanguagePicker />
+
+          <Text style={styles.sectionTitle}>{t("profile.daySection")}</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 13, lineHeight: 18, marginBottom: spacing.md }}>
+            {t("profile.daySectionHint")}
+          </Text>
+          <SegmentedControl
+            value={String(dayStartMinutes)}
+            onChange={(v) => setDayStartMinutes(Number(v))}
+            options={DAY_START_OPTIONS.map((o) => ({ key: String(o.minutes), label: t(o.labelKey) }))}
+          />
+          <View style={{ marginTop: spacing.md }}>
+            <Button
+              label={t("profile.saveDayReset")}
+              variant="secondary"
+              compact
+              onPress={async () => {
+                setDaySaveLoading(true);
+                try {
+                  const p = await updateProfile({
+                    timezone: deviceTimezone(),
+                    day_start_minutes: dayStartMinutes,
+                  });
+                  setProfile(p);
+                  try {
+                    setToday(await getToday());
+                  } catch (e) {
+                    console.error(e);
+                  }
+                  toastSuccess(t("profile.dayResetSaved"));
+                } catch (e) {
+                  console.error(e);
+                  toastError((e as Error).message);
+                } finally {
+                  setDaySaveLoading(false);
+                }
+              }}
+              loading={daySaveLoading}
             />
           </View>
 
-          <Text style={styles.fieldSection}>Body</Text>
-          <Text style={styles.label}>Weight ({units === "metric" ? "kg" : "lb"})</Text>
-          <Input
-            value={weight}
-            onChangeText={(v) => {
-              setWeight(v);
-              if (weightError) setWeightError(null);
-            }}
-            keyboardType="decimal-pad"
-            placeholder={units === "metric" ? "70" : "155"}
-            centered={false}
-            error={weightError}
-          />
-          <Text style={styles.label}>Height ({units === "metric" ? "cm" : "in"})</Text>
-          <Input
-            value={height}
-            onChangeText={(v) => {
-              setHeight(v);
-              if (heightError) setHeightError(null);
-            }}
-            keyboardType="decimal-pad"
-            placeholder={units === "metric" ? "175" : "69"}
-            centered={false}
-            error={heightError}
-          />
-          <Text style={styles.label}>Age</Text>
-          <Input
-            value={age}
-            onChangeText={(v) => {
-              setAge(v);
-              if (ageError) setAgeError(null);
-            }}
-            keyboardType="number-pad"
-            placeholder="30"
-            centered={false}
-            error={ageError}
-          />
-
-          <Text style={styles.label}>Sex</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Male" selected={sex === "male"} onPress={() => setSex("male")} />
-            <OptionCard label="Female" selected={sex === "female"} onPress={() => setSex("female")} />
+          <Text style={{ ...styles.sectionTitle, marginTop: spacing.xxl }}>Account</Text>
+          <Button label="Sign out" variant="secondary" onPress={signOut} />
+          <View style={{ marginTop: spacing.md }}>
+            <Button label="Delete account" variant="ghost" onPress={deleteAccount} />
           </View>
-
-          <Text style={styles.fieldSection}>Activity</Text>
-          <View style={{ gap: 12 }}>
-            {ACTIVITY_OPTIONS.map(({ key, label }) => (
-              <OptionCard key={key} label={label} selected={activity === key} onPress={() => setActivity(key)} />
-            ))}
-          </View>
-
-          <Text style={styles.fieldSection}>Goal</Text>
-          <View style={{ gap: 12 }}>
-            <OptionCard label="Lose weight" selected={goal === "lose"} onPress={() => setGoal("lose")} />
-            <OptionCard label="Maintain" selected={goal === "maintain"} onPress={() => setGoal("maintain")} />
-            <OptionCard label="Gain weight" selected={goal === "gain"} onPress={() => setGoal("gain")} />
-          </View>
-
-          <View style={{ marginTop: 24 }}>
-            <Button label="Save changes" onPress={save} loading={loading} />
-          </View>
-        </Card>
-      ) : null}
-
-      <Text style={styles.sectionTitle}>AI & food scans</Text>
-      <Pressable
-        onPress={() => router.push("/ai-info")}
-        accessibilityRole="button"
-        style={styles.aiLinkRow}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "600" }}>How scanning works</Text>
-          <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
-            Accuracy, your stats, and what to expect from AI estimates
-          </Text>
         </View>
-        <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
-      </Pressable>
-
-      <Text style={styles.sectionTitle}>Language</Text>
-      <View style={{ gap: 12 }}>
-        {LANGUAGES.map((l) => (
-          <OptionCard key={l.code} label={l.native} selected={lang === l.code} onPress={() => setLang(l.code)} />
-        ))}
-      </View>
-
-      <Text style={{ ...styles.sectionTitle, marginTop: 32 }}>Account</Text>
-      <Button label="Sign out" variant="secondary" onPress={signOut} />
-      <View style={{ marginTop: 12 }}>
-        <Button label="Delete account" variant="ghost" onPress={deleteAccount} />
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
@@ -412,13 +500,35 @@ const styles = {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    marginTop: 24,
-    marginBottom: 4,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    gap: spacing.md,
   },
   editHeaderTitle: {
+    flex: 1,
     color: colors.textPrimary,
     fontWeight: "600" as const,
     fontSize: 17,
+  },
+  editPill: {
+    flexShrink: 0,
+    minHeight: 36,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: glass.chipFill,
+  },
+  editPillPressed: {
+    opacity: 0.8,
+  },
+  editPillText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "600" as const,
+    textAlign: "center" as const,
   },
   targetCalories: {
     color: colors.textPrimary,
@@ -430,6 +540,33 @@ const styles = {
     fontSize: 15,
     marginTop: 8,
     lineHeight: 22,
+  },
+  heroNumber: {
+    color: colors.textPrimary,
+    fontSize: 34,
+    fontWeight: "700" as const,
+  },
+  heroUnit: {
+    color: colors.textMuted,
+    fontSize: 15,
+    fontWeight: "600" as const,
+    marginLeft: spacing.sm,
+  },
+  macroRow: {
+    flexDirection: "row" as const,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  macroLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600" as const,
+  },
+  macroValue: {
+    fontSize: 18,
+    fontWeight: "700" as const,
   },
   fieldSection: {
     color: colors.textPrimary,

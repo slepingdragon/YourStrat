@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Modal, Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
-import { Screen, Button, toastError } from "@/components/ui";
+import { Screen, Button, GlassModal, toastError } from "@/components/ui";
 import { isApiError, lookupBarcode, scanMeal, type MealItem } from "@/lib/api";
 import { normalizeMealItem } from "@/lib/mealNutrition";
 import { useScanQueue } from "@/lib/scanQueueStore";
@@ -256,30 +256,20 @@ export default function ScanScreen() {
         </View>
       </View>
 
-      <Modal visible={!!match} transparent animationType="fade" onRequestClose={dismissMatch}>
-        <Pressable
-          onPress={dismissMatch}
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl }}
-        >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
-            style={{ width: "100%", maxWidth: 360, backgroundColor: colors.surfaceElevated, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.lg }}
-          >
-            <View>
-              <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>
-                {t("scan.foundFree")}
-              </Text>
-              <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", marginTop: spacing.xs }} numberOfLines={3}>
-                {match?.name}
-              </Text>
-            </View>
-            <View style={{ gap: spacing.sm }}>
-              <Button label={t("scan.select")} onPress={selectMatch} />
-              <Button label={t("scan.scanAgain")} variant="ghost" onPress={dismissMatch} />
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <GlassModal visible={!!match} onClose={dismissMatch}>
+        <View>
+          <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>
+            {t("scan.foundFree")}
+          </Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "700", marginTop: spacing.xs }} numberOfLines={3}>
+            {match?.name}
+          </Text>
+        </View>
+        <View style={{ gap: spacing.sm }}>
+          <Button label={t("scan.select")} onPress={selectMatch} />
+          <Button label={t("scan.scanAgain")} variant="ghost" onPress={dismissMatch} />
+        </View>
+      </GlassModal>
     </Screen>
   );
 }

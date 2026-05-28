@@ -17,6 +17,8 @@ class OnboardingInput(BaseModel):
     sex: Sex
     activity_level: ActivityLevel
     goal: Goal
+    timezone: str = "UTC"
+    day_start_minutes: int = Field(default=120, ge=0, le=1439)
 
 
 class ProfileUpdate(BaseModel):
@@ -27,6 +29,8 @@ class ProfileUpdate(BaseModel):
     sex: Sex | None = None
     activity_level: ActivityLevel | None = None
     goal: Goal | None = None
+    timezone: str | None = None
+    day_start_minutes: int | None = Field(default=None, ge=0, le=1439)
 
 
 class TrialStatus(BaseModel):
@@ -50,6 +54,8 @@ class Profile(BaseModel):
     daily_protein_target_g: int
     daily_carbs_target_g: int
     daily_fat_target_g: int
+    timezone: str = "UTC"
+    day_start_minutes: int = 120
     trial: TrialStatus
 
 

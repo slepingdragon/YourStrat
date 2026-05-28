@@ -37,6 +37,7 @@ export function TodayHeader({ now }: Props) {
           fontWeight: "600",
           letterSpacing: 0.6,
           textTransform: "uppercase",
+          textAlign: "center",
         }}
       >
         {date}  ·  {tag}

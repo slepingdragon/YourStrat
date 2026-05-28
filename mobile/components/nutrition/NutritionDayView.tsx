@@ -21,6 +21,7 @@ import { targetsFromProfile } from "@/lib/nutritionTargets";
 import { useStore } from "@/lib/store";
 import type { TodayMetricId } from "@/lib/todayMetrics";
 import { colors } from "@/theme/colors";
+import { glassInline } from "@/theme/glass";
 
 const CONTENT_MAX_WIDTH = 420;
 
@@ -73,9 +74,7 @@ function MealsEmptyState({ onLogPress }: { onLogPress: () => void }) {
   return (
     <View
       style={{
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        borderWidth: 1,
+        ...glassInline.card,
         borderRadius: 16,
         padding: 16,
       }}
@@ -188,6 +187,7 @@ export function NutritionDayView() {
     <Screen padding={false}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 56, alignItems: "center" }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.star} />
         }

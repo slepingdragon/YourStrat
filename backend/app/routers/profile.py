@@ -27,6 +27,8 @@ def _row_to_profile(row: dict, trial: TrialStatus) -> Profile:
         daily_protein_target_g=int(row["daily_protein_target_g"]),
         daily_carbs_target_g=int(row["daily_carbs_target_g"]),
         daily_fat_target_g=int(row["daily_fat_target_g"]),
+        timezone=str(row.get("timezone") or "UTC"),
+        day_start_minutes=int(row.get("day_start_minutes") if row.get("day_start_minutes") is not None else 120),
         trial=trial,
     )
 
@@ -69,6 +71,8 @@ def onboard(body: OnboardingInput, user: dict = Depends(get_current_user)):
         "sex": body.sex,
         "activity_level": body.activity_level,
         "goal": body.goal,
+        "timezone": body.timezone or "UTC",
+        "day_start_minutes": body.day_start_minutes,
         "trial_started_at": started_at,
         "trial_ends_at": ends_at,
         **targets,

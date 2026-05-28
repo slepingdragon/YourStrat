@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Image, Platform, Text, View } from "react-native";
+import { ActivityIndicator, Image, Platform, Pressable, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { Button, toastError } from "@/components/ui";
-import { Star } from "@/components/icons/Star";
+import { toastError } from "@/components/ui";
+import { Camera } from "@/components/icons";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 import type { Profile } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { cmToIn, kgToLbs } from "@/lib/targets";
@@ -56,6 +59,8 @@ export function ProfileIdentity({ profile }: Props) {
   const [email, setEmail] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  const scale = useSharedValue(1);
+  const avatarStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const loadPhoto = useCallback(async () => {
     const stored = await AsyncStorage.getItem(PROFILE_PHOTO_KEY);
@@ -114,34 +119,73 @@ export function ProfileIdentity({ profile }: Props) {
 
   return (
     <View style={{ alignItems: "center", paddingTop: 8, paddingBottom: 4 }}>
-      <View
-        style={{
-          width: AVATAR_SIZE,
-          height: AVATAR_SIZE,
-          borderRadius: AVATAR_SIZE / 2,
-          overflow: "hidden",
-          backgroundColor: colors.surfaceElevated,
-          borderWidth: 1,
-          borderColor: colors.border,
-          alignItems: "center",
-          justifyContent: "center",
+      <AnimatedPressable
+        onPress={pickPhoto}
+        disabled={picking}
+        accessibilityRole="button"
+        accessibilityLabel="Change photo"
+        accessibilityState={{ disabled: picking }}
+        onPressIn={() => {
+          scale.value = withTiming(0.96, { duration: 150 });
         }}
+        onPressOut={() => {
+          scale.value = withTiming(1, { duration: 150 });
+        }}
+        style={[{ width: AVATAR_SIZE, height: AVATAR_SIZE }, avatarStyle]}
       >
-        {photoUri ? (
-          <Image source={{ uri: photoUri }} style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} resizeMode="cover" />
-        ) : (
-          <>
+        <View
+          style={{
+            width: AVATAR_SIZE,
+            height: AVATAR_SIZE,
+            borderRadius: AVATAR_SIZE / 2,
+            overflow: "hidden",
+            backgroundColor: colors.surfaceElevated,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }} resizeMode="cover" />
+          ) : (
             <Text style={{ color: colors.textPrimary, fontSize: 40, fontWeight: "700" }}>{initials}</Text>
-            <View style={{ position: "absolute", bottom: 6, right: 8, opacity: 0.35 }}>
-              <Star size={18} />
+          )}
+          {picking ? (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(8,8,11,0.45)",
+              }}
+            >
+              <ActivityIndicator color={colors.textPrimary} />
             </View>
-          </>
-        )}
-      </View>
-
-      <View style={{ marginTop: 16, width: "100%", maxWidth: 280 }}>
-        <Button label="Change photo" variant="secondary" onPress={pickPhoto} loading={picking} />
-      </View>
+          ) : null}
+        </View>
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            backgroundColor: colors.star,
+            borderWidth: 3,
+            borderColor: colors.bg,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Camera size={16} color={colors.bg} />
+        </View>
+      </AnimatedPressable>
 
       <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 20, letterSpacing: 0.3 }}>
         Your profile
